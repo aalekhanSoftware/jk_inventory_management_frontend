@@ -1,132 +1,224 @@
 <div class="employee-order-form-container">
   <app-loader [show]="isLoading"></app-loader>
-  
+
   <div class="form-card">
     <div class="card-header">
       <h2 class="form-title">
-        <i class="fas fa-tasks"></i> 
+        <i class="fas fa-tasks"></i>
         {{ isEditMode ? 'Edit Employee Order' : 'Create Employee Order' }}
       </h2>
     </div>
 
-    <form [formGroup]="employeeOrderForm" (ngSubmit)="onSubmit()" class="employee-order-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="productId">
-            <i class="fas fa-box"></i> Product <span class="required">*</span>
-          </label>
-          <div class="product-select-group">
-            <app-searchable-select
-              formControlName="productId"
-              [options]="products"
-              labelKey="name"
-              valueKey="id"
-              [placeholder]="'Select Product'"
-              [searchPlaceholder]="'Search products...'"
-            ></app-searchable-select>
-            <button 
-              type="button" 
-              class="btn-icon refresh" 
-              (click)="refreshProducts()" 
-              [disabled]="isLoadingProducts"
-              title="Refresh Products"
-            >
-              <i class="fas" [ngClass]="isLoadingProducts ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
-            </button>
+    <form [formGroup]="employeeOrderForm" (ngSubmit)="onSubmit($event)" class="employee-order-form" novalidate>
+      <!-- Order header: employees + status -->
+      <div class="section-card">
+        <h3><i class="fas fa-clipboard-list"></i> Order Details</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="employeeIds">
+              <i class="fas fa-users"></i> Employees <span class="required">*</span>
+            </label>
+            <div class="employee-select-group">
+              <app-searchable-select
+                formControlName="employeeIds"
+                [options]="employees"
+                labelKey="name"
+                valueKey="id"
+                [placeholder]="'Select Employees'"
+                [searchPlaceholder]="'Search employees...'"
+                [multiple]="true"
+              ></app-searchable-select>
+              <button
+                type="button"
+                class="btn-icon refresh"
+                (click)="loadEmployees(); $event.preventDefault(); $event.stopPropagation()"
+                [disabled]="isLoadingEmployees"
+                title="Refresh Employees"
+                aria-label="Refresh Employees"
+              >
+                <i class="fas" [ngClass]="isLoadingEmployees ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback" *ngIf="isFieldInvalid('employeeIds')">
+              {{ getFieldError('employeeIds') }}
+            </div>
           </div>
-          <div class="invalid-feedback" *ngIf="isFieldInvalid('productId')">
-            {{ getFieldError('productId') }}
-          </div>
-        </div>
 
-        <div class="form-group">
-          <label for="employeeIds">
-            <i class="fas fa-users"></i> Employees <span class="required">*</span>
-          </label>
-          <div class="employee-select-group">
-            <app-searchable-select
-              formControlName="employeeIds"
-              [options]="employees"
-              labelKey="name"
-              valueKey="id"
-              [placeholder]="'Select Employees'"
-              [searchPlaceholder]="'Search employees...'"
-              [multiple]="true"
-            ></app-searchable-select>
-            <button 
-              type="button" 
-              class="btn-icon refresh" 
-              (click)="loadEmployees()" 
-              [disabled]="isLoadingEmployees"
-              title="Refresh Employees"
+          <div class="form-group">
+            <label for="status">
+              <i class="fas fa-info-circle"></i> Status
+            </label>
+            <select
+              id="status"
+              formControlName="status"
+              class="form-control"
+              [class.is-invalid]="isFieldInvalid('status')"
             >
-              <i class="fas" [ngClass]="isLoadingEmployees ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
-            </button>
+              <option value="O">Open</option>
+              <option value="I">In Progress</option>
+              <option value="C">Completed</option>
+            </select>
+            <div class="invalid-feedback" *ngIf="isFieldInvalid('status')">
+              {{ getFieldError('status') }}
+            </div>
           </div>
-          <div class="invalid-feedback" *ngIf="isFieldInvalid('employeeIds')">
-            {{ getFieldError('employeeIds') }}
+
+          <div class="form-group">
+            <label for="orderDate">
+              <i class="fas fa-calendar-alt"></i> Order Date <span class="required">*</span>
+            </label>
+            <input
+              type="date"
+              id="orderDate"
+              formControlName="orderDate"
+              class="form-control"
+              [class.is-invalid]="isFieldInvalid('orderDate')"
+            >
+            <div class="invalid-feedback" *ngIf="isFieldInvalid('orderDate')">
+              {{ getFieldError('orderDate') }}
+            </div>
+          </div>
+
+          <div class="form-group" *ngIf="isEditMode && orderNumber">
+            <label for="orderNumber">
+              <i class="fas fa-hashtag"></i> Order No
+            </label>
+            <input
+              type="text"
+              id="orderNumber"
+              class="form-control"
+              [value]="orderNumber"
+              readonly
+              tabindex="-1"
+            >
           </div>
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="quantity">
-            <i class="fas fa-sort-amount-up"></i> Quantity <span class="required">*</span>
-          </label>
-          <input 
-            type="number" 
-            id="quantity"
-            formControlName="quantity"
-            class="form-control"
-            [class.is-invalid]="isFieldInvalid('quantity')"
-            min="1"
+      <!-- Multiple products section (reference: add/update coating items) -->
+      <div class="section-card items-section" formArrayName="items">
+        <div class="items-header">
+          <h3><i class="fas fa-boxes"></i> Products</h3>
+          <button
+            type="button"
+            class="btn btn-primary add-item-btn"
+            (click)="addItem(); $event.preventDefault(); $event.stopPropagation()"
+            [disabled]="isLoading"
+            aria-label="Add Product"
+            title="Add Product (Alt+P)"
           >
-          <div class="invalid-feedback" *ngIf="isFieldInvalid('quantity')">
-            {{ getFieldError('quantity') }}
-          </div>
+            <i class="fas fa-plus"></i> Add Product <span class="kbd-hint" title="Press Alt+P to add a product">Alt+P</span>
+          </button>
         </div>
 
-        <div class="form-group">
-          <label for="status">
-            <i class="fas fa-info-circle"></i> Status
-          </label>
-          <select 
-            id="status"
-            formControlName="status"
-            class="form-control"
-            [class.is-invalid]="isFieldInvalid('status')"
-          >
-            <option value="O">Open</option>
-            <option value="I">In Progress</option>
-            <option value="C">Completed</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="isFieldInvalid('status')">
-            {{ getFieldError('status') }}
-          </div>
+        <div class="table-responsive">
+          <table class="table items-table" role="table" aria-label="Order Products">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Product <span class="required">*</span></th>
+                <th scope="col">Quantity <span class="required">*</span></th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itemsFormArray.controls; let i = index" [formGroupName]="i">
+                <td class="row-index">{{ i + 1 }}</td>
+                <td>
+                  <div class="form-field-container">
+                    <div class="product-select-group">
+                      <app-searchable-select
+                        [formControlName]="'productId'"
+                        [options]="products"
+                        [labelKey]="'name'"
+                        [valueKey]="'id'"
+                        [placeholder]="'Select Product'"
+                        [searchPlaceholder]="'Search products...'"
+                        [class.is-invalid]="isItemFieldInvalid(i, 'productId')"
+                        [attr.id]="'productId_' + i"
+                      ></app-searchable-select>
+                      <button
+                        type="button"
+                        class="btn-icon refresh"
+                        (click)="refreshProducts(); $event.preventDefault(); $event.stopPropagation()"
+                        [disabled]="isLoadingProducts"
+                        title="Refresh Products"
+                        aria-label="Refresh Products"
+                      >
+                        <i class="fas" [ngClass]="isLoadingProducts ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
+                      </button>
+                    </div>
+                    <div class="invalid-feedback" *ngIf="isItemFieldInvalid(i, 'productId')">
+                      {{ getItemFieldError(i, 'productId') }}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="quantity"
+                    class="form-control"
+                    [class.is-invalid]="isItemFieldInvalid(i, 'quantity')"
+                    [attr.id]="'quantity_' + i"
+                    min="1"
+                    step="1"
+                    [attr.aria-label]="'Quantity for product ' + (i + 1)"
+                  >
+                  <div class="invalid-feedback" *ngIf="isItemFieldInvalid(i, 'quantity')">
+                    {{ getItemFieldError(i, 'quantity') }}
+                  </div>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    (click)="removeItem(i); $event.preventDefault(); $event.stopPropagation()"
+                    class="btn btn-sm btn-danger"
+                    [disabled]="isLoading || itemsFormArray.length <= 1"
+                    [attr.aria-label]="'Remove product ' + (i + 1)"
+                    [title]="'Remove Product ' + (i + 1)"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="itemsFormArray.length === 0">
+                <td colspan="4" class="text-center">No products added. Click "Add Product" to get started.</td>
+              </tr>
+            </tbody>
+            <tfoot *ngIf="itemsFormArray.length > 0">
+              <tr>
+                <td colspan="2" class="text-end"><strong>Total Quantity:</strong></td>
+                <td><strong>{{ getTotalQuantity() }}</strong></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="remarks">
-          <i class="fas fa-comment"></i> Remarks
-        </label>
-        <textarea 
-          id="remarks"
-          formControlName="remarks"
-          class="form-control"
-          rows="3"
-        ></textarea>
+      <div class="section-card">
+        <div class="form-group remarks-group">
+          <label for="remarks">
+            <i class="fas fa-comment"></i> Remarks
+          </label>
+          <textarea
+            id="remarks"
+            formControlName="remarks"
+            class="form-control"
+            rows="3"
+            placeholder="Optional note for this order"
+          ></textarea>
+        </div>
       </div>
 
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" routerLink="/employee-order">
           <i class="fas fa-times"></i> Cancel
         </button>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           class="btn btn-primary"
-          [disabled]="employeeOrderForm.invalid || isLoading"
+          [disabled]="employeeOrderForm.invalid || isLoading || itemsFormArray.length === 0"
         >
           <i class="fas" [ngClass]="isLoading ? 'fa-spinner fa-spin' : (isEditMode ? 'fa-save' : 'fa-plus')"></i>
           {{ isLoading ? 'Processing...' : (isEditMode ? 'Update' : 'Create') }}
@@ -134,4 +226,4 @@
       </div>
     </form>
   </div>
-</div> 
+</div>

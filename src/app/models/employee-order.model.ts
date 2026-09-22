@@ -1,5 +1,14 @@
+export interface EmployeeOrderItem {
+  id?: number;
+  productId: number;
+  productName?: string;
+  quantity: number;
+}
+
 export interface EmployeeOrder {
   id?: number;
+  employeeOrderNumber?: string;
+  orderDate?: string;
   productId: number;
   productName?: string;
   employeeIds: number[];
@@ -8,6 +17,7 @@ export interface EmployeeOrder {
   status: string;
   createdAt?: string;
   updatedAt?: string;
+  items?: EmployeeOrderItem[];
 }
 
 export interface EmployeeOrderSearchRequest {

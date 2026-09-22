@@ -147,4 +147,24 @@ export class EmployeeOrderListComponent implements OnInit {
   getPageNumbers(): number[] {
     return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
+
+  getProductSummary(order: EmployeeOrder): string {
+    if (order.items && order.items.length > 0) {
+      const first = order.items[0].productName || this.getProductLabel(order.items[0].productId);
+      if (order.items.length === 1) return first;
+      return `${first} +${order.items.length - 1} more`;
+    }
+    return order.productName || '';
+  }
+
+  getTotalQuantity(order: EmployeeOrder): number {
+    if (order.items && order.items.length > 0) {
+      return order.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    }
+    return Number(order.quantity) || 0;
+  }
+
+  private getProductLabel(productId: number): string {
+    return `Product #${productId}`;
+  }
 } 

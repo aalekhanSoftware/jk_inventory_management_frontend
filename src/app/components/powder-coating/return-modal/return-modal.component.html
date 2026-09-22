@@ -1,0 +1,70 @@
+<div class="modal-overlay" *ngIf="display$ | async" (click)="close()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><i class="fas fa-undo" aria-hidden="true"></i> <strong>Create Return</strong></h2>
+      <button class="btn-icon close" (click)="close()" title="Close" aria-label="Close Modal" type="button">
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="returnForm" (ngSubmit)="onSubmit()" novalidate>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="returnQuantity">
+            <i class="fas fa-hashtag" aria-hidden="true"></i> <strong>Return Quantity</strong> <span class="required" aria-label="required">*</span>
+          </label>
+          <input 
+            type="number" 
+            id="returnQuantity" 
+            formControlName="returnQuantity" 
+            class="form-control"
+            [class.is-invalid]="returnForm.get('returnQuantity')?.invalid && returnForm.get('returnQuantity')?.touched"
+            min="1"
+            step="1"
+            aria-required="true"
+            aria-label="Return Quantity"
+          >
+          <div class="invalid-feedback" *ngIf="returnForm.get('returnQuantity')?.errors?.['required']">
+            Return quantity is required
+          </div>
+          <div class="invalid-feedback" *ngIf="returnForm.get('returnQuantity')?.errors?.['min']">
+            Return quantity must be greater than 0
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="returnDate">
+            <i class="fas fa-calendar" aria-hidden="true"></i> <strong>Return Date</strong>
+          </label>
+          <input 
+            type="datetime-local" 
+            id="returnDate" 
+            formControlName="returnDate" 
+            class="form-control"
+            aria-label="Return Date"
+          >
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="close()"
+          aria-label="Cancel"
+        >
+          <i class="fas fa-times" aria-hidden="true"></i> Cancel
+        </button>
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="returnForm.invalid || loading"
+          aria-label="Create Return"
+        >
+          <i class="fas" [ngClass]="loading ? 'fa-spinner fa-spin' : 'fa-save'" aria-hidden="true"></i>
+          {{ loading ? 'Creating...' : 'Create Return' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div> 

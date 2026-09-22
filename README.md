@@ -1,0 +1,1 @@
+# jk_inventory_management_frontend

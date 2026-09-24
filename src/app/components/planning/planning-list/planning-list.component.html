@@ -1,0 +1,117 @@
+<div class="planning-container">
+
+  <div class="search-section card">
+    <h2>Search Plannings</h2>
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+      <div class="search-controls">
+        <div class="form-group">
+          <input
+            type="text"
+            formControlName="search"
+            class="form-control"
+            placeholder="Search by planning no or remarks..."
+          >
+        </div>
+        <div class="form-group">
+          <select formControlName="status" class="form-control">
+            <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <input type="date" formControlName="startDate" class="form-control" placeholder="Start Date">
+        </div>
+        <div class="form-group">
+          <input type="date" formControlName="endDate" class="form-control" placeholder="End Date">
+        </div>
+        <div class="button-group">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i> Search
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="resetForm()">
+            <i class="fas fa-undo"></i> Reset
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="action-buttons">
+    <button routerLink="/planning/create" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Create Planning
+    </button>
+    <button routerLink="/dashboard" class="btn btn-secondary">
+      <i class="fas fa-chart-bar"></i> Dashboard
+    </button>
+    <button routerLink="/production/entry" class="btn btn-secondary">
+      <i class="fas fa-industry"></i> Production Entry
+    </button>
+  </div>
+
+  <div class="planning-list card">
+    <h2>Plannings</h2>
+    <div class="table-responsive">
+      <app-loader [show]="isLoading"></app-loader>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Planning No</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Products</th>
+            <th>Planned</th>
+            <th>Cutting</th>
+            <th>Emboss</th>
+            <th>Coating</th>
+            <th>Packing</th>
+            <th>Dispatch</th>
+            <th>Remaining</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of plannings">
+            <td><a [routerLink]="['/planning', encId(p.id)]">{{ p.planningNumber || '-' }}</a></td>
+            <td>{{ p.planningDate ? (p.planningDate | date:'dd-MM-yyyy') : '-' }}</td>
+            <td>{{ p.customerName || '-' }}</td>
+            <td>{{ p.productCount ?? '-' }}</td>
+            <td>{{ p.totalPlanned ?? '-' }}</td>
+            <td>{{ p.cuttingQty ?? '-' }}</td>
+            <td>{{ p.embossQty ?? '-' }}</td>
+            <td>{{ p.coatingQty ?? '-' }}</td>
+            <td>{{ p.packingQty ?? '-' }}</td>
+            <td>{{ p.dispatchQty ?? '-' }}</td>
+            <td [class.negative]="(p.remainingQty ?? 0) < 0">{{ p.remainingQty ?? '-' }}</td>
+            <td><span [ngClass]="'status-' + (p.status || 'o').toLowerCase()">{{ statusLabel(p.status) }}</span></td>
+            <td class="actions">
+              <button class="btn-icon edit" [routerLink]="['/planning', encId(p.id)]" title="View Detail">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn-icon edit" [routerLink]="['/planning/edit', encId(p.id)]" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-icon delete" (click)="deletePlanning(p.id ?? 0)" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!plannings?.length">
+            <td colspan="13" class="text-center">No plannings found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-controls">
+      <app-pagination
+        *ngIf="totalPages > 0"
+        [currentPage]="currentPage"
+        [pageSize]="pageSize"
+        [totalElements]="totalElements"
+        [pageSizeOptions]="pageSizeOptions"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      ></app-pagination>
+    </div>
+    <p class="hint">Remaining = Planned − Cutting (combined Cutting+Emboss counts inside Cutting; later stages consume prior-stage stock, not the plan).</p>
+  </div>
+</div>

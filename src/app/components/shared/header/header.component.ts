@@ -12,6 +12,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isAuthenticated: boolean = false;
   showMasterMenu: boolean = false;
   showTransactionMenu: boolean = false;
+  showPlanningMenu: boolean = false;
   isMobileMenuOpen: boolean = false;
   private authSubscription: Subscription;
 
@@ -42,6 +43,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (!target.closest('.dropdown') && !target.closest('.mobile-menu-toggle')) {
       this.showMasterMenu = false;
       this.showTransactionMenu = false;
+      this.showPlanningMenu = false;
       if (!target.closest('.nav-links')) {
         this.isMobileMenuOpen = false;
       }
@@ -57,6 +59,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     this.showMasterMenu = !this.showMasterMenu;
     this.showTransactionMenu = false;
+    this.showPlanningMenu = false;
   }
 
   toggleTransactionMenu(event: Event): void {
@@ -64,6 +67,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     this.showTransactionMenu = !this.showTransactionMenu;
     this.showMasterMenu = false;
+    this.showPlanningMenu = false;
+  }
+
+  togglePlanningMenu(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.showPlanningMenu = !this.showPlanningMenu;
+    this.showMasterMenu = false;
+    this.showTransactionMenu = false;
   }
 
   isMasterActive(): boolean {
@@ -76,6 +88,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isTransactionActive(): boolean {
     const currentUrl = this.router.url;
     return ['/purchase', '/sale', '/profit', '/daily-profit'].some(path => 
+      currentUrl.includes(path)
+    );
+  }
+
+  isPlanningActive(): boolean {
+    const currentUrl = this.router.url;
+    return ['/planning', '/production/entry', '/dashboard', '/stock-moves', '/stock-movements'].some(path =>
       currentUrl.includes(path)
     );
   }

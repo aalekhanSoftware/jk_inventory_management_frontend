@@ -1,0 +1,61 @@
+<div class="movement-container">
+  <div class="search-section card">
+    <h2>Search Stock Movements</h2>
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+      <div class="search-controls">
+        <div class="form-group">
+          <input type="text" formControlName="search" class="form-control" placeholder="Search by product, stage or planning no...">
+        </div>
+        <div class="form-group">
+          <input type="date" formControlName="startDate" class="form-control">
+        </div>
+        <div class="form-group">
+          <input type="date" formControlName="endDate" class="form-control">
+        </div>
+        <div class="button-group">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+          <button type="button" class="btn btn-secondary" (click)="resetForm()"><i class="fas fa-undo"></i> Reset</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="movement-list card">
+    <h2>Stock Movements (audit trail)</h2>
+    <div class="table-responsive">
+      <app-loader [show]="isLoading"></app-loader>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Planning</th>
+            <th>Stage</th>
+            <th>Type</th>
+            <th>Input</th>
+            <th>In Qty</th>
+            <th>Output</th>
+            <th>Out Qty</th>
+            <th>By</th>
+            <th>When</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of movements">
+            <td>{{ m.planningNumber || '-' }}</td>
+            <td>{{ m.processStage }}</td>
+            <td>{{ m.movementType }}</td>
+            <td>{{ m.inputProductName || '-' }}</td>
+            <td>{{ m.inputQuantity ?? '-' }}</td>
+            <td>{{ m.outputProductName }}</td>
+            <td>{{ m.outputQuantity }}</td>
+            <td>{{ m.createdByName || '-' }}</td>
+            <td>{{ m.createdAt | date:'dd-MM-yyyy HH:mm' }}</td>
+          </tr>
+          <tr *ngIf="!movements?.length">
+            <td colspan="9" class="text-center">No stock movements found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-pagination *ngIf="totalPages > 0" [currentPage]="currentPage" [pageSize]="pageSize" [totalElements]="totalElements" [pageSizeOptions]="pageSizeOptions" (pageChange)="onPageChange($event)" (pageSizeChange)="onPageSizeChange($event)"></app-pagination>
+  </div>
+</div>

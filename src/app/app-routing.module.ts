@@ -19,6 +19,12 @@ import { EmployeeListComponent } from './components/employee/employee-list/emplo
 import { EmployeeFormComponent } from './components/employee/employee-form/employee-form.component';
 import { EmployeeOrderListComponent } from './components/employee-order/employee-order-list/employee-order-list.component';
 import { EmployeeOrderFormComponent } from './components/employee-order/employee-order-form/employee-order-form.component';
+import { PlanningListComponent } from './components/planning/planning-list/planning-list.component';
+import { PlanningFormComponent } from './components/planning/planning-form/planning-form.component';
+import { PlanningDetailComponent } from './components/planning/planning-detail/planning-detail.component';
+import { ProductionEntryComponent } from './components/production/production-entry/production-entry.component';
+import { ProductionDashboardComponent } from './components/production/production-dashboard/production-dashboard.component';
+import { StockMovementListComponent } from './components/production/stock-movement-list/stock-movement-list.component';
 import { DailyProfitComponent } from './components/all-profits/daily-profit/daily-profit.component';
 import { AddQuotationComponent } from './components/all-quotation/add-quotation/add-quotation.component';
 import { QuotationComponent } from './components/all-quotation/quotation/quotation.component';
@@ -139,6 +145,46 @@ const routes: Routes = [
     path: 'daily-profit',
     component: DailyProfitComponent,
     canActivate: [AuthGuard, ClientPasswordGuard]
+  },
+  {
+    path: 'planning',
+    component: PlanningListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'planning/create',
+    component: PlanningFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'planning/edit/:id',
+    component: PlanningFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'planning/:id',
+    component: PlanningDetailComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'production/entry',
+    component: ProductionEntryComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'production/edit/:id',
+    component: ProductionEntryComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'dashboard',
+    component: ProductionDashboardComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock-movements',
+    component: StockMovementListComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: '**',

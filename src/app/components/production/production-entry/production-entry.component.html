@@ -1,0 +1,95 @@
+<div class="entry-container">
+  <app-loader [show]="isLoading"></app-loader>
+  <div class="form-card">
+    <div class="card-header">
+      <h2 class="form-title"><i class="fas fa-industry"></i> {{ isEditMode ? 'Edit Production Entry' : 'Production Entry' }}</h2>
+    </div>
+    <form [formGroup]="entryForm" (ngSubmit)="onSubmit()" class="entry-form" novalidate>
+      <div class="section-card" *ngIf="isEditMode && existingOp">
+        <h3><i class="fas fa-lock"></i> Locked (delete + recreate to change these)</h3>
+        <div class="readonly-grid">
+          <div><span>Planning:</span> <strong>{{ existingOp.planningNumber || '-' }}</strong></div>
+          <div><span>Operation:</span> <strong>{{ existingOp.operationType }}</strong></div>
+          <div><span>Input:</span> <strong>{{ existingOp.inputProductName || '-' }}</strong></div>
+          <div><span>Output:</span> <strong>{{ existingOp.outputProductName || '-' }}</strong></div>
+        </div>
+      </div>
+      <div class="section-card" *ngIf="!isEditMode">
+        <h3><i class="fas fa-clipboard-list"></i> Planning → Product → Operation</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Planning <span class="required">*</span></label>
+            <app-searchable-select formControlName="planningId" [options]="plannings" labelKey="planningNumber" valueKey="id" [placeholder]="'Select Planning'" [searchPlaceholder]="'Search plannings...'"></app-searchable-select>
+          </div>
+          <div class="form-group">
+            <label>Planning Product <span class="required">*</span></label>
+            <app-searchable-select formControlName="planningItemId" [options]="planningItems" labelKey="productName" valueKey="id" [placeholder]="'Select Product'" [searchPlaceholder]="'Search products...'"></app-searchable-select>
+            <small *ngIf="selectedItem">Planned: {{ selectedItem.plannedQuantity }} | Cutting: {{ selectedItem.cuttingQty }} | Emboss: {{ selectedItem.embossQty }} | Coating: {{ selectedItem.coatingRequired ? selectedItem.coatingQty : 'N/A' }} | Packing: {{ selectedItem.packingQty }} | Dispatch: {{ selectedItem.dispatchQty }} | Remaining: {{ selectedItem.remainingQty }}</small>
+          </div>
+          <div class="form-group">
+            <label>Operation <span class="required">*</span></label>
+            <select formControlName="operationType" class="form-control">
+              <option *ngFor="let o of operationOptions" [value]="o.value">{{ o.label }}</option>
+            </select>
+            <small>{{ operationHint }}</small>
+            <small *ngIf="availableInfo"><strong>{{ availableInfo.label }}: {{ availableInfo.qty }}</strong></small>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card transform-banner" *ngIf="!isEditMode">
+        <h3><i class="fas fa-arrow-down"></i> Input → Process → Output</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Input Product {{ isSameProductStage ? '(locked = output)' : '*' }}</label>
+            <app-searchable-select formControlName="inputProductId" [options]="products" labelKey="name" valueKey="id" [placeholder]="'Select Input (e.g. Galvanized Patti)'" [searchPlaceholder]="'Search products...'"></app-searchable-select>
+            <small *ngIf="!isSameProductStage">Cutting consumes input stock; output stock is added.</small>
+          </div>
+          <div class="form-group">
+            <label>Output Product <span class="required">*</span></label>
+            <app-searchable-select formControlName="outputProductId" [options]="products" labelKey="name" valueKey="id" [placeholder]="'Select Output (e.g. Silver Clamp)'" [searchPlaceholder]="'Search products...'"></app-searchable-select>
+            <small *ngIf="isSameProductStage">Emboss/Coating/Packing: input and output stay the same (progress only, no net stock change).</small>
+          </div>
+          <div class="form-group">
+            <label>Quantity <span class="required">*</span></label>
+            <input type="number" formControlName="quantity" class="form-control" min="1" step="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3><i class="fas fa-info-circle"></i> {{ isEditMode ? 'Editable Details' : 'Additional Details' }}</h3>
+        <div class="form-row">
+          <div class="form-group" *ngIf="isEditMode">
+            <label>Quantity <span class="required">*</span></label>
+            <input type="number" formControlName="quantity" class="form-control" min="1" step="1">
+          </div>
+          <div class="form-group">
+            <label>Operation Date</label>
+            <input type="date" formControlName="operationDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Employees</label>
+            <app-searchable-select formControlName="employeeIds" [options]="employees" labelKey="name" valueKey="id" [placeholder]="'Select Employees'" [multiple]="true"></app-searchable-select>
+          </div>
+          <div class="form-group">
+            <label>Machine / Workstation</label>
+            <input type="text" formControlName="machineRemarks" class="form-control" placeholder="e.g. Cutting+Emboss M/C-2">
+          </div>
+          <div class="form-group">
+            <label>Remarks</label>
+            <input type="text" formControlName="remarks" class="form-control" placeholder="Optional">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" [routerLink]="cancelLink"><i class="fas fa-times"></i> Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="entryForm.invalid || isSaving">
+          <i class="fas" [ngClass]="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+          {{ isSaving ? (isEditMode ? 'Updating…' : 'Saving…') : (isEditMode ? 'Update Entry' : 'Save Entry') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,85 @@
+<div class="dashboard-container">
+  <app-loader [show]="isLoading"></app-loader>
+
+  <section class="page-header card">
+    <div class="header-content">
+      <div class="header-icon"><i class="fas fa-chart-bar"></i></div>
+      <div class="header-text">
+        <h1>Production Dashboard</h1>
+        <p>At-a-glance clamp manufacturing status — Planned → Cutting → Emboss → Coating → Packing → Dispatch</p>
+      </div>
+      <div class="header-actions">
+        <button routerLink="/planning" class="btn btn-secondary"><i class="fas fa-clipboard-list"></i> Plannings</button>
+        <button routerLink="/production/entry" class="btn btn-primary"><i class="fas fa-plus"></i> Production Entry</button>
+        <button type="button" class="btn btn-secondary" (click)="exportExcel()" [disabled]="isLoading || isExporting || !summary?.breakdown?.length"><i class="fas" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i> {{ isExporting ? 'Exporting…' : 'Excel' }}</button>
+      </div>
+    </div>
+    <form [formGroup]="filterForm" (ngSubmit)="onFilter()" class="filter-row">
+      <app-searchable-select formControlName="planningId" [options]="plannings" labelKey="planningNumber" valueKey="id" [placeholder]="'All Plannings'"></app-searchable-select>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+      <button type="button" class="btn btn-secondary" (click)="resetFilter()"><i class="fas fa-undo"></i> Reset</button>
+    </form>
+  </section>
+
+  <section class="stat-grid" *ngIf="summary">
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-clipboard-list"></i></div><div class="stat-content"><span class="stat-label">Planned</span><span class="stat-value">{{ summary.planned }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-cut"></i></div><div class="stat-content"><span class="stat-label">Cutting</span><span class="stat-value">{{ summary.cutting }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-stamp"></i></div><div class="stat-content"><span class="stat-label">Emboss</span><span class="stat-value">{{ summary.emboss }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-spray-can-sparkles"></i></div><div class="stat-content"><span class="stat-label">Coating</span><span class="stat-value">{{ summary.coating }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-box"></i></div><div class="stat-content"><span class="stat-label">Packing</span><span class="stat-value">{{ summary.packing }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-truck"></i></div><div class="stat-content"><span class="stat-label">Dispatch</span><span class="stat-value">{{ summary.dispatch }}</span></div></div>
+    <div class="stat-card" [class.negative]="(summary.remaining ?? 0) < 0"><div class="stat-icon"><i class="fas fa-scale-balanced"></i></div><div class="stat-content"><span class="stat-label">Remaining</span><span class="stat-value">{{ summary.remaining }}</span></div></div>
+  </section>
+
+  <section class="card" *ngIf="summary">
+    <h2>Product Breakdown</h2>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Planning</th>
+            <th>Product</th>
+            <th>Planned</th>
+            <th>Cutting</th>
+            <th>Emboss</th>
+            <th>Coating</th>
+            <th>Packing</th>
+            <th>Dispatch</th>
+            <th>Remaining</th>
+            <th>Progress</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of summary.breakdown">
+            <td><a [routerLink]="['/planning', encId(row.planningId)]">{{ row.planningNumber }}</a></td>
+            <td>{{ row.productName }} <span class="badge" *ngIf="row.coatingRequired">Coating</span></td>
+            <td>{{ row.planned }}</td>
+            <td>{{ row.cutting }}</td>
+            <td>{{ row.emboss }}</td>
+            <td>{{ row.coatingRequired ? row.coating : 'N/A' }}</td>
+            <td>{{ row.packing }}</td>
+            <td>{{ row.dispatch }}</td>
+            <td [class.negative]="(row.remaining ?? 0) < 0">{{ row.remaining }}</td>
+            <td>
+              <div class="progress"><div class="progress-bar" [style.width.%]="rowPercent(row)"></div></div>
+              <small>{{ rowPercent(row) }}%</small>
+            </td>
+          </tr>
+          <tr *ngIf="!summary.breakdown?.length">
+            <td colspan="10" class="text-center">No production data yet</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Remaining = Planned − Cutting (combined entries count inside Cutting; later stages consume prior-stage stock).</p>
+    <app-pagination
+      *ngIf="totalPages > 0"
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
+      [totalElements]="totalElements"
+      [pageSizeOptions]="pageSizeOptions"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    ></app-pagination>
+  </section>
+</div>

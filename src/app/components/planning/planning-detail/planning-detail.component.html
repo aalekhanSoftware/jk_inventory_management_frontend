@@ -1,0 +1,115 @@
+<div class="planning-detail-container">
+  <app-loader [show]="isLoading"></app-loader>
+
+  <div class="action-bar" *ngIf="planning">
+    <button routerLink="/planning" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</button>
+    <button [routerLink]="['/planning/edit', encId(planning.id)]" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</button>
+    <button [routerLink]="['/production/entry']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-plus"></i> Production Entry</button>
+    <button [routerLink]="['/dashboard']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Dashboard</button>
+    <button type="button" class="btn btn-secondary" (click)="exportExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+  </div>
+
+  <div class="card" *ngIf="planning">
+    <h2>Planning Information — {{ planning.planningNumber }}</h2>
+    <div class="info-grid">
+      <div><span>Planning No:</span> <strong>{{ planning.planningNumber }}</strong></div>
+      <div><span>Date:</span> <strong>{{ planning.planningDate ? (planning.planningDate | date:'dd-MM-yyyy') : '-' }}</strong></div>
+      <div><span>Customer:</span> <strong>{{ planning.customerName || '-' }}</strong></div>
+      <div><span>Status:</span> <strong>{{ statusLabel(planning.status) }}</strong></div>
+      <div class="full"><span>Remarks:</span> {{ planning.remarks || '-' }}</div>
+    </div>
+  </div>
+
+  <div class="card summary-card" *ngIf="planning">
+    <h2>Production Summary</h2>
+    <div class="stat-grid">
+      <div class="stat-card"><span class="stat-label">Planned</span><span class="stat-value">{{ planning.totalPlanned }}</span></div>
+      <div class="stat-card"><span class="stat-label">Cutting</span><span class="stat-value">{{ planning.cuttingQty }}</span></div>
+      <div class="stat-card"><span class="stat-label">Emboss</span><span class="stat-value">{{ planning.embossQty }}</span></div>
+      <div class="stat-card"><span class="stat-label">Coating</span><span class="stat-value">{{ planning.coatingQty }}</span></div>
+      <div class="stat-card"><span class="stat-label">Packing</span><span class="stat-value">{{ planning.packingQty }}</span></div>
+      <div class="stat-card"><span class="stat-label">Dispatch</span><span class="stat-value">{{ planning.dispatchQty }}</span></div>
+      <div class="stat-card" [class.negative]="(planning.remainingQty ?? 0) < 0"><span class="stat-label">Remaining</span><span class="stat-value">{{ planning.remainingQty }}</span></div>
+    </div>
+    <p class="hint">Remaining = Planned − Cutting (combined Cutting+Emboss counts inside Cutting)</p>
+  </div>
+
+  <div class="card" *ngIf="planning">
+    <h2>Product-wise Production</h2>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Planned</th>
+            <th>Cutting</th>
+            <th>Emboss</th>
+            <th>Coating</th>
+            <th>Packing</th>
+            <th>Dispatch</th>
+            <th>Remaining</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let item of planning.items">
+            <tr>
+              <td>{{ item.productName }} <span class="badge" *ngIf="item.coatingRequired">Coating</span></td>
+              <td>{{ item.plannedQuantity }}</td>
+              <td>{{ item.cuttingQty }}</td>
+              <td>{{ item.embossQty }}</td>
+              <td>{{ item.coatingRequired ? item.coatingQty : 'N/A' }}</td>
+              <td>{{ item.packingQty }}</td>
+              <td>{{ item.dispatchQty }}</td>
+              <td [class.negative]="(item.remainingQty ?? 0) < 0">{{ item.remainingQty }}</td>
+              <td>
+                <div class="progress"><div class="progress-bar" [style.width.%]="progressPercent(item)"></div></div>
+                <small>{{ progressPercent(item) }}%</small>
+              </td>
+              <td>{{ itemStatusLabel(item.itemStatus) }}</td>
+              <td>
+                <button class="btn btn-sm btn-secondary" (click)="toggleTransactions(item)">
+                  {{ expandedItemId === item.id ? 'Hide' : 'Transactions' }}
+                </button>
+                <button class="btn btn-sm btn-primary" [routerLink]="['/production/entry']" [queryParams]="{planningId: encId(planning.id), planningItemId: encId(item.id)}" title="Direct production entry — planning and product pre-selected, changeable">
+                  <i class="fas fa-plus"></i> Entry
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="expandedItemId === item.id">
+              <td colspan="11">
+                <div *ngIf="loadingTx[item.id]">Loading transactions…</div>
+                <table class="table inner" *ngIf="transactionsByItem[item.id]">
+                  <thead>
+                    <tr><th>Type</th><th>Qty</th><th>Date</th><th>Remarks</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let op of transactionsByItem[item.id].operations">
+                      <td>{{ op.operationType }}</td>
+                      <td>{{ op.quantity }}</td>
+                      <td>{{ op.operationDate ? (op.operationDate | date:'dd-MM-yyyy HH:mm') : (op.createdAt | date:'dd-MM-yyyy HH:mm') }}</td>
+                      <td>{{ op.remarks || op.machineRemarks || '-' }}</td>
+                      <td class="actions">
+                        <button class="btn-icon edit" [routerLink]="['/production/edit', encId(op.id)]" title="Edit entry (quantity/date/remarks)">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon delete" (click)="deleteEntry(op.id, item)" title="Delete entry and reverse stock">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!transactionsByItem[item.id].operations?.length">
+                      <td colspan="5" class="text-center">No transactions yet</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

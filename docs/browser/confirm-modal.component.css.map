@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/shared/components/confirm-modal/confirm-modal.component.scss"],
+  "sourcesContent": [".modal-overlay {\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  background-color: rgba(0, 0, 0, 0.5);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  z-index: 1000;\n}\n\n.modal-content {\n  background: white;\n  border-radius: 8px;\n  width: 90%;\n  max-width: 400px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  animation: modalIn 0.2s ease-out;\n}\n\n.modal-header {\n  padding: 1rem 1.5rem;\n  border-bottom: 1px solid #dee2e6;\n  \n  h3 {\n    margin: 0;\n    color: var(--text-primary);\n  }\n}\n\n.modal-body {\n  padding: 1.5rem;\n  \n  p {\n    margin: 0;\n    color: var(--text-primary);\n  }\n}\n\n.modal-actions {\n  padding: 1rem 1.5rem;\n  border-top: 1px solid #dee2e6;\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n} "],
+  "mappings": ";AAAA,CAAA;AACE,YAAA;AACA,OAAA;AACA,QAAA;AACA,SAAA;AACA,UAAA;AACA,oBAAA,KAAA,CAAA,EAAA,CAAA,EAAA,CAAA,EAAA;AACA,WAAA;AACA,eAAA;AACA,mBAAA;AACA,WAAA;;AAGF,CAAA;AACE,cAAA;AACA,iBAAA;AACA,SAAA;AACA,aAAA;AACA,cAAA,EAAA,IAAA,IAAA,KAAA,CAAA,EAAA,CAAA,EAAA,CAAA,EAAA;AACA,aAAA,QAAA,KAAA;;AAGF,CAAA;AACE,WAAA,KAAA;AACA,iBAAA,IAAA,MAAA;;AAEA,CAJF,aAIE;AACE,UAAA;AACA,SAAA,IAAA;;AAIJ,CAAA;AACE,WAAA;;AAEA,CAHF,WAGE;AACE,UAAA;AACA,SAAA,IAAA;;AAIJ,CAAA;AACE,WAAA,KAAA;AACA,cAAA,IAAA,MAAA;AACA,WAAA;AACA,mBAAA;AACA,OAAA;;",
+  "names": []
+}

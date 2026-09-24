@@ -1,0 +1,352 @@
+@import '../../../../variables';
+
+.planning-form-container {
+  padding: 2rem;
+  margin: 0 auto;
+
+  .form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+
+    .card-header {
+      background-color: var(--primary);
+      padding: 1.5rem;
+
+      .form-title {
+        color: white;
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    }
+  }
+
+  .planning-form {
+    padding: 2rem;
+
+    .section-card {
+      background: var(--background);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid #e0e0e0;
+
+      h3 {
+        margin: 0 0 1.25rem 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+          color: var(--primary);
+        }
+      }
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    // Shared select + refresh-button row. Kept at form level (not inside
+    // .form-group) so it also applies to the product rows in the items
+    // table, where the select and the refresh icon must sit side by side.
+    .product-select-group,
+    .employee-select-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      flex-wrap: nowrap;
+
+      app-searchable-select {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: block;
+      }
+
+      .btn-icon.refresh {
+        flex: 0 0 auto;
+        width: 40px;
+        height: 40px;
+        margin: 0;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--supporting);
+        border-radius: 8px;
+        background: white;
+        color: var(--primary);
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+
+        i {
+          color: inherit;
+          font-size: 1rem;
+          line-height: 1;
+          margin: 0;
+        }
+
+        &:hover:not(:disabled) {
+          background: var(--primary);
+          border-color: var(--primary);
+          color: white;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        font-weight: 500;
+
+        i {
+          color: var(--primary);
+        }
+
+        .required {
+          color: #dc3545;
+          margin-left: 4px;
+        }
+      }
+
+      .form-control {
+        width: 100%;
+        font-size: 1rem;
+      }
+
+      .invalid-feedback {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+      }
+    }
+
+    .remarks-group {
+      margin-bottom: 0;
+
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+    }
+
+    .items-section {
+      .items-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+
+        h3 {
+          margin: 0;
+        }
+
+        .add-item-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          min-height: 44px;
+          touch-action: manipulation;
+
+          .kbd-hint {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            line-height: 1.4;
+            white-space: nowrap;
+          }
+        }
+      }
+
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        // Keep the products grid comfortably tall even with a single row
+        // (~165px of content), leaving room to scan rows and open
+        // product dropdowns without a cramped scroll area.
+        min-height: 340px;
+      }
+
+      .items-table {
+        width: 100%;
+        min-width: 640px;
+        border-collapse: collapse;
+        background: white;
+
+        thead {
+          background-color: var(--secondary);
+          color: white;
+
+          th {
+            padding: 0.9rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+
+            .required {
+              color: #ffd9d9;
+            }
+          }
+        }
+
+        tbody {
+          tr {
+            border-bottom: 1px solid #e0e0e0;
+
+            &:hover {
+              background-color: rgba(253, 120, 35, 0.05);
+            }
+
+            &:last-child {
+              border-bottom: none;
+            }
+          }
+
+          td {
+            padding: 0.9rem 1rem;
+            vertical-align: middle;
+
+            &.row-index {
+              font-weight: 600;
+              color: var(--text-secondary);
+              white-space: nowrap;
+              width: 48px;
+            }
+
+            .form-field-container {
+              min-width: 240px;
+            }
+
+            .form-control {
+              width: 100%;
+              min-width: 100px;
+            }
+          }
+        }
+
+        tfoot {
+          background-color: var(--background);
+
+          tr {
+            border-top: 2px solid var(--primary);
+          }
+
+          td {
+            padding: 0.9rem 1rem;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 2rem;
+
+      .btn {
+        min-height: 44px;
+        touch-action: manipulation;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .planning-form-container {
+    padding: 1rem;
+
+    .planning-form {
+      padding: 1rem;
+
+      .section-card {
+        padding: 1rem;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .product-select-group,
+      .employee-select-group {
+        .btn-icon.refresh {
+          width: 44px;
+          height: 44px;
+        }
+      }
+
+      .items-section {
+        .items-header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.75rem;
+
+          .add-item-btn {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+
+        .items-table {
+          min-width: 560px;
+
+          thead th,
+          tbody td {
+            padding: 0.6rem;
+            font-size: 0.9rem;
+          }
+
+          .form-control {
+            font-size: 1rem;
+          }
+        }
+
+        .table-responsive {
+          min-height: 260px;
+        }
+      }
+
+      .form-actions {
+        flex-direction: column;
+
+        .btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}

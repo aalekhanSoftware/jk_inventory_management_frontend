@@ -42,6 +42,18 @@
         <li><a routerLink="/transport" routerLinkActive="active">Transport</a></li>
         <li><a routerLink="/quotation" routerLinkActive="active">Quotation</a></li>
         <li><a routerLink="/employee-order" routerLinkActive="active">Employee Order</a></li>
+        <li class="dropdown">
+          <a (click)="togglePlanningMenu($event)" [class.active]="isPlanningActive()">
+            <i class="fas fa-industry"></i> Planning &amp; Production
+            <i class="fas fa-chevron-down"></i>
+          </a>
+          <ul class="dropdown-menu" [class.show]="showPlanningMenu">
+            <li><a routerLink="/planning" routerLinkActive="active">Planning</a></li>
+            <li><a routerLink="/production/entry" routerLinkActive="active">Production</a></li>
+            <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+            <li><a routerLink="/stock-movements" routerLinkActive="active">Stock Moves</a></li>
+          </ul>
+        </li>
       </ul>
 
       <div class="nav-actions">

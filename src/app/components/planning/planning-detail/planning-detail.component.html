@@ -6,6 +6,7 @@
     <button [routerLink]="['/planning/edit', encId(planning.id)]" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</button>
     <button [routerLink]="['/production/entry']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-plus"></i> Production Entry</button>
     <button [routerLink]="['/dashboard']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Dashboard</button>
+    <button [routerLink]="['/plan-dispatch/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-truck"></i> Dispatch</button>
     <button type="button" class="btn btn-secondary" (click)="exportExcel()"><i class="fas fa-file-excel"></i> Excel</button>
   </div>
 

@@ -34,6 +34,11 @@ export class ProductionService {
     return this.http.post(`${this.apiUrl}/search`, params);
   }
 
+  /** PROCESS_DATE_REPORT: paginated date + multi-process rows. */
+  getProductionReport(params: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/report`, params);
+  }
+
   getTransactionsByItem(planningItemId: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/by-planning-item/${planningItemId}`, {});
   }

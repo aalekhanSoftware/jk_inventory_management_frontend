@@ -66303,15 +66303,21 @@ function HeaderComponent_div_7_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(65, "li")(66, "a", 32);
     \u0275\u0275text(67, "Stock Moves");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(68, "li")(69, "a", 33);
+    \u0275\u0275text(70, "Date Report");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(71, "li")(72, "a", 34);
+    \u0275\u0275text(73, "Plan Dispatch");
     \u0275\u0275elementEnd()()()()();
-    \u0275\u0275elementStart(68, "div", 33)(69, "button", 34);
-    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_button_click_69_listener() {
+    \u0275\u0275elementStart(74, "div", 35)(75, "button", 36);
+    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_button_click_75_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.logout());
     });
-    \u0275\u0275element(70, "i", 35);
-    \u0275\u0275text(71, " Logout ");
+    \u0275\u0275element(76, "i", 37);
+    \u0275\u0275text(77, " Logout ");
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -66397,7 +66403,7 @@ var HeaderComponent = class _HeaderComponent {
   }
   isPlanningActive() {
     const currentUrl = this.router.url;
-    return ["/planning", "/production/entry", "/dashboard", "/stock-moves", "/stock-movements"].some((path) => currentUrl.includes(path));
+    return ["/planning", "/production/entry", "/production/report", "/dashboard", "/stock-moves", "/stock-movements", "/plan-dispatch"].some((path) => currentUrl.includes(path));
   }
   logout() {
     this.authService.logout();
@@ -66417,14 +66423,14 @@ var HeaderComponent = class _HeaderComponent {
           return ctx.onDocumentClick($event);
         }, false, \u0275\u0275resolveDocument);
       }
-    }, decls: 8, vars: 2, consts: [[1, "header"], [1, "nav-container"], [1, "nav-top"], [1, "logo"], ["class", "mobile-menu-toggle", 3, "click", 4, "ngIf"], ["class", "nav-content", 3, "show", 4, "ngIf"], [1, "mobile-menu-toggle", 3, "click"], [1, "fas"], [1, "nav-content"], [1, "nav-links"], [1, "dropdown"], [3, "click"], [1, "fas", "fa-th-large"], [1, "fas", "fa-chevron-down"], [1, "dropdown-menu"], ["routerLink", "/category", "routerLinkActive", "active"], ["routerLink", "/product", "routerLinkActive", "active"], ["routerLink", "/customer", "routerLinkActive", "active"], ["routerLink", "/employee", "routerLinkActive", "active"], [1, "fas", "fa-exchange-alt"], ["routerLink", "/purchase", "routerLinkActive", "active"], ["routerLink", "/sale", "routerLinkActive", "active"], ["routerLink", "/profit", "routerLinkActive", "active"], ["routerLink", "/daily-profit", "routerLinkActive", "active"], ["routerLink", "/powder-coating-process", "routerLinkActive", "active"], ["routerLink", "/transport", "routerLinkActive", "active"], ["routerLink", "/quotation", "routerLinkActive", "active"], ["routerLink", "/employee-order", "routerLinkActive", "active"], [1, "fas", "fa-industry"], ["routerLink", "/planning", "routerLinkActive", "active"], ["routerLink", "/production/entry", "routerLinkActive", "active"], ["routerLink", "/dashboard", "routerLinkActive", "active"], ["routerLink", "/stock-movements", "routerLinkActive", "active"], [1, "nav-actions"], [1, "btn", "btn-logout", 3, "click"], [1, "fas", "fa-sign-out-alt"]], template: function HeaderComponent_Template(rf, ctx) {
+    }, decls: 8, vars: 2, consts: [[1, "header"], [1, "nav-container"], [1, "nav-top"], [1, "logo"], ["class", "mobile-menu-toggle", 3, "click", 4, "ngIf"], ["class", "nav-content", 3, "show", 4, "ngIf"], [1, "mobile-menu-toggle", 3, "click"], [1, "fas"], [1, "nav-content"], [1, "nav-links"], [1, "dropdown"], [3, "click"], [1, "fas", "fa-th-large"], [1, "fas", "fa-chevron-down"], [1, "dropdown-menu"], ["routerLink", "/category", "routerLinkActive", "active"], ["routerLink", "/product", "routerLinkActive", "active"], ["routerLink", "/customer", "routerLinkActive", "active"], ["routerLink", "/employee", "routerLinkActive", "active"], [1, "fas", "fa-exchange-alt"], ["routerLink", "/purchase", "routerLinkActive", "active"], ["routerLink", "/sale", "routerLinkActive", "active"], ["routerLink", "/profit", "routerLinkActive", "active"], ["routerLink", "/daily-profit", "routerLinkActive", "active"], ["routerLink", "/powder-coating-process", "routerLinkActive", "active"], ["routerLink", "/transport", "routerLinkActive", "active"], ["routerLink", "/quotation", "routerLinkActive", "active"], ["routerLink", "/employee-order", "routerLinkActive", "active"], [1, "fas", "fa-industry"], ["routerLink", "/planning", "routerLinkActive", "active"], ["routerLink", "/production/entry", "routerLinkActive", "active"], ["routerLink", "/dashboard", "routerLinkActive", "active"], ["routerLink", "/stock-movements", "routerLinkActive", "active"], ["routerLink", "/production/report", "routerLinkActive", "active"], ["routerLink", "/plan-dispatch", "routerLinkActive", "active"], [1, "nav-actions"], [1, "btn", "btn-logout", 3, "click"], [1, "fas", "fa-sign-out-alt"]], template: function HeaderComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "header", 0)(1, "nav", 1)(2, "div", 2)(3, "div", 3)(4, "span");
         \u0275\u0275text(5, "Inventory System");
         \u0275\u0275elementEnd()();
         \u0275\u0275template(6, HeaderComponent_button_6_Template, 2, 4, "button", 4);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(7, HeaderComponent_div_7_Template, 72, 14, "div", 5);
+        \u0275\u0275template(7, HeaderComponent_div_7_Template, 78, 14, "div", 5);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
@@ -76670,6 +76676,1911 @@ var TransportListComponent = class _TransportListComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(TransportListComponent, { className: "TransportListComponent", filePath: "src\\app\\components\\Transports\\transport-list\\transport-list.component.ts", lineNumber: 26 });
 })();
 
+// src/app/services/plan-dispatch.service.ts
+var PlanDispatchService = class _PlanDispatchService {
+  constructor(http) {
+    this.http = http;
+    this.apiUrl = `${environment.apiUrl}/api/plan-dispatch`;
+    this.transportApiUrl = `${environment.apiUrl}/api/transport`;
+  }
+  createDispatch(data) {
+    return this.http.post(`${this.apiUrl}/create`, data);
+  }
+  updateDispatch(data) {
+    return this.http.post(`${this.apiUrl}/update`, data);
+  }
+  deleteDispatch(id) {
+    return this.http.post(`${this.apiUrl}/delete`, { id });
+  }
+  searchDispatches(params) {
+    return this.http.post(`${this.apiUrl}/search`, params);
+  }
+  getDispatchDetail(id) {
+    return this.http.post(`${this.apiUrl}/detail`, { id });
+  }
+  getItemBalances(planningId) {
+    return this.http.post(`${this.apiUrl}/item-balances`, { planningId });
+  }
+  generatePdf(id) {
+    return this.http.post(`${this.transportApiUrl}/generate-pdf`, { id }, {
+      responseType: "blob",
+      observe: "response"
+    }).pipe(map((response) => {
+      const contentDisposition = response.headers.get("Content-Disposition");
+      const filename = contentDisposition?.split("filename=")[1]?.replace(/"/g, "") || "transport.pdf";
+      const blob = new Blob([response.body], { type: "application/pdf" });
+      return { blob, filename };
+    }));
+  }
+  static {
+    this.\u0275fac = function PlanDispatchService_Factory(t) {
+      return new (t || _PlanDispatchService)(\u0275\u0275inject(HttpClient));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _PlanDispatchService, factory: _PlanDispatchService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// src/app/components/plan-dispatch/plan-dispatch-list/plan-dispatch-list.component.ts
+var _c014 = (a0) => ["/plan-dispatch/edit", a0];
+function PlanDispatchListComponent_tr_48_span_6_span_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const pn_r2 = ctx.$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(pn_r2);
+  }
+}
+function PlanDispatchListComponent_tr_48_span_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span");
+    \u0275\u0275template(1, PlanDispatchListComponent_tr_48_span_6_span_1_Template, 2, 1, "span", 36);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const dispatch_r3 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275property("ngForOf", dispatch_r3.planningNumbers);
+  }
+}
+function PlanDispatchListComponent_tr_48_ng_template_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 38);
+    \u0275\u0275text(1, "Existing");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanDispatchListComponent_tr_48_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr")(1, "td");
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "td");
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "td");
+    \u0275\u0275template(6, PlanDispatchListComponent_tr_48_span_6_Template, 2, 1, "span", 28)(7, PlanDispatchListComponent_tr_48_ng_template_7_Template, 2, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(9, "td");
+    \u0275\u0275text(10);
+    \u0275\u0275pipe(11, "number");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "td");
+    \u0275\u0275text(13);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "td");
+    \u0275\u0275text(15);
+    \u0275\u0275pipe(16, "date");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(17, "td", 29)(18, "button", 30);
+    \u0275\u0275element(19, "i", 31);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(20, "button", 32);
+    \u0275\u0275listener("click", function PlanDispatchListComponent_tr_48_Template_button_click_20_listener() {
+      const dispatch_r3 = \u0275\u0275restoreView(_r1).$implicit;
+      const ctx_r3 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r3.onPrintDispatch(dispatch_r3.id));
+    });
+    \u0275\u0275element(21, "i", 33);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(22, "button", 34);
+    \u0275\u0275listener("click", function PlanDispatchListComponent_tr_48_Template_button_click_22_listener() {
+      const dispatch_r3 = \u0275\u0275restoreView(_r1).$implicit;
+      const ctx_r3 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r3.onDeleteDispatch(dispatch_r3.id));
+    });
+    \u0275\u0275element(23, "i", 35);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const dispatch_r3 = ctx.$implicit;
+    const i_r5 = ctx.index;
+    const existingRow_r6 = \u0275\u0275reference(8);
+    const ctx_r3 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r3.startIndex + i_r5 + 1);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(dispatch_r3.customerName);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", dispatch_r3.planningNumbers == null ? null : dispatch_r3.planningNumbers.length)("ngIfElse", existingRow_r6);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(11, 8, dispatch_r3.totalWeight, "1.3-3"), " kg");
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(dispatch_r3.totalBags);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(16, 11, dispatch_r3.createdAt, "medium"));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(14, _c014, ctx_r3.encId(dispatch_r3.id)));
+  }
+}
+function PlanDispatchListComponent_tr_49_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 39);
+    \u0275\u0275text(2, "No dispatches found");
+    \u0275\u0275elementEnd()();
+  }
+}
+function PlanDispatchListComponent_app_pagination_51_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r7 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 40);
+    \u0275\u0275listener("pageChange", function PlanDispatchListComponent_app_pagination_51_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r3 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r3.onPageChange($event));
+    })("pageSizeChange", function PlanDispatchListComponent_app_pagination_51_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r3 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r3.onPageSizeChange($event));
+    });
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r3 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r3.currentPage)("pageSize", ctx_r3.pageSize)("totalElements", ctx_r3.totalElements)("pageSizeOptions", ctx_r3.pageSizeOptions);
+  }
+}
+var PlanDispatchListComponent = class _PlanDispatchListComponent {
+  constructor(planDispatchService, fb, snackbar, encryptionService) {
+    this.planDispatchService = planDispatchService;
+    this.fb = fb;
+    this.snackbar = snackbar;
+    this.encryptionService = encryptionService;
+    this.dispatches = [];
+    this.isLoading = false;
+    this.currentPage = 0;
+    this.pageSize = 10;
+    this.pageSizeOptions = [5, 10, 25, 50, 100];
+    this.totalPages = 0;
+    this.totalElements = 0;
+    this.startIndex = 0;
+    this.endIndex = 0;
+    this.showDeleteModal = false;
+    this.dispatchToDelete = null;
+    this.initializeForm();
+  }
+  ngOnInit() {
+    this.loadDispatches();
+  }
+  /** Encrypted id for URLs (medonix pattern); numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
+  }
+  initializeForm() {
+    this.searchForm = this.fb.group({
+      search: [""],
+      startDate: [null],
+      endDate: [null]
+    });
+  }
+  formatDateForApi(dateStr, isStartDate) {
+    if (!dateStr)
+      return "";
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime()))
+      return "";
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    const time = isStartDate ? "00:00:00" : "23:59:59";
+    return `${day}-${month}-${year} ${time}`;
+  }
+  loadDispatches() {
+    this.isLoading = true;
+    const formValues = this.searchForm.value;
+    const params = {
+      currentPage: this.currentPage,
+      perPageRecord: this.pageSize,
+      startDate: formValues.startDate ? this.formatDateForApi(formValues.startDate, true) : null,
+      endDate: formValues.endDate ? this.formatDateForApi(formValues.endDate, false) : null,
+      search: formValues.search?.trim() || "",
+      sortBy: "id",
+      sortDir: "desc"
+    };
+    this.planDispatchService.searchDispatches(params).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.dispatches = response.data.content;
+          this.totalPages = response.data.totalPages;
+          this.totalElements = response.data.totalElements;
+          this.updatePaginationIndexes();
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || "Failed to load dispatches");
+        this.isLoading = false;
+      }
+    });
+  }
+  onSearch() {
+    this.currentPage = 0;
+    this.loadDispatches();
+  }
+  onPageChange(page) {
+    this.currentPage = page;
+    this.loadDispatches();
+  }
+  onPageSizeChange(newSize) {
+    this.pageSize = newSize;
+    this.currentPage = 0;
+    this.loadDispatches();
+  }
+  updatePaginationIndexes() {
+    this.startIndex = this.currentPage * this.pageSize;
+    this.endIndex = Math.min(this.startIndex + this.pageSize, this.totalElements);
+  }
+  resetForm() {
+    this.searchForm.reset();
+    this.currentPage = 0;
+    this.loadDispatches();
+  }
+  onDeleteDispatch(id) {
+    this.dispatchToDelete = id;
+    this.showDeleteModal = true;
+  }
+  confirmDelete() {
+    if (this.dispatchToDelete) {
+      this.isLoading = true;
+      this.planDispatchService.deleteDispatch(this.dispatchToDelete).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.snackbar.success(response.message || "Dispatch deleted successfully; linked progress reversed");
+            this.loadDispatches();
+          } else {
+            this.snackbar.error(response.message || "Failed to delete dispatch");
+          }
+          this.cancelDelete();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          this.snackbar.error(error?.error?.message || "Failed to delete dispatch");
+          this.cancelDelete();
+          this.isLoading = false;
+        }
+      });
+    }
+  }
+  cancelDelete() {
+    this.showDeleteModal = false;
+    this.dispatchToDelete = null;
+  }
+  onPrintDispatch(id) {
+    this.planDispatchService.generatePdf(id).subscribe({
+      next: (response) => {
+        const url = window.URL.createObjectURL(response.blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = response.filename;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.snackbar.error("Failed to generate PDF");
+      }
+    });
+  }
+  static {
+    this.\u0275fac = function PlanDispatchListComponent_Factory(t) {
+      return new (t || _PlanDispatchListComponent)(\u0275\u0275directiveInject(PlanDispatchService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchListComponent, selectors: [["app-plan-dispatch-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 53, vars: 8, consts: [["existingRow", ""], [1, "transport-list-container"], [1, "search-section", "card"], [1, "fas", "fa-truck"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by customer or planning no...", 1, "form-control"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/plan-dispatch/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "transports-list", "card"], [1, "table-container"], [3, "show"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["title", "Delete Dispatch", "message", "Are you sure? Linked dispatch progress and stock will be reversed. This action cannot be undone.", 3, "confirm", "cancel", "show"], [4, "ngIf", "ngIfElse"], [1, "actions"], ["title", "Edit Dispatch", 1, "btn-icon", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Print Dispatch", 1, "btn-icon", "print", 3, "click"], [1, "fas", "fa-print"], ["title", "Delete Dispatch (linked progress reversed)", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["class", "plan-badge", 4, "ngFor", "ngForOf"], [1, "plan-badge"], [1, "existing-badge"], ["colspan", "7", 1, "no-data"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PlanDispatchListComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 1)(1, "div", 2)(2, "h2");
+        \u0275\u0275element(3, "i", 3);
+        \u0275\u0275text(4, " Plan Dispatch List");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(5, "form", 4);
+        \u0275\u0275listener("ngSubmit", function PlanDispatchListComponent_Template_form_ngSubmit_5_listener() {
+          return ctx.onSearch();
+        });
+        \u0275\u0275elementStart(6, "div", 5)(7, "div", 6);
+        \u0275\u0275element(8, "input", 7);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(9, "div", 6);
+        \u0275\u0275element(10, "input", 8);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(11, "div", 6);
+        \u0275\u0275element(12, "input", 9);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(13, "div", 10)(14, "button", 11);
+        \u0275\u0275element(15, "i", 12);
+        \u0275\u0275text(16, " Search ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(17, "button", 13);
+        \u0275\u0275listener("click", function PlanDispatchListComponent_Template_button_click_17_listener() {
+          return ctx.resetForm();
+        });
+        \u0275\u0275element(18, "i", 14);
+        \u0275\u0275text(19, " Reset ");
+        \u0275\u0275elementEnd()()()()();
+        \u0275\u0275elementStart(20, "div", 15)(21, "button", 16);
+        \u0275\u0275element(22, "i", 17);
+        \u0275\u0275text(23, " Create Dispatch ");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(24, "div", 18)(25, "h2");
+        \u0275\u0275text(26, "Dispatches");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(27, "div", 19);
+        \u0275\u0275element(28, "app-loader", 20);
+        \u0275\u0275elementStart(29, "div", 21)(30, "table", 22)(31, "thead")(32, "tr")(33, "th");
+        \u0275\u0275text(34, "No.");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(35, "th");
+        \u0275\u0275text(36, "Customer Name");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(37, "th");
+        \u0275\u0275text(38, "Planning");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(39, "th");
+        \u0275\u0275text(40, "Total Weight");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(41, "th");
+        \u0275\u0275text(42, "Total Bags");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(43, "th");
+        \u0275\u0275text(44, "Created At");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(45, "th");
+        \u0275\u0275text(46, "Actions");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(47, "tbody");
+        \u0275\u0275template(48, PlanDispatchListComponent_tr_48_Template, 24, 16, "tr", 23)(49, PlanDispatchListComponent_tr_49_Template, 3, 0, "tr", 24);
+        \u0275\u0275elementEnd()()()();
+        \u0275\u0275elementStart(50, "div", 25);
+        \u0275\u0275template(51, PlanDispatchListComponent_app_pagination_51_Template, 1, 4, "app-pagination", 26);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(52, "app-confirm-modal", 27);
+        \u0275\u0275listener("confirm", function PlanDispatchListComponent_Template_app_confirm_modal_confirm_52_listener() {
+          return ctx.confirmDelete();
+        })("cancel", function PlanDispatchListComponent_Template_app_confirm_modal_cancel_52_listener() {
+          return ctx.cancelDelete();
+        });
+        \u0275\u0275elementEnd();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(5);
+        \u0275\u0275property("formGroup", ctx.searchForm);
+        \u0275\u0275advance(23);
+        \u0275\u0275property("show", ctx.isLoading);
+        \u0275\u0275advance();
+        \u0275\u0275classProp("loading", ctx.isLoading);
+        \u0275\u0275advance(19);
+        \u0275\u0275property("ngForOf", ctx.dispatches);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !ctx.isLoading && (!ctx.dispatches || ctx.dispatches.length === 0));
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ctx.totalPages > 0);
+        \u0275\u0275advance();
+        \u0275\u0275property("show", ctx.showDeleteModal);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgForOf,
+      NgIf,
+      DecimalPipe,
+      DatePipe,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      DefaultValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      FormGroupDirective,
+      FormControlName,
+      RouterModule,
+      RouterLink,
+      LoaderComponent,
+      FormsModule,
+      ConfirmModalComponent,
+      PaginationComponent
+    ], styles: ["\n\n.transport-list-container[_ngcontent-%COMP%] {\n  padding: 20px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  padding: 20px;\n  margin-bottom: 20px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  margin-right: 10px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 15px;\n  flex-wrap: wrap;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 200px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  gap: 10px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: center;\n  margin-top: 1rem;\n}\n.transport-list-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   app-pagination[_ngcontent-%COMP%] {\n  width: 100%;\n}\n.table-container[_ngcontent-%COMP%] {\n  position: relative;\n  min-height: 200px;\n}\n.table-container[_ngcontent-%COMP%]   app-loader[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  z-index: 2;\n}\n.table-container[_ngcontent-%COMP%]   .table-responsive.loading[_ngcontent-%COMP%] {\n  opacity: 0.6;\n  pointer-events: none;\n}\n.plan-badge[_ngcontent-%COMP%] {\n  color: var(--secondary);\n  background-color: rgba(0, 153, 156, 0.12);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n  white-space: nowrap;\n  margin-right: 4px;\n}\n.existing-badge[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  background-color: rgba(0, 0, 0, 0.06);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n/*# sourceMappingURL=plan-dispatch-list.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchListComponent, { className: "PlanDispatchListComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-list\\plan-dispatch-list.component.ts", lineNumber: 31 });
+})();
+
+// src/app/services/planning.service.ts
+var PlanningService = class _PlanningService {
+  constructor(http) {
+    this.http = http;
+    this.apiUrl = `${environment.apiUrl}/api/plannings`;
+  }
+  searchPlannings(params) {
+    return this.http.post(`${this.apiUrl}/search`, params);
+  }
+  createPlanning(planning) {
+    return this.http.post(`${this.apiUrl}/create`, planning);
+  }
+  updatePlanning(planning) {
+    return this.http.post(`${this.apiUrl}/update`, planning);
+  }
+  deletePlanning(id) {
+    return this.http.post(`${this.apiUrl}/delete`, { id });
+  }
+  getPlanningDetail(id) {
+    return this.http.post(`${this.apiUrl}/detail`, { id });
+  }
+  /** Slim items-only array for dropdowns (lighter than full detail). */
+  getPlanningItems(id) {
+    return this.http.post(`${this.apiUrl}/items`, { id });
+  }
+  copyFromEmployeeOrder(employeeOrderId) {
+    return this.http.post(`${this.apiUrl}/copy-from-employee-order`, { employeeOrderId });
+  }
+  static {
+    this.\u0275fac = function PlanningService_Factory(t) {
+      return new (t || _PlanningService)(\u0275\u0275inject(HttpClient));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _PlanningService, factory: _PlanningService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// src/app/components/plan-dispatch/plan-dispatch-form/plan-dispatch-form.component.ts
+var _c015 = () => ({ label: "Select Customer", value: "" });
+var _c15 = () => ({ label: "No plan", value: "" });
+function PlanDispatchFormComponent_button_7_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 36);
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_button_7_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPrint());
+    });
+    \u0275\u0275element(1, "i", 19);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("disabled", ctx_r1.loading || ctx_r1.isPrinting);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", ctx_r1.isPrinting ? "fa-spinner fa-spin" : "fa-print");
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r1.isPrinting ? "Printing..." : "Print", " ");
+  }
+}
+function PlanDispatchFormComponent_div_23_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1, " Please select a customer ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanDispatchFormComponent_div_31_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 38)(1, "div", 39)(2, "div", 40)(3, "h3");
+    \u0275\u0275element(4, "i", 41);
+    \u0275\u0275text(5, " Transport Summary");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "span", 42);
+    \u0275\u0275text(7);
+    \u0275\u0275pipe(8, "date");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(9, "div", 43)(10, "div", 44)(11, "label");
+    \u0275\u0275text(12, "Total Bags");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(13, "span");
+    \u0275\u0275text(14);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(15, "div", 44)(16, "label");
+    \u0275\u0275text(17, "Total Weight");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(18, "span");
+    \u0275\u0275text(19);
+    \u0275\u0275pipe(20, "number");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(21, "div", 44)(22, "label");
+    \u0275\u0275text(23, "Total Purchase");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(24, "span");
+    \u0275\u0275text(25);
+    \u0275\u0275pipe(26, "number");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(27, "div", 44)(28, "label");
+    \u0275\u0275text(29, "Total Sale");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(30, "span");
+    \u0275\u0275text(31);
+    \u0275\u0275pipe(32, "number");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(33, "div", 45)(34, "label");
+    \u0275\u0275text(35, "Total Profit");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(36, "span");
+    \u0275\u0275text(37);
+    \u0275\u0275pipe(38, "number");
+    \u0275\u0275elementEnd()()()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(7);
+    \u0275\u0275textInterpolate1("Created: ", \u0275\u0275pipeBind2(8, 6, ctx_r1.transportSummary.createdAt, "medium"), "");
+    \u0275\u0275advance(7);
+    \u0275\u0275textInterpolate(ctx_r1.transportSummary.totalBags);
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(20, 9, ctx_r1.transportSummary.totalWeight, "1.3-3"), " kg");
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(26, 12, ctx_r1.transportSummary.totalPurchaseAmount, "1.2-2"), "");
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(32, 15, ctx_r1.transportSummary.totalSaleAmount, "1.2-2"), "");
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(38, 18, ctx_r1.transportSummary.totalProfit, "1.2-2"), "");
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_small_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "small");
+    \u0275\u0275text(1, "Linked: progress + stock auto-updated.");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_div_17_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1, " Please select a product ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_small_18_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "small");
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r1.balanceForRow(item_r6));
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_div_26_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 98);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    let tmp_8_0;
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" Total: ", (tmp_8_0 = item_r6.get("totalQuantity")) == null ? null : tmp_8_0.value, " ");
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_div_27_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1, " Please enter a valid quantity ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_div_43_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    let tmp_8_0;
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["required"]) ? "Unit price is required" : ((tmp_8_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_div_48_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    let tmp_8_0;
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_8_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_div_68_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    let tmp_8_0;
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["required"]) ? "Unit price is required" : ((tmp_8_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_div_73_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    let tmp_8_0;
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("saleDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_8_0 = item_r6.get("saleDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_div_30_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 67)(1, "div", 68)(2, "div", 69)(3, "label");
+    \u0275\u0275text(4, "Plan (optional)");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "div", 70);
+    \u0275\u0275element(6, "app-searchable-select", 71);
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(7, PlanDispatchFormComponent_div_33_div_1_div_30_small_7_Template, 2, 0, "small", 72);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "div", 69)(9, "label");
+    \u0275\u0275text(10, "Product ");
+    \u0275\u0275elementStart(11, "span", 15);
+    \u0275\u0275text(12, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(13, "div", 70);
+    \u0275\u0275element(14, "app-searchable-select", 73);
+    \u0275\u0275elementStart(15, "button", 18);
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_33_div_1_div_30_Template_button_click_15_listener() {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r1 = \u0275\u0275nextContext(3);
+      return \u0275\u0275resetView(ctx_r1.refreshProducts());
+    });
+    \u0275\u0275element(16, "i", 74);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275template(17, PlanDispatchFormComponent_div_33_div_1_div_30_div_17_Template, 2, 0, "div", 20)(18, PlanDispatchFormComponent_div_33_div_1_div_30_small_18_Template, 2, 1, "small", 72);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(19, "div", 75)(20, "label");
+    \u0275\u0275text(21, "Quantity ");
+    \u0275\u0275elementStart(22, "span", 15);
+    \u0275\u0275text(23, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(24, "div", 76);
+    \u0275\u0275element(25, "input", 77);
+    \u0275\u0275template(26, PlanDispatchFormComponent_div_33_div_1_div_30_div_26_Template, 2, 1, "div", 78);
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(27, PlanDispatchFormComponent_div_33_div_1_div_30_div_27_Template, 2, 0, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(28, "div", 79)(29, "label");
+    \u0275\u0275text(30, "Remarks");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(31, "input", 80);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(32, "div", 81)(33, "h6", 82);
+    \u0275\u0275element(34, "i", 83);
+    \u0275\u0275text(35, " Purchase Details");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(36, "div", 84)(37, "div", 85)(38, "label");
+    \u0275\u0275text(39, "Unit Price ");
+    \u0275\u0275elementStart(40, "span", 15);
+    \u0275\u0275text(41, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275element(42, "input", 86);
+    \u0275\u0275template(43, PlanDispatchFormComponent_div_33_div_1_div_30_div_43_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(44, "div", 85)(45, "label");
+    \u0275\u0275text(46, "Discount %");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(47, "input", 87);
+    \u0275\u0275template(48, PlanDispatchFormComponent_div_33_div_1_div_30_div_48_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(49, "div", 85)(50, "label");
+    \u0275\u0275text(51, "Discount Amount");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(52, "input", 88);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(53, "div", 85)(54, "label");
+    \u0275\u0275text(55, "Final Price");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(56, "input", 89);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(57, "div", 90)(58, "h6", 82);
+    \u0275\u0275element(59, "i", 91);
+    \u0275\u0275text(60, " Sale Details");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(61, "div", 84)(62, "div", 85)(63, "label");
+    \u0275\u0275text(64, "Unit Price ");
+    \u0275\u0275elementStart(65, "span", 15);
+    \u0275\u0275text(66, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275element(67, "input", 92);
+    \u0275\u0275template(68, PlanDispatchFormComponent_div_33_div_1_div_30_div_68_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(69, "div", 85)(70, "label");
+    \u0275\u0275text(71, "Discount %");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(72, "input", 93);
+    \u0275\u0275template(73, PlanDispatchFormComponent_div_33_div_1_div_30_div_73_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(74, "div", 85)(75, "label");
+    \u0275\u0275text(76, "Discount Amount");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(77, "input", 94);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(78, "div", 85)(79, "label");
+    \u0275\u0275text(80, "Final Price");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(81, "input", 95);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(82, "button", 96);
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_33_div_1_div_30_Template_button_click_82_listener() {
+      const itemIndex_r7 = \u0275\u0275restoreView(_r5).index;
+      const bagIndex_r4 = \u0275\u0275nextContext().index;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.onDeleteItem(bagIndex_r4, itemIndex_r7));
+    });
+    \u0275\u0275element(83, "i", 97);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    let tmp_18_0;
+    const item_r6 = ctx.$implicit;
+    const itemIndex_r7 = ctx.index;
+    const bagIndex_r4 = \u0275\u0275nextContext().index;
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("formGroupName", itemIndex_r7);
+    \u0275\u0275advance(6);
+    \u0275\u0275property("options", ctx_r1.plannings)("placeholder", "No plan")("defaultOption", \u0275\u0275pureFunction0(28, _c15))("searchPlaceholder", "Search plannings...");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.rowPlanningId(item_r6));
+    \u0275\u0275advance(7);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("productId")));
+    \u0275\u0275property("options", ctx_r1.rowProductOptions(item_r6));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("productId")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.balanceForRow(item_r6));
+    \u0275\u0275advance(7);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("quantity")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ((tmp_18_0 = item_r6.get("totalQuantity")) == null ? null : tmp_18_0.value) !== ((tmp_18_0 = item_r6.get("quantity")) == null ? null : tmp_18_0.value));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("quantity")));
+    \u0275\u0275advance(15);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
+    \u0275\u0275advance(19);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
+    \u0275\u0275advance(9);
+    \u0275\u0275property("disabled", ctx_r1.getBagItems(bagIndex_r4).length === 1);
+  }
+}
+function PlanDispatchFormComponent_div_33_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 48)(1, "div", 49)(2, "h4");
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "div", 50)(5, "div", 51)(6, "label");
+    \u0275\u0275element(7, "i", 52);
+    \u0275\u0275text(8, " Number of Bags ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(9, "input", 53);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "div", 54)(11, "label");
+    \u0275\u0275element(12, "i", 55);
+    \u0275\u0275text(13, " Bag Weight (kg) ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(14, "input", 56);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(15, "div", 57)(16, "label");
+    \u0275\u0275element(17, "i", 58);
+    \u0275\u0275text(18, " Total Bag Weight ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(19, "input", 59);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(20, "button", 60);
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_33_div_1_Template_button_click_20_listener() {
+      const bagIndex_r4 = \u0275\u0275restoreView(_r3).index;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.onDeleteBag(bagIndex_r4));
+    });
+    \u0275\u0275element(21, "i", 61);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(22, "div", 62)(23, "div", 63)(24, "h5");
+    \u0275\u0275text(25, "Items");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(26, "button", 64);
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_33_div_1_Template_button_click_26_listener() {
+      const bagIndex_r4 = \u0275\u0275restoreView(_r3).index;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.addItem(bagIndex_r4));
+    });
+    \u0275\u0275element(27, "i", 29);
+    \u0275\u0275text(28, " Add Item ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(29, "div", 65);
+    \u0275\u0275template(30, PlanDispatchFormComponent_div_33_div_1_div_30_Template, 84, 29, "div", 66);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const bag_r8 = ctx.$implicit;
+    const bagIndex_r4 = ctx.index;
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("formGroupName", bagIndex_r4);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(ctx_r1.getBagTitle(bagIndex_r4));
+    \u0275\u0275advance(6);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(bag_r8.get("numberOfBags")));
+    \u0275\u0275advance(5);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(bag_r8.get("weight")));
+    \u0275\u0275advance(5);
+    \u0275\u0275property("value", ctx_r1.calculateTotalBagWeight(bagIndex_r4));
+    \u0275\u0275advance();
+    \u0275\u0275property("disabled", ctx_r1.bags.length === 1);
+    \u0275\u0275advance(10);
+    \u0275\u0275property("ngForOf", ctx_r1.getBagItems(bagIndex_r4).controls);
+  }
+}
+function PlanDispatchFormComponent_div_33_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 46);
+    \u0275\u0275template(1, PlanDispatchFormComponent_div_33_div_1_Template, 31, 9, "div", 47);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275property("ngForOf", ctx_r1.bags.controls);
+  }
+}
+var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
+  constructor(fb, route, router, productService, customerService, planningService, planDispatchService, snackbar, encryptionService, priceService) {
+    this.fb = fb;
+    this.route = route;
+    this.router = router;
+    this.productService = productService;
+    this.customerService = customerService;
+    this.planningService = planningService;
+    this.planDispatchService = planDispatchService;
+    this.snackbar = snackbar;
+    this.encryptionService = encryptionService;
+    this.priceService = priceService;
+    this.products = [];
+    this.customers = [];
+    this.plannings = [];
+    this.planItemsCache = /* @__PURE__ */ new Map();
+    this.prodOptionsMemo = /* @__PURE__ */ new WeakMap();
+    this.defaultPlanningId = null;
+    this.loading = false;
+    this.isLoadingProducts = false;
+    this.isLoadingCustomers = false;
+    this.isLoadingPlannings = false;
+    this.showDeleteBagModal = false;
+    this.showDeleteItemModal = false;
+    this.deleteBagIndex = null;
+    this.deleteItemIndices = null;
+    this.transportId = null;
+    this.isEditMode = false;
+    this.transportSummary = null;
+    this.isPrinting = false;
+    this.submitted = false;
+    this.pendingItemPlanningMap = {};
+    this.pendingItemPlanningIdMap = {};
+    this.destroy$ = new Subject();
+    this.initializeForm();
+  }
+  ngOnInit() {
+    this.loadProducts();
+    this.loadCustomers();
+    this.loadPlannings();
+    const rawId = this.route.snapshot.paramMap.get("id");
+    if (rawId) {
+      const id = Number(this.encryptionService.decrypt(rawId));
+      if (!id) {
+        this.snackbar.error("Invalid link");
+        this.router.navigate(["/plan-dispatch"]);
+        return;
+      }
+      this.transportId = id;
+      this.isEditMode = true;
+      this.loadDispatchDetail();
+      return;
+    }
+    const rawPlanningId = this.route.snapshot.queryParamMap.get("planningId");
+    const preselect = rawPlanningId ? Number(this.encryptionService.decrypt(rawPlanningId)) : NaN;
+    if (preselect) {
+      this.defaultPlanningId = preselect;
+      this.ensurePlanItems([preselect], () => {
+        if (this.bags.length === 0) {
+          this.addBag();
+        }
+      });
+    }
+  }
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  /** Encrypted id for URLs (medonix pattern); numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
+  }
+  initializeForm() {
+    this.transportForm = this.fb.group({
+      customerId: ["", [Validators.required]],
+      bags: this.fb.array([])
+    });
+  }
+  get bags() {
+    return this.transportForm.get("bags");
+  }
+  rowPlanningId(itemGroup) {
+    const v = itemGroup.get("planningId")?.value;
+    return v ? Number(v) : null;
+  }
+  rowPlanItems(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    return pid ? this.planItemsCache.get(pid) || [] : [];
+  }
+  /** Product options for a row: its plan's products (ids normalized to numbers
+      so the dropdown's strict matching works), plus the row's current product
+      when it is missing from the plan so stored/legacy values still display.
+      Reference memoized per row — a fresh array each cycle breaks the dropdown. */
+  rowProductOptions(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    if (!pid) {
+      return this.products;
+    }
+    const list = this.planItemsCache.get(pid) || [];
+    const cur = Number(itemGroup.get("productId")?.value) || 0;
+    const sig = [
+      pid,
+      cur,
+      list.length,
+      list.map((p) => p.productId).join(","),
+      this.products.length
+    ].join("|");
+    const hit = this.prodOptionsMemo.get(itemGroup);
+    if (hit && hit.sig === sig) {
+      return hit.arr;
+    }
+    const arr = list.map((pi) => ({ id: Number(pi.productId), name: pi.productName }));
+    if (cur && !arr.some((o) => o.id === cur)) {
+      const fallback = (this.products || []).find((p) => Number(p.id) === cur);
+      arr.push({ id: cur, name: fallback ? fallback.name : `Product #${cur}` });
+    }
+    this.prodOptionsMemo.set(itemGroup, { sig, arr });
+    return arr;
+  }
+  balanceForRow(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    const piId = itemGroup.get("planningItemId")?.value;
+    if (!pid || !piId) {
+      return "";
+    }
+    const pi = (this.planItemsCache.get(pid) || []).find((p) => Number(p.planningItemId ?? p.id) === Number(piId));
+    if (!pi) {
+      return "";
+    }
+    return `Pack: ${pi.packing ?? 0} \xB7 Disp: ${pi.dispatch ?? 0} \xB7 Can dispatch: ${pi.dispatchable ?? 0}`;
+  }
+  loadPlannings() {
+    this.isLoadingPlannings = true;
+    this.planningService.searchPlannings({ currentPage: 0, perPageRecord: 100, sortBy: "id", sortDir: "desc" }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.plannings = response.data.content;
+        }
+        this.isLoadingPlannings = false;
+      },
+      error: () => {
+        this.isLoadingPlannings = false;
+      }
+    });
+  }
+  /** Cached balances for plans (one backend call per plan). */
+  ensurePlanItems(ids, done) {
+    const missing = ids.filter((id) => id && !this.planItemsCache.has(id));
+    if (!missing.length) {
+      done();
+      return;
+    }
+    let pending = missing.length;
+    const check = () => {
+      if (--pending === 0) {
+        done();
+      }
+    };
+    missing.forEach((id) => {
+      this.planDispatchService.getItemBalances(id).subscribe({
+        next: (r) => {
+          if (r.success) {
+            this.planItemsCache.set(id, r.data || []);
+          }
+          check();
+        },
+        error: () => {
+          this.snackbar.error("Failed to load planning products");
+          check();
+        }
+      });
+    });
+  }
+  onRowPlanningChange(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    if (!pid) {
+      itemGroup.patchValue({ planningItemId: null }, { emitEvent: false });
+      return;
+    }
+    this.ensurePlanItems([pid], () => {
+      const prodCtrl = itemGroup.get("productId");
+      if (!prodCtrl?.value) {
+        const list = this.planItemsCache.get(pid) || [];
+        if (list.length) {
+          itemGroup.patchValue({
+            productId: Number(list[0].productId),
+            planningItemId: Number(list[0].planningItemId ?? list[0].id)
+          }, { emitEvent: false });
+          return;
+        }
+      }
+      const prodId = Number(itemGroup.get("productId")?.value);
+      const match2 = prodId ? (this.planItemsCache.get(pid) || []).find((p) => Number(p.productId) === prodId) : null;
+      if (prodId && !match2) {
+        itemGroup.patchValue({ productId: "", planningItemId: null }, { emitEvent: false });
+        this.snackbar.error("Row product is not in the selected plan and was cleared");
+      } else {
+        itemGroup.patchValue({ planningItemId: match2 ? Number(match2.planningItemId ?? match2.id) : null }, { emitEvent: false });
+      }
+    });
+  }
+  onRowProductChange(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    if (!pid) {
+      itemGroup.patchValue({ planningItemId: null }, { emitEvent: false });
+      return;
+    }
+    const prodId = Number(itemGroup.get("productId")?.value);
+    const match2 = prodId ? (this.planItemsCache.get(pid) || []).find((p) => Number(p.productId) === prodId) : null;
+    itemGroup.patchValue({ planningItemId: match2 ? Number(match2.planningItemId ?? match2.id) : null }, { emitEvent: false });
+  }
+  addBag() {
+    const bagGroup = this.createBagFormGroup();
+    this.bags.push(bagGroup);
+    const bagIndex = this.bags.length - 1;
+    this.setupBagCalculations(bagIndex);
+    this.addItem(bagIndex);
+  }
+  removeBag(bagIndex) {
+    this.deleteBagIndex = bagIndex;
+    this.showDeleteBagModal = true;
+  }
+  getBagItems(bagIndex) {
+    return this.bags.at(bagIndex).get("items");
+  }
+  addItem(bagIndex) {
+    const items = this.getBagItems(bagIndex);
+    const newItem = this.fb.group({
+      id: [null],
+      planningId: [this.defaultPlanningId],
+      productId: ["", [Validators.required]],
+      planningItemId: [null],
+      quantity: ["", [Validators.required, Validators.min(1)]],
+      originalQuantity: [""],
+      totalQuantity: [""],
+      remarks: [""],
+      purchaseUnitPrice: [0, [Validators.required, Validators.min(0)]],
+      purchaseDiscount: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+      purchaseDiscountAmount: [0, [Validators.required, Validators.min(0)]],
+      purchaseDiscountPrice: [0, [Validators.required, Validators.min(0)]],
+      saleUnitPrice: [0, [Validators.required, Validators.min(0)]],
+      saleDiscount: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+      saleDiscountAmount: [0, [Validators.required, Validators.min(0)]],
+      saleDiscountPrice: [0, [Validators.required, Validators.min(0)]]
+    });
+    newItem.get("planningId")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.onRowPlanningChange(newItem);
+    });
+    newItem.get("productId")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.onRowProductChange(newItem);
+      this.setupPriceFetching(newItem);
+    });
+    items.push(newItem);
+    if (this.defaultPlanningId) {
+      this.ensurePlanItems([this.defaultPlanningId], () => {
+        if (!newItem.get("productId")?.value) {
+          const list = this.planItemsCache.get(this.defaultPlanningId) || [];
+          if (list.length) {
+            newItem.patchValue({
+              productId: Number(list[0].productId),
+              planningItemId: Number(list[0].planningItemId ?? list[0].id)
+            }, { emitEvent: false });
+          }
+        }
+      });
+    }
+    this.setupItemCalculations(bagIndex, items.length - 1);
+    this.setupDiscountCalculations(bagIndex, items.length - 1);
+    this.updateItemQuantities(bagIndex, items.length - 1);
+  }
+  setupDiscountCalculations(bagIndex, itemIndex) {
+    const itemGroup = this.getBagItems(bagIndex).at(itemIndex);
+    ["purchaseUnitPrice", "purchaseDiscount", "purchaseDiscountAmount"].forEach((field) => {
+      itemGroup.get(field)?.valueChanges.pipe(distinctUntilChanged(), debounceTime(300)).subscribe((value) => {
+        if (value !== null && value !== void 0) {
+          const control = itemGroup.get(field);
+          if (control) {
+            control.markAsDirty();
+            control.markAsTouched();
+          }
+          this.calculateDiscount(bagIndex, itemIndex, "purchase");
+        }
+      });
+    });
+    ["saleUnitPrice", "saleDiscount", "saleDiscountAmount"].forEach((field) => {
+      itemGroup.get(field)?.valueChanges.pipe(distinctUntilChanged(), debounceTime(300)).subscribe((value) => {
+        if (value !== null && value !== void 0) {
+          const control = itemGroup.get(field);
+          if (control) {
+            control.markAsDirty();
+            control.markAsTouched();
+          }
+          this.calculateDiscount(bagIndex, itemIndex, "sale");
+        }
+      });
+    });
+  }
+  calculateDiscount(bagIndex, itemIndex, type) {
+    const bag = this.bags.at(bagIndex);
+    const numberOfBags = bag.get("numberOfBags")?.value || 1;
+    const itemGroup = this.getBagItems(bagIndex).at(itemIndex);
+    const prefix = type === "purchase" ? "purchase" : "sale";
+    const values = {
+      quantity: (Number(itemGroup.get("quantity")?.value) || 0) * numberOfBags,
+      unitPrice: Number(itemGroup.get(`${prefix}UnitPrice`)?.value) || 0,
+      discountPercentage: Number(itemGroup.get(`${prefix}Discount`)?.value) || 0,
+      discountAmount: Number(itemGroup.get(`${prefix}DiscountAmount`)?.value) || 0,
+      finalPrice: 0
+    };
+    const totalPrice = values.quantity * values.unitPrice;
+    const discountControl = itemGroup.get(`${prefix}Discount`);
+    const discountAmountControl = itemGroup.get(`${prefix}DiscountAmount`);
+    const unitPriceControl = itemGroup.get(`${prefix}UnitPrice`);
+    if (discountControl?.dirty && discountControl.touched) {
+      values.discountPercentage = Math.min(Math.max(values.discountPercentage, 0), 100);
+      values.discountAmount = totalPrice * values.discountPercentage / 100;
+      values.finalPrice = totalPrice - values.discountAmount;
+    } else if (discountAmountControl?.dirty && discountAmountControl.touched) {
+      values.discountAmount = Math.min(Math.max(values.discountAmount, 0), totalPrice);
+      values.discountPercentage = totalPrice > 0 ? values.discountAmount / totalPrice * 100 : 0;
+      values.finalPrice = totalPrice - values.discountAmount;
+    } else if (unitPriceControl?.dirty && unitPriceControl.touched) {
+      values.discountAmount = totalPrice * values.discountPercentage / 100;
+      values.finalPrice = totalPrice - values.discountAmount;
+    } else {
+      values.discountAmount = totalPrice * values.discountPercentage / 100;
+      values.finalPrice = totalPrice - values.discountAmount;
+    }
+    values.finalPrice = Math.max(0, Number(values.finalPrice.toFixed(2)));
+    values.discountAmount = Math.max(0, Number(values.discountAmount.toFixed(2)));
+    values.discountPercentage = Math.max(0, Math.min(Number(values.discountPercentage.toFixed(2)), 100));
+    itemGroup.patchValue({
+      [`${prefix}DiscountAmount`]: values.discountAmount,
+      [`${prefix}Discount`]: values.discountPercentage,
+      [`${prefix}DiscountPrice`]: values.finalPrice
+    }, { emitEvent: false });
+  }
+  removeItem(bagIndex, itemIndex) {
+    this.deleteItemIndices = { bagIndex, itemIndex };
+    this.showDeleteItemModal = true;
+  }
+  loadCustomers() {
+    this.isLoadingCustomers = true;
+    this.customerService.getCustomers({ status: "A" }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.customers = response.data;
+        }
+        this.isLoadingCustomers = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to load customers");
+        this.isLoadingCustomers = false;
+      }
+    });
+  }
+  refreshCustomers() {
+    this.isLoadingCustomers = true;
+    this.customerService.refreshCustomers().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.customers = response.data;
+          this.snackbar.success("Customers refreshed successfully");
+        }
+        this.isLoadingCustomers = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to refresh customers");
+        this.isLoadingCustomers = false;
+      }
+    });
+  }
+  loadProducts() {
+    this.isLoadingProducts = true;
+    this.productService.getProducts({ status: "A" }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.products = response.data;
+        }
+        this.isLoadingProducts = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to load products");
+        this.isLoadingProducts = false;
+      }
+    });
+  }
+  refreshProducts() {
+    this.isLoadingProducts = true;
+    this.productService.refreshProducts().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.products = response.data;
+          this.snackbar.success("Products refreshed successfully");
+        }
+        this.isLoadingProducts = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to refresh products");
+        this.isLoadingProducts = false;
+      }
+    });
+  }
+  isFieldInvalid(control) {
+    if (!control)
+      return false;
+    return control.invalid;
+  }
+  getFieldError(field) {
+    if (!field)
+      return "";
+    if (field.hasError("required")) {
+      return "This field is required";
+    }
+    if (field.hasError("min")) {
+      const min = field.errors?.["min"].min;
+      return `Value must be greater than ${min}`;
+    }
+    return "";
+  }
+  getCustomErrorMessage(field, fieldName) {
+    if (!field?.errors)
+      return "";
+    if (field.hasError("required")) {
+      return `Please enter ${fieldName}`;
+    }
+    if (field.hasError("min")) {
+      const min = field.errors?.["min"].min;
+      if (fieldName === "weight") {
+        return `Weight must be greater than ${min}kg`;
+      }
+      return `${fieldName} must be greater than ${min}`;
+    }
+    return "";
+  }
+  validateForm() {
+    const errors = [];
+    if (!this.transportForm.get("customerId")?.value) {
+      errors.push("Please select a customer");
+    }
+    if (this.bags.length === 0) {
+      errors.push("Please add at least one bag");
+    } else {
+      this.bags.controls.forEach((bag, bagIndex) => {
+        if (!bag.get("weight")?.value) {
+          errors.push(`Please enter weight for Bag #${bagIndex + 1}`);
+        } else if (bag.get("weight")?.errors?.["min"]) {
+          errors.push(`Weight must be greater than 0kg for Bag #${bagIndex + 1}`);
+        }
+        const items = this.getBagItems(bagIndex);
+        if (items.length === 0) {
+          errors.push(`Please add at least one item in Bag #${bagIndex + 1}`);
+        } else {
+          items.controls.forEach((item, itemIndex) => {
+            const label = `item ${itemIndex + 1} in Bag #${bagIndex + 1}`;
+            const rowPid = this.rowPlanningId(item);
+            if (!item.get("productId")?.value) {
+              errors.push(`Please select product for ${label}`);
+            }
+            if (!item.get("quantity")?.value) {
+              errors.push(`Please enter quantity for ${label}`);
+            } else if (item.get("quantity")?.errors?.["min"]) {
+              errors.push(`Quantity must be greater than 0 for ${label}`);
+            }
+            if (rowPid) {
+              const prodId = Number(item.get("productId")?.value);
+              const match2 = prodId ? (this.planItemsCache.get(rowPid) || []).find((p) => Number(p.productId) === prodId) : null;
+              if (!match2) {
+                errors.push(`Please select a product of the chosen plan for ${label}`);
+              } else {
+                item.patchValue({ planningItemId: Number(match2.planningItemId ?? match2.id) }, { emitEvent: false });
+              }
+            } else {
+              item.patchValue({ planningItemId: null }, { emitEvent: false });
+            }
+          });
+        }
+      });
+    }
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+  onSubmit(event2) {
+    if (event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
+    }
+    this.submitted = true;
+    const checked = this.validateForm();
+    if (!checked.isValid) {
+      this.markAllFieldsAsTouched(this.transportForm);
+      this.snackbar.error(checked.errors[0]);
+      return;
+    }
+    if (this.transportForm.invalid) {
+      this.markAllFieldsAsTouched(this.transportForm);
+      this.snackbar.error("Please fill in all required fields correctly");
+      return;
+    }
+    this.loading = true;
+    const formValue = this.transportForm.getRawValue();
+    const payload = {
+      id: this.isEditMode ? this.transportId : void 0,
+      customerId: formValue.customerId,
+      bags: formValue.bags.map((bag) => ({
+        id: bag.id,
+        weight: bag.weight,
+        numberOfBags: bag.numberOfBags,
+        totalBagWeight: bag.totalBagWeight,
+        items: bag.items.map((item) => ({
+          id: item.id,
+          productId: Number(item.productId),
+          planningId: item.planningId ? Number(item.planningId) : null,
+          planningItemId: item.planningItemId ? Number(item.planningItemId) : null,
+          quantity: item.totalQuantity,
+          remarks: item.remarks || "",
+          purchaseUnitPrice: item.purchaseUnitPrice,
+          purchaseDiscount: item.purchaseDiscount,
+          purchaseDiscountAmount: item.purchaseDiscountAmount,
+          purchaseDiscountPrice: item.purchaseDiscountPrice,
+          saleUnitPrice: item.saleUnitPrice,
+          saleDiscount: item.saleDiscount,
+          saleDiscountAmount: item.saleDiscountAmount,
+          saleDiscountPrice: item.saleDiscountPrice
+        }))
+      }))
+    };
+    const apiCall = this.isEditMode ? this.planDispatchService.updateDispatch(payload) : this.planDispatchService.createDispatch(payload);
+    apiCall.subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.snackbar.success(response.message || `Dispatch ${this.isEditMode ? "updated" : "created"} successfully`);
+          this.router.navigate(["/plan-dispatch"]);
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || `Failed to ${this.isEditMode ? "update" : "create"} dispatch`);
+        this.loading = false;
+      }
+    });
+  }
+  markAllFieldsAsTouched(formGroup) {
+    Object.values(formGroup.controls).forEach((control) => {
+      if (control instanceof FormControl) {
+        control.markAsTouched();
+        control.updateValueAndValidity();
+      } else if (control instanceof FormGroup) {
+        this.markAllFieldsAsTouched(control);
+      } else if (control instanceof FormArray) {
+        this.markAllFieldsAsTouched(control);
+        control.controls.forEach((ctrl) => {
+          if (ctrl instanceof FormGroup) {
+            this.markAllFieldsAsTouched(ctrl);
+          }
+        });
+      }
+    });
+  }
+  resetForm() {
+    this.transportForm.reset();
+    while (this.bags.length) {
+      this.bags.removeAt(0);
+    }
+  }
+  onDeleteBag(bagIndex) {
+    this.deleteBagIndex = bagIndex;
+    this.showDeleteBagModal = true;
+  }
+  onDeleteItem(bagIndex, itemIndex) {
+    this.deleteItemIndices = { bagIndex, itemIndex };
+    this.showDeleteItemModal = true;
+  }
+  confirmDeleteBag() {
+    if (this.deleteBagIndex !== null) {
+      this.bags.removeAt(this.deleteBagIndex);
+      this.showDeleteBagModal = false;
+      this.deleteBagIndex = null;
+    }
+  }
+  confirmDeleteItem() {
+    if (this.deleteItemIndices) {
+      const { bagIndex, itemIndex } = this.deleteItemIndices;
+      const items = this.getBagItems(bagIndex);
+      if (items.length > 1) {
+        items.removeAt(itemIndex);
+      }
+      this.showDeleteItemModal = false;
+      this.deleteItemIndices = null;
+    }
+  }
+  cancelDelete() {
+    this.showDeleteBagModal = false;
+    this.showDeleteItemModal = false;
+    this.deleteBagIndex = null;
+    this.deleteItemIndices = null;
+  }
+  loadDispatchDetail() {
+    if (!this.transportId)
+      return;
+    this.loading = true;
+    this.planDispatchService.getDispatchDetail(this.transportId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.pendingItemPlanningMap = response.data.itemPlanningMap || {};
+          this.pendingItemPlanningIdMap = response.data.itemPlanningIdMap || {};
+          this.populateForm(response.data.transport);
+          const planIds = [...new Set(Object.values(this.pendingItemPlanningIdMap).map(Number))].filter((id) => Number.isFinite(id) && id > 0);
+          if (planIds.length) {
+            this.ensurePlanItems(planIds, () => {
+              this.applyItemPlanningMaps();
+              this.loading = false;
+            });
+          } else {
+            this.loading = false;
+          }
+        } else {
+          this.loading = false;
+        }
+      },
+      error: () => {
+        this.snackbar.error("Failed to load dispatch details");
+        this.loading = false;
+      }
+    });
+  }
+  applyItemPlanningMaps() {
+    this.bags.controls.forEach((bag) => {
+      bag.get("items").controls.forEach((item) => {
+        const rowId = item.get("id")?.value;
+        const key = rowId !== null && rowId !== void 0 ? String(rowId) : null;
+        const piId = key ? this.pendingItemPlanningMap[key] : null;
+        const pId = key ? this.pendingItemPlanningIdMap[key] : null;
+        if (piId && pId) {
+          item.patchValue({ planningId: Number(pId), planningItemId: Number(piId) }, { emitEvent: false });
+        } else {
+          this.onRowProductChange(item);
+        }
+      });
+    });
+  }
+  populateForm(data) {
+    if (!this.products.length) {
+      this.snackbar.error("Products not loaded yet");
+      return;
+    }
+    while (this.bags.length) {
+      this.bags.removeAt(0);
+    }
+    this.transportForm.patchValue({
+      customerId: data.customerId
+    });
+    data.bags.forEach((bag) => {
+      const bagGroup = this.fb.group({
+        id: [bag.id],
+        weight: [bag.weight, [Validators.required, Validators.min(0.01)]],
+        numberOfBags: [bag.numberOfBags, [Validators.required, Validators.min(1)]],
+        totalBagWeight: [bag.totalBagWeight],
+        items: this.fb.array([])
+      });
+      this.bags.push(bagGroup);
+      const currentBagIndex = this.bags.length - 1;
+      bag.items.forEach((item) => {
+        const itemGroup = this.fb.group({
+          id: [item.id],
+          planningId: [null],
+          productId: [item.productId !== null && item.productId !== void 0 ? Number(item.productId) : "", [Validators.required]],
+          planningItemId: [null],
+          quantity: [item.quantity, [Validators.required, Validators.min(1)]],
+          totalQuantity: [item.totalQuantity, [Validators.required, Validators.min(1)]],
+          remarks: [item.remarks || ""],
+          purchaseUnitPrice: [item.purchase.unitPrice, [Validators.required, Validators.min(0)]],
+          purchaseDiscount: [item.purchase.discount, [Validators.required, Validators.min(0)]],
+          purchaseDiscountAmount: [item.purchase.discountAmount, [Validators.required, Validators.min(0)]],
+          purchaseDiscountPrice: [item.purchase.discountPrice, [Validators.required, Validators.min(0)]],
+          saleUnitPrice: [item.sale.unitPrice, [Validators.required, Validators.min(0)]],
+          saleDiscount: [item.sale.discount, [Validators.required, Validators.min(0)]],
+          saleDiscountAmount: [item.sale.discountAmount, [Validators.required, Validators.min(0)]],
+          saleDiscountPrice: [item.sale.discountPrice, [Validators.required, Validators.min(0)]]
+        });
+        const itemsArray = this.getBagItems(currentBagIndex);
+        itemsArray.push(itemGroup);
+        itemGroup.get("planningId")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+          this.onRowPlanningChange(itemGroup);
+        });
+        itemGroup.get("productId")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+          this.onRowProductChange(itemGroup);
+          this.setupPriceFetching(itemGroup);
+        });
+        this.setupItemCalculations(currentBagIndex, itemsArray.length - 1);
+        this.setupDiscountCalculations(currentBagIndex, itemsArray.length - 1);
+      });
+      this.setupBagCalculations(currentBagIndex);
+    });
+    this.transportSummary = {
+      totalBags: data.totalBags,
+      totalWeight: data.totalWeight,
+      totalSaleAmount: data.summary.totalSaleAmount,
+      totalProfit: data.summary.totalProfit,
+      totalPurchaseAmount: data.summary.totalPurchaseAmount,
+      createdAt: new Date(data.createdAt)
+    };
+    this.transportForm.updateValueAndValidity();
+  }
+  calculateTotalWeight() {
+    return this.bags.controls.reduce((total, bag) => {
+      return total + this.calculateTotalBagWeight(this.bags.controls.indexOf(bag));
+    }, 0);
+  }
+  getErrorMessage(control, fieldName) {
+    if (control.hasError("required")) {
+      return `${fieldName} is required`;
+    }
+    if (control.hasError("min")) {
+      return `${fieldName} must be greater than ${control.errors?.["min"].min}`;
+    }
+    return "";
+  }
+  setupPriceFetching(item) {
+    const productControl = item.get("productId");
+    const customerId = this.transportForm.get("customerId")?.value;
+    if (productControl && customerId) {
+      this.priceService.getLatestPrices({
+        productId: productControl.value,
+        customerId
+      }).subscribe({
+        next: (response) => {
+          if (response.success) {
+            item.patchValue({
+              purchaseUnitPrice: response.data.lastPurchasePrice || 0,
+              saleUnitPrice: response.data.lastSalePrice || 0
+            }, { emitEvent: true });
+          }
+        },
+        error: () => {
+          this.snackbar.error("Failed to fetch latest prices");
+        }
+      });
+    }
+  }
+  onPrint() {
+    if (!this.transportId || this.isPrinting || this.loading)
+      return;
+    this.isPrinting = true;
+    this.planDispatchService.generatePdf(this.transportId).subscribe({
+      next: (response) => {
+        const url = window.URL.createObjectURL(response.blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = response.filename;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        this.isPrinting = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to generate PDF");
+        this.isPrinting = false;
+      }
+    });
+  }
+  createBagFormGroup() {
+    return this.fb.group({
+      id: [""],
+      weight: [0.01, [Validators.required, Validators.min(0.01)]],
+      numberOfBags: [1, [Validators.required, Validators.min(1)]],
+      totalBagWeight: [0],
+      items: this.fb.array([])
+    });
+  }
+  getBagTitle(bagIndex) {
+    const bag = this.bags.at(bagIndex);
+    const numberOfBags = bag.get("numberOfBags")?.value || 1;
+    let startNumber = this.calculateStartNumber(bagIndex);
+    let endNumber = startNumber + numberOfBags - 1;
+    return numberOfBags === 1 ? `Bag #${startNumber}` : `Bags #${startNumber}-${endNumber}`;
+  }
+  calculateStartNumber(bagIndex) {
+    let startNumber = 1;
+    for (let i = 0; i < bagIndex; i++) {
+      const bag = this.bags.at(i);
+      startNumber += bag.get("numberOfBags")?.value || 1;
+    }
+    return startNumber;
+  }
+  calculateTotalBagWeight(bagIndex) {
+    const bag = this.bags.at(bagIndex);
+    const weight = bag.get("weight")?.value || 0;
+    const numberOfBags = bag.get("numberOfBags")?.value || 1;
+    return weight * numberOfBags;
+  }
+  setupBagCalculations(bagIndex) {
+    const bag = this.bags.at(bagIndex);
+    this.updateBagCalculations(bagIndex);
+    ["weight", "numberOfBags"].forEach((field) => {
+      bag.get(field)?.valueChanges.subscribe(() => {
+        this.updateBagCalculations(bagIndex);
+      });
+    });
+  }
+  updateBagCalculations(bagIndex) {
+    const bag = this.bags.at(bagIndex);
+    const numberOfBags = bag.get("numberOfBags")?.value || 1;
+    const totalBagWeight = this.calculateTotalBagWeight(bagIndex);
+    bag.patchValue({ totalBagWeight }, { emitEvent: false });
+    const items = this.getBagItems(bagIndex);
+    items.controls.forEach((item, itemIndex) => {
+      const originalQuantity = item.get("quantity")?.value || 0;
+      const totalQuantity = originalQuantity * numberOfBags;
+      item.patchValue({
+        originalQuantity,
+        totalQuantity
+      }, { emitEvent: false });
+      this.calculateDiscount(bagIndex, itemIndex, "purchase");
+      this.calculateDiscount(bagIndex, itemIndex, "sale");
+    });
+  }
+  setupItemCalculations(bagIndex, itemIndex) {
+    const bag = this.bags.at(bagIndex);
+    const item = this.getBagItems(bagIndex).at(itemIndex);
+    item.get("quantity")?.valueChanges.subscribe(() => {
+      this.updateItemQuantities(bagIndex, itemIndex);
+    });
+    bag.get("numberOfBags")?.valueChanges.subscribe(() => {
+      this.updateItemQuantities(bagIndex, itemIndex);
+    });
+  }
+  updateItemQuantities(bagIndex, itemIndex) {
+    const bag = this.bags.at(bagIndex);
+    const item = this.getBagItems(bagIndex).at(itemIndex);
+    const numberOfBags = bag.get("numberOfBags")?.value || 1;
+    const originalQuantity = item.get("quantity")?.value || 0;
+    const totalQuantity = originalQuantity * numberOfBags;
+    item.patchValue({
+      originalQuantity,
+      totalQuantity
+    }, { emitEvent: false });
+    this.calculateDiscount(bagIndex, itemIndex, "purchase");
+    this.calculateDiscount(bagIndex, itemIndex, "sale");
+  }
+  createItemFormGroup() {
+    return this.fb.group({
+      productId: ["", Validators.required],
+      planningId: [this.defaultPlanningId],
+      planningItemId: [null],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      remarks: [""],
+      purchaseUnitPrice: [0, [Validators.required, Validators.min(0)]],
+      purchaseDiscount: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+      purchaseDiscountAmount: [0, [Validators.required, Validators.min(0)]],
+      purchaseDiscountPrice: [0],
+      saleUnitPrice: [0, [Validators.required, Validators.min(0)]],
+      saleDiscount: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+      saleDiscountAmount: [0, [Validators.required, Validators.min(0)]],
+      saleDiscountPrice: [0],
+      totalQuantity: [0],
+      originalQuantity: [0]
+    });
+  }
+  static {
+    this.\u0275fac = function PlanDispatchFormComponent_Factory(t) {
+      return new (t || _PlanDispatchFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(PlanDispatchService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(PriceService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchFormComponent, selectors: [["app-plan-dispatch-form"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 28, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "productId", 3, "options"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], [1, "form-group"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"]], template: function PlanDispatchFormComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "div", 3)(4, "h2", 4);
+        \u0275\u0275element(5, "i", 5);
+        \u0275\u0275text(6);
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(7, PlanDispatchFormComponent_button_7_Template, 3, 3, "button", 6);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(8, "div", 7);
+        \u0275\u0275element(9, "app-loader", 8);
+        \u0275\u0275elementStart(10, "form", 9);
+        \u0275\u0275listener("ngSubmit", function PlanDispatchFormComponent_Template_form_ngSubmit_10_listener() {
+          return ctx.onSubmit();
+        });
+        \u0275\u0275elementStart(11, "div", 10)(12, "div", 11)(13, "div", 12)(14, "label", 13);
+        \u0275\u0275element(15, "i", 14);
+        \u0275\u0275text(16, " Select Customer ");
+        \u0275\u0275elementStart(17, "span", 15);
+        \u0275\u0275text(18, "*");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(19, "div", 16);
+        \u0275\u0275element(20, "app-searchable-select", 17);
+        \u0275\u0275elementStart(21, "button", 18);
+        \u0275\u0275listener("click", function PlanDispatchFormComponent_Template_button_click_21_listener() {
+          return ctx.refreshCustomers();
+        });
+        \u0275\u0275element(22, "i", 19);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275template(23, PlanDispatchFormComponent_div_23_Template, 2, 0, "div", 20);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(24, "div", 21)(25, "label");
+        \u0275\u0275element(26, "i", 22);
+        \u0275\u0275text(27, " Total Weight");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(28, "div", 23);
+        \u0275\u0275text(29);
+        \u0275\u0275pipe(30, "number");
+        \u0275\u0275elementEnd()()()();
+        \u0275\u0275template(31, PlanDispatchFormComponent_div_31_Template, 39, 21, "div", 24);
+        \u0275\u0275elementStart(32, "div", 25);
+        \u0275\u0275template(33, PlanDispatchFormComponent_div_33_Template, 2, 1, "div", 26);
+        \u0275\u0275elementStart(34, "div", 27)(35, "h3");
+        \u0275\u0275text(36, "Bags");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(37, "button", 28);
+        \u0275\u0275listener("click", function PlanDispatchFormComponent_Template_button_click_37_listener() {
+          return ctx.addBag();
+        });
+        \u0275\u0275element(38, "i", 29);
+        \u0275\u0275text(39, " Add Bag ");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(40, "div", 30)(41, "button", 31);
+        \u0275\u0275listener("click", function PlanDispatchFormComponent_Template_button_click_41_listener() {
+          return ctx.resetForm();
+        });
+        \u0275\u0275element(42, "i", 32);
+        \u0275\u0275text(43, " Reset ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(44, "button", 33);
+        \u0275\u0275element(45, "i", 19);
+        \u0275\u0275text(46);
+        \u0275\u0275elementEnd()()()()()();
+        \u0275\u0275elementStart(47, "app-confirm-modal", 34);
+        \u0275\u0275listener("confirm", function PlanDispatchFormComponent_Template_app_confirm_modal_confirm_47_listener() {
+          return ctx.confirmDeleteBag();
+        })("cancel", function PlanDispatchFormComponent_Template_app_confirm_modal_cancel_47_listener() {
+          return ctx.cancelDelete();
+        });
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(48, "app-confirm-modal", 35);
+        \u0275\u0275listener("confirm", function PlanDispatchFormComponent_Template_app_confirm_modal_confirm_48_listener() {
+          return ctx.confirmDeleteItem();
+        })("cancel", function PlanDispatchFormComponent_Template_app_confirm_modal_cancel_48_listener() {
+          return ctx.cancelDelete();
+        });
+        \u0275\u0275elementEnd();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(6);
+        \u0275\u0275textInterpolate1(" ", ctx.isEditMode ? "Edit Plan Dispatch" : "Create Plan Dispatch", " ");
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isEditMode && ctx.transportId);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("show", ctx.loading);
+        \u0275\u0275advance();
+        \u0275\u0275classProp("loading", ctx.loading);
+        \u0275\u0275property("formGroup", ctx.transportForm);
+        \u0275\u0275advance(10);
+        \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid(ctx.transportForm.get("customerId")));
+        \u0275\u0275property("options", ctx.customers)("placeholder", "Select Customer")("defaultOption", \u0275\u0275pureFunction0(27, _c015))("searchPlaceholder", "Search customers...");
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.transportForm.get("customerId")));
+        \u0275\u0275advance(6);
+        \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(30, 24, ctx.calculateTotalWeight(), "1.3-3"), " kg");
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ctx.isEditMode && ctx.transportSummary);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ctx.bags.length > 0);
+        \u0275\u0275advance(4);
+        \u0275\u0275property("disabled", ctx.loading);
+        \u0275\u0275advance(4);
+        \u0275\u0275property("disabled", ctx.loading);
+        \u0275\u0275advance(3);
+        \u0275\u0275property("disabled", ctx.transportForm.invalid || ctx.loading);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngClass", ctx.loading ? "fa-spinner fa-spin" : "fa-save");
+        \u0275\u0275advance();
+        \u0275\u0275textInterpolate1(" ", ctx.loading ? "Saving..." : "Save Dispatch", " ");
+        \u0275\u0275advance();
+        \u0275\u0275property("show", ctx.showDeleteBagModal);
+        \u0275\u0275advance();
+        \u0275\u0275property("show", ctx.showDeleteItemModal);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgClass,
+      NgForOf,
+      NgIf,
+      DecimalPipe,
+      DatePipe,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      DefaultValueAccessor,
+      NumberValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      MinValidator,
+      MaxValidator,
+      FormGroupDirective,
+      FormControlName,
+      FormGroupName,
+      FormArrayName,
+      SearchableSelectComponent,
+      LoaderComponent,
+      ConfirmModalComponent
+    ], styles: ["\n\n.transport-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  margin: 0 auto;\n}\n.form-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 12px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  overflow: hidden;\n  margin-bottom: 2rem;\n}\n.card-header[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  padding: 1.5rem;\n}\n.card-header[_ngcontent-%COMP%]   .form-title[_ngcontent-%COMP%] {\n  color: white;\n  margin: 0;\n  font-size: 1.5rem;\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.card-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n.card-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .print-btn[_ngcontent-%COMP%] {\n  padding: 6px 12px;\n  font-size: 0.9rem;\n}\n.card-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .print-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  margin-right: 6px;\n}\n.form-content[_ngcontent-%COMP%] {\n  padding: 1.25rem;\n  position: relative;\n}\n.transport-form.loading[_ngcontent-%COMP%] {\n  opacity: 0.7;\n  pointer-events: none;\n}\n.customer-section[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.customer-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.bags-section[_ngcontent-%COMP%] {\n  margin-top: 1rem;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%] {\n  display: flex;\n  flex-wrap: wrap;\n  justify-content: space-between;\n  align-items: center;\n  gap: 1rem;\n  margin-bottom: 1.5rem;\n  padding: 1rem;\n  background: var(--background-light);\n  border-radius: var(--border-radius);\n  border: 1px solid var(--border-color);\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n  color: var(--text-primary);\n  flex: 0 0 auto;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1;\n  gap: 1rem;\n  align-items: flex-start;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  margin: 0;\n  min-width: 150px;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n  margin-bottom: 0.25rem;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%]   .total-bag-weight[_ngcontent-%COMP%]   input[_ngcontent-%COMP%] {\n  background-color: var(--background-light);\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .add-bag-btn[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n@media (max-width: 992px) {\n  .bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%] {\n    flex-wrap: wrap;\n  }\n}\n@media (max-width: 768px) {\n  .bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n  }\n  .bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .add-bag-btn[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n.bag-card[_ngcontent-%COMP%] {\n  background: #f8f9fa;\n  border-radius: 8px;\n  padding: 1rem;\n  margin-bottom: 1rem;\n  border: 1px solid #dee2e6;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   h4[_ngcontent-%COMP%] {\n  margin: 0;\n  color: var(--text-primary);\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  flex-wrap: wrap;\n  align-items: flex-end;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 200px;\n  margin: 0;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n  margin-bottom: 0.25rem;\n  display: block;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .form-group.total-bag-weight[_ngcontent-%COMP%]   input[_ngcontent-%COMP%] {\n  background-color: var(--background-light);\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .remove-bag-btn[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n  height: 38px;\n  padding: 0 0.75rem;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n@media (max-width: 768px) {\n  .bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n  }\n  .bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .remove-bag-btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   h5[_ngcontent-%COMP%] {\n  margin: 0;\n  color: var(--text-primary);\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 0;\n  padding: 0.75rem;\n  background: white;\n  border-radius: 8px;\n  margin-bottom: 1rem;\n  border: 1px solid var(--secondary);\n  position: relative;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .basic-info-section[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: 2fr 1fr;\n  gap: 1rem;\n}\n@media (max-width: 768px) {\n  .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .basic-info-section[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%] {\n  background: var(--background-light);\n  border-radius: var(--border-radius);\n  border: 1px solid var(--border-color);\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 1rem;\n  margin: 0;\n  padding: 0.5rem 0 0.25rem 0;\n  border-bottom: 1px solid var(--border-color);\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 0.9em;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(4, 1fr);\n  gap: 0.75rem;\n}\n@media (max-width: 576px) {\n  .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .remarks-section[_ngcontent-%COMP%] {\n  margin-top: 1rem;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .remove-item-btn[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 1rem;\n  right: 1rem;\n  padding: 0.5rem;\n  border-radius: 50%;\n  width: 32px;\n  height: 32px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .remove-item-btn[_ngcontent-%COMP%]:disabled {\n  opacity: 0.5;\n  cursor: not-allowed;\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 0.25rem;\n  color: var(--text-primary);\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #dc3545;\n}\n.form-group[_ngcontent-%COMP%]   input[_ngcontent-%COMP%], .form-group[_ngcontent-%COMP%]   select[_ngcontent-%COMP%] {\n  padding: 0.4rem 0.75rem;\n  height: auto;\n  font-size: 0.9rem;\n}\n.form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  margin-top: 2rem;\n  padding-top: 1rem;\n  border-top: 1px solid #dee2e6;\n}\n.btn-icon[_ngcontent-%COMP%] {\n  padding: 0.5rem;\n  border: none;\n  background: none;\n  cursor: pointer;\n  color: var(--primary);\n  border-radius: 4px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  transition: background-color 0.2s;\n}\n.btn-icon[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.05);\n}\n.btn-icon[_ngcontent-%COMP%]:disabled {\n  opacity: 0.6;\n  cursor: not-allowed;\n}\n.invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.product-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  margin-top: 0;\n}\n.form-control[_ngcontent-%COMP%]:read-only {\n  background-color: var(--background-light);\n  cursor: not-allowed;\n}\n.customer-weight-row[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  align-items: flex-start;\n  margin-bottom: 1rem;\n}\n.customer-weight-row[_ngcontent-%COMP%]   .customer-select[_ngcontent-%COMP%] {\n  flex: 2;\n}\n.customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%] {\n  flex: 1;\n  background: var(--background-light);\n  padding: 0.75rem 1rem;\n  border-radius: var(--border-radius);\n  border: 1px solid var(--border-color);\n}\n.customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.9rem;\n  margin-bottom: 0.25rem;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%]   .weight-value[_ngcontent-%COMP%] {\n  font-size: 1.25rem;\n  font-weight: 500;\n  color: var(--text-primary);\n}\n.basic-info-row[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: 2fr 1fr 1fr;\n  gap: 0.75rem;\n  margin-bottom: 0;\n}\n@media (max-width: 992px) {\n  .basic-info-row[_ngcontent-%COMP%] {\n    grid-template-columns: 2fr 1fr;\n  }\n}\n@media (max-width: 768px) {\n  .basic-info-row[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.purchase-section[_ngcontent-%COMP%], .sale-section[_ngcontent-%COMP%] {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.purchase-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%], .sale-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%] {\n  margin: 0;\n  padding: 0.5rem 0 0.25rem 0;\n}\n.purchase-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%], .sale-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%] {\n  gap: 0.75rem;\n}\n.transport-summary[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: var(--border-radius);\n  border: 1px solid var(--border-color);\n  overflow: hidden;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-header[_ngcontent-%COMP%] {\n  background: var(--primary);\n  color: white;\n  padding: 0.75rem;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-header[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1.1rem;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-header[_ngcontent-%COMP%]   .created-at[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n  opacity: 0.9;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 0.75rem;\n  padding: 1rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%]   .summary-item[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 0.25rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%]   .summary-item[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.9rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%]   .summary-item[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  font-size: 1.2rem;\n  font-weight: 500;\n  color: var(--text-primary);\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%]   .summary-item.profit[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: var(--success);\n}\n@media (max-width: 992px) {\n  .price-details[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n@media (max-width: 768px) {\n  .form-content[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .customer-weight-row[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 0.75rem;\n  }\n  .customer-weight-row[_ngcontent-%COMP%]   .customer-select[_ngcontent-%COMP%], .customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .basic-info-row[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n  .price-details[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n  }\n  .bag-card[_ngcontent-%COMP%] {\n    padding: 0.75rem;\n  }\n}\n@media (max-width: 576px) {\n  .price-details[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.quantity-group[_ngcontent-%COMP%] {\n  position: relative;\n}\n.quantity-group[_ngcontent-%COMP%]   .total-quantity[_ngcontent-%COMP%] {\n  position: absolute;\n  right: 0;\n  top: 100%;\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n  margin-top: 0.25rem;\n}\n/*# sourceMappingURL=plan-dispatch-form.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchFormComponent, { className: "PlanDispatchFormComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-form\\plan-dispatch-form.component.ts", lineNumber: 49 });
+})();
+
 // src/app/services/employee.service.ts
 var EmployeeService = class _EmployeeService {
   constructor(http) {
@@ -76705,8 +78616,8 @@ var EmployeeService = class _EmployeeService {
 };
 
 // src/app/components/employee/employee-list/employee-list.component.ts
-var _c014 = (a0, a1) => ({ "active": a0, "inactive": a1 });
-var _c15 = (a0) => ["/employee/edit", a0];
+var _c016 = (a0, a1) => ({ "active": a0, "inactive": a1 });
+var _c16 = (a0) => ["/employee/edit", a0];
 function EmployeeListComponent_tr_44_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -76753,11 +78664,11 @@ function EmployeeListComponent_tr_44_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(employee_r2.department);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(8, _c014, employee_r2.status === "A", employee_r2.status !== "A"));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(8, _c016, employee_r2.status === "A", employee_r2.status !== "A"));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", employee_r2.status === "A" ? "Active" : "Inactive", " ");
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c15, employee_r2.id));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c16, employee_r2.id));
   }
 }
 function EmployeeListComponent_tr_45_Template(rf, ctx) {
@@ -77349,7 +79260,7 @@ var EmployeeOrderService = class _EmployeeOrderService {
 };
 
 // src/app/components/employee-order/employee-order-list/employee-order-list.component.ts
-var _c015 = (a0) => ["/employee-order/edit", a0];
+var _c017 = (a0) => ["/employee-order/edit", a0];
 function EmployeeOrderListComponent_tr_60_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -77414,7 +79325,7 @@ function EmployeeOrderListComponent_tr_60_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 13, order_r2.createdAt, "medium"));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c015, order_r2.id));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c017, order_r2.id));
   }
 }
 function EmployeeOrderListComponent_tr_61_Template(rf, ctx) {
@@ -78364,47 +80275,9 @@ function planningStatusLabel(status) {
   }
 }
 
-// src/app/services/planning.service.ts
-var PlanningService = class _PlanningService {
-  constructor(http) {
-    this.http = http;
-    this.apiUrl = `${environment.apiUrl}/api/plannings`;
-  }
-  searchPlannings(params) {
-    return this.http.post(`${this.apiUrl}/search`, params);
-  }
-  createPlanning(planning) {
-    return this.http.post(`${this.apiUrl}/create`, planning);
-  }
-  updatePlanning(planning) {
-    return this.http.post(`${this.apiUrl}/update`, planning);
-  }
-  deletePlanning(id) {
-    return this.http.post(`${this.apiUrl}/delete`, { id });
-  }
-  getPlanningDetail(id) {
-    return this.http.post(`${this.apiUrl}/detail`, { id });
-  }
-  /** Slim items-only array for dropdowns (lighter than full detail). */
-  getPlanningItems(id) {
-    return this.http.post(`${this.apiUrl}/items`, { id });
-  }
-  copyFromEmployeeOrder(employeeOrderId) {
-    return this.http.post(`${this.apiUrl}/copy-from-employee-order`, { employeeOrderId });
-  }
-  static {
-    this.\u0275fac = function PlanningService_Factory(t) {
-      return new (t || _PlanningService)(\u0275\u0275inject(HttpClient));
-    };
-  }
-  static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _PlanningService, factory: _PlanningService.\u0275fac, providedIn: "root" });
-  }
-};
-
 // src/app/components/planning/planning-list/planning-list.component.ts
-var _c016 = (a0) => ["/planning", a0];
-var _c16 = (a0) => ["/planning/edit", a0];
+var _c018 = (a0) => ["/planning", a0];
+var _c17 = (a0) => ["/planning/edit", a0];
 function PlanningListComponent_option_10_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "option", 31);
@@ -78487,7 +80360,7 @@ function PlanningListComponent_tr_67_Template(rf, ctx) {
     const p_r3 = ctx.$implicit;
     const ctx_r3 = \u0275\u0275nextContext();
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(21, _c016, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(21, _c018, ctx_r3.encId(p_r3.id)));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate(p_r3.planningNumber || "-");
     \u0275\u0275advance(2);
@@ -78517,9 +80390,9 @@ function PlanningListComponent_tr_67_Template(rf, ctx) {
     \u0275\u0275advance();
     \u0275\u0275textInterpolate(ctx_r3.statusLabel(p_r3.status));
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(23, _c016, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(23, _c018, ctx_r3.encId(p_r3.id)));
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(25, _c16, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(25, _c17, ctx_r3.encId(p_r3.id)));
   }
 }
 function PlanningListComponent_tr_68_Template(rf, ctx) {
@@ -79541,6 +81414,10 @@ var ProductionService = class _ProductionService {
   searchOperations(params) {
     return this.http.post(`${this.apiUrl}/search`, params);
   }
+  /** PROCESS_DATE_REPORT: paginated date + multi-process rows. */
+  getProductionReport(params) {
+    return this.http.post(`${this.apiUrl}/report`, params);
+  }
   getTransactionsByItem(planningItemId) {
     return this.http.post(`${this.apiUrl}/by-planning-item/${planningItemId}`, {});
   }
@@ -79571,12 +81448,13 @@ var ProductionService = class _ProductionService {
 };
 
 // src/app/components/planning/planning-detail/planning-detail.component.ts
-var _c017 = (a0) => ["/planning/edit", a0];
-var _c17 = () => ["/production/entry"];
+var _c019 = (a0) => ["/planning/edit", a0];
+var _c18 = () => ["/production/entry"];
 var _c24 = (a0) => ({ planningId: a0 });
 var _c33 = () => ["/dashboard"];
-var _c43 = (a0, a1) => ({ planningId: a0, planningItemId: a1 });
-var _c53 = (a0) => ["/production/edit", a0];
+var _c43 = () => ["/plan-dispatch/create"];
+var _c53 = (a0, a1) => ({ planningId: a0, planningItemId: a1 });
+var _c63 = (a0) => ["/production/edit", a0];
 function PlanningDetailComponent_div_2_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -79596,32 +81474,38 @@ function PlanningDetailComponent_div_2_Template(rf, ctx) {
     \u0275\u0275element(11, "i", 13);
     \u0275\u0275text(12, " Dashboard");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "button", 14);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_13_listener() {
+    \u0275\u0275elementStart(13, "button", 10);
+    \u0275\u0275element(14, "i", 14);
+    \u0275\u0275text(15, " Dispatch");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(16, "button", 15);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_16_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.exportExcel());
     });
-    \u0275\u0275element(14, "i", 15);
-    \u0275\u0275text(15, " Excel");
+    \u0275\u0275element(17, "i", 16);
+    \u0275\u0275text(18, " Excel");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(4);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(5, _c017, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(7, _c019, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(7, _c17))("queryParams", \u0275\u0275pureFunction1(8, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(9, _c18))("queryParams", \u0275\u0275pureFunction1(10, _c24, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(10, _c33))("queryParams", \u0275\u0275pureFunction1(11, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(12, _c33))("queryParams", \u0275\u0275pureFunction1(13, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(15, _c43))("queryParams", \u0275\u0275pureFunction1(16, _c24, ctx_r1.encId(ctx_r1.planning.id)));
   }
 }
 function PlanningDetailComponent_div_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 16)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 17)(1, "h2");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 17)(4, "div")(5, "span");
+    \u0275\u0275elementStart(3, "div", 18)(4, "div")(5, "span");
     \u0275\u0275text(6, "Planning No:");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(7, "strong");
@@ -79646,7 +81530,7 @@ function PlanningDetailComponent_div_3_Template(rf, ctx) {
     \u0275\u0275elementStart(23, "strong");
     \u0275\u0275text(24);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(25, "div", 18)(26, "span");
+    \u0275\u0275elementStart(25, "div", 19)(26, "span");
     \u0275\u0275text(27, "Remarks:");
     \u0275\u0275elementEnd();
     \u0275\u0275text(28);
@@ -79670,52 +81554,52 @@ function PlanningDetailComponent_div_3_Template(rf, ctx) {
 }
 function PlanningDetailComponent_div_4_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 19)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 20)(1, "h2");
     \u0275\u0275text(2, "Production Summary");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 20)(4, "div", 21)(5, "span", 22);
+    \u0275\u0275elementStart(3, "div", 21)(4, "div", 22)(5, "span", 23);
     \u0275\u0275text(6, "Planned");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "span", 23);
+    \u0275\u0275elementStart(7, "span", 24);
     \u0275\u0275text(8);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "div", 21)(10, "span", 22);
+    \u0275\u0275elementStart(9, "div", 22)(10, "span", 23);
     \u0275\u0275text(11, "Cutting");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "span", 23);
+    \u0275\u0275elementStart(12, "span", 24);
     \u0275\u0275text(13);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "div", 21)(15, "span", 22);
+    \u0275\u0275elementStart(14, "div", 22)(15, "span", 23);
     \u0275\u0275text(16, "Emboss");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "span", 23);
+    \u0275\u0275elementStart(17, "span", 24);
     \u0275\u0275text(18);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(19, "div", 21)(20, "span", 22);
+    \u0275\u0275elementStart(19, "div", 22)(20, "span", 23);
     \u0275\u0275text(21, "Coating");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "span", 23);
+    \u0275\u0275elementStart(22, "span", 24);
     \u0275\u0275text(23);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(24, "div", 21)(25, "span", 22);
+    \u0275\u0275elementStart(24, "div", 22)(25, "span", 23);
     \u0275\u0275text(26, "Packing");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(27, "span", 23);
+    \u0275\u0275elementStart(27, "span", 24);
     \u0275\u0275text(28);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "div", 21)(30, "span", 22);
+    \u0275\u0275elementStart(29, "div", 22)(30, "span", 23);
     \u0275\u0275text(31, "Dispatch");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(32, "span", 23);
+    \u0275\u0275elementStart(32, "span", 24);
     \u0275\u0275text(33);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(34, "div", 21)(35, "span", 22);
+    \u0275\u0275elementStart(34, "div", 22)(35, "span", 23);
     \u0275\u0275text(36, "Remaining");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(37, "span", 23);
+    \u0275\u0275elementStart(37, "span", 24);
     \u0275\u0275text(38);
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(39, "p", 24);
+    \u0275\u0275elementStart(39, "p", 25);
     \u0275\u0275text(40, "Remaining = Planned \u2212 Cutting (combined Cutting+Emboss counts inside Cutting)");
     \u0275\u0275elementEnd()();
   }
@@ -79742,7 +81626,7 @@ function PlanningDetailComponent_div_4_Template(rf, ctx) {
 }
 function PlanningDetailComponent_div_5_ng_container_29_span_4_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 34);
+    \u0275\u0275elementStart(0, "span", 35);
     \u0275\u0275text(1, "Coating");
     \u0275\u0275elementEnd();
   }
@@ -79771,17 +81655,17 @@ function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Templ
     \u0275\u0275elementStart(9, "td");
     \u0275\u0275text(10);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(11, "td", 38)(12, "button", 39);
+    \u0275\u0275elementStart(11, "td", 39)(12, "button", 40);
     \u0275\u0275element(13, "i", 9);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "button", 40);
+    \u0275\u0275elementStart(14, "button", 41);
     \u0275\u0275listener("click", function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Template_button_click_14_listener() {
       const op_r6 = \u0275\u0275restoreView(_r5).$implicit;
       const item_r4 = \u0275\u0275nextContext(3).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.deleteEntry(op_r6.id, item_r4));
     });
-    \u0275\u0275element(15, "i", 41);
+    \u0275\u0275element(15, "i", 42);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -79796,19 +81680,19 @@ function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Templ
     \u0275\u0275advance(4);
     \u0275\u0275textInterpolate(op_r6.remarks || op_r6.machineRemarks || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c53, ctx_r1.encId(op_r6.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c63, ctx_r1.encId(op_r6.id)));
   }
 }
 function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_15_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 42);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 43);
     \u0275\u0275text(2, "No transactions yet");
     \u0275\u0275elementEnd()();
   }
 }
 function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "table", 37)(1, "thead")(2, "tr")(3, "th");
+    \u0275\u0275elementStart(0, "table", 38)(1, "thead")(2, "tr")(3, "th");
     \u0275\u0275text(4, "Type");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "th");
@@ -79824,7 +81708,7 @@ function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_Template(rf
     \u0275\u0275text(12, "Actions");
     \u0275\u0275elementEnd()()();
     \u0275\u0275elementStart(13, "tbody");
-    \u0275\u0275template(14, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Template, 16, 13, "tr", 27)(15, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_15_Template, 3, 0, "tr", 33);
+    \u0275\u0275template(14, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Template, 16, 13, "tr", 28)(15, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_15_Template, 3, 0, "tr", 34);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -79838,8 +81722,8 @@ function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_Template(rf
 }
 function PlanningDetailComponent_div_5_ng_container_29_tr_32_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 35);
-    \u0275\u0275template(2, PlanningDetailComponent_div_5_ng_container_29_tr_32_div_2_Template, 2, 0, "div", 33)(3, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_Template, 16, 2, "table", 36);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 36);
+    \u0275\u0275template(2, PlanningDetailComponent_div_5_ng_container_29_tr_32_div_2_Template, 2, 0, "div", 34)(3, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_Template, 16, 2, "table", 37);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -79857,7 +81741,7 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     \u0275\u0275elementContainerStart(0);
     \u0275\u0275elementStart(1, "tr")(2, "td");
     \u0275\u0275text(3);
-    \u0275\u0275template(4, PlanningDetailComponent_div_5_ng_container_29_span_4_Template, 2, 0, "span", 28);
+    \u0275\u0275template(4, PlanningDetailComponent_div_5_ng_container_29_span_4_Template, 2, 0, "span", 29);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "td");
     \u0275\u0275text(6);
@@ -79880,8 +81764,8 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     \u0275\u0275elementStart(17, "td");
     \u0275\u0275text(18);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(19, "td")(20, "div", 29);
-    \u0275\u0275element(21, "div", 30);
+    \u0275\u0275elementStart(19, "td")(20, "div", 30);
+    \u0275\u0275element(21, "div", 31);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(22, "small");
     \u0275\u0275text(23);
@@ -79889,7 +81773,7 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     \u0275\u0275elementStart(24, "td");
     \u0275\u0275text(25);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(26, "td")(27, "button", 31);
+    \u0275\u0275elementStart(26, "td")(27, "button", 32);
     \u0275\u0275listener("click", function PlanningDetailComponent_div_5_ng_container_29_Template_button_click_27_listener() {
       const item_r4 = \u0275\u0275restoreView(_r3).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
@@ -79897,11 +81781,11 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     });
     \u0275\u0275text(28);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(29, "button", 32);
+    \u0275\u0275elementStart(29, "button", 33);
     \u0275\u0275element(30, "i", 11);
     \u0275\u0275text(31, " Entry ");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275template(32, PlanningDetailComponent_div_5_ng_container_29_tr_32_Template, 4, 2, "tr", 33);
+    \u0275\u0275template(32, PlanningDetailComponent_div_5_ng_container_29_tr_32_Template, 4, 2, "tr", 34);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
@@ -79937,17 +81821,17 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate1(" ", ctx_r1.expandedItemId === item_r4.id ? "Hide" : "Transactions", " ");
     \u0275\u0275advance();
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(19, _c17))("queryParams", \u0275\u0275pureFunction2(20, _c43, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r4.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(19, _c18))("queryParams", \u0275\u0275pureFunction2(20, _c53, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r4.id)));
     \u0275\u0275advance(3);
     \u0275\u0275property("ngIf", ctx_r1.expandedItemId === item_r4.id);
   }
 }
 function PlanningDetailComponent_div_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 16)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 17)(1, "h2");
     \u0275\u0275text(2, "Product-wise Production");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 25)(4, "table", 26)(5, "thead")(6, "tr")(7, "th");
+    \u0275\u0275elementStart(3, "div", 26)(4, "table", 27)(5, "thead")(6, "tr")(7, "th");
     \u0275\u0275text(8, "Product");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(9, "th");
@@ -79980,7 +81864,7 @@ function PlanningDetailComponent_div_5_Template(rf, ctx) {
     \u0275\u0275element(27, "th");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(28, "tbody");
-    \u0275\u0275template(29, PlanningDetailComponent_div_5_ng_container_29_Template, 33, 23, "ng-container", 27);
+    \u0275\u0275template(29, PlanningDetailComponent_div_5_ng_container_29_Template, 33, 23, "ng-container", 28);
     \u0275\u0275elementEnd()()()();
   }
   if (rf & 2) {
@@ -80138,11 +82022,11 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningDetailComponent, selectors: [["app-planning-detail"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 6, vars: 5, consts: [[1, "planning-detail-container"], [3, "show"], ["class", "action-bar", 4, "ngIf"], ["class", "card", 4, "ngIf"], ["class", "card summary-card", 4, "ngIf"], [1, "action-bar"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-arrow-left"], [1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-edit"], [1, "btn", "btn-primary", 3, "routerLink", "queryParams"], [1, "fas", "fa-plus"], [1, "btn", "btn-secondary", 3, "routerLink", "queryParams"], [1, "fas", "fa-chart-bar"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-file-excel"], [1, "card"], [1, "info-grid"], [1, "full"], [1, "card", "summary-card"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-label"], [1, "stat-value"], [1, "hint"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "btn", "btn-sm", "btn-secondary", 3, "click"], ["title", "Direct production entry \u2014 planning and product pre-selected, changeable", 1, "btn", "btn-sm", "btn-primary", 3, "routerLink", "queryParams"], [4, "ngIf"], [1, "badge"], ["colspan", "11"], ["class", "table inner", 4, "ngIf"], [1, "table", "inner"], [1, "actions"], ["title", "Edit entry (quantity/date/remarks)", 1, "btn-icon", "edit", 3, "routerLink"], ["title", "Delete entry and reverse stock", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "5", 1, "text-center"]], template: function PlanningDetailComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningDetailComponent, selectors: [["app-planning-detail"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 6, vars: 5, consts: [[1, "planning-detail-container"], [3, "show"], ["class", "action-bar", 4, "ngIf"], ["class", "card", 4, "ngIf"], ["class", "card summary-card", 4, "ngIf"], [1, "action-bar"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-arrow-left"], [1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-edit"], [1, "btn", "btn-primary", 3, "routerLink", "queryParams"], [1, "fas", "fa-plus"], [1, "btn", "btn-secondary", 3, "routerLink", "queryParams"], [1, "fas", "fa-chart-bar"], [1, "fas", "fa-truck"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-file-excel"], [1, "card"], [1, "info-grid"], [1, "full"], [1, "card", "summary-card"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-label"], [1, "stat-value"], [1, "hint"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "btn", "btn-sm", "btn-secondary", 3, "click"], ["title", "Direct production entry \u2014 planning and product pre-selected, changeable", 1, "btn", "btn-sm", "btn-primary", 3, "routerLink", "queryParams"], [4, "ngIf"], [1, "badge"], ["colspan", "11"], ["class", "table inner", 4, "ngIf"], [1, "table", "inner"], [1, "actions"], ["title", "Edit entry (quantity/date/remarks)", 1, "btn-icon", "edit", 3, "routerLink"], ["title", "Delete entry and reverse stock", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "5", 1, "text-center"]], template: function PlanningDetailComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
-        \u0275\u0275template(2, PlanningDetailComponent_div_2_Template, 16, 13, "div", 2)(3, PlanningDetailComponent_div_3_Template, 29, 9, "div", 3)(4, PlanningDetailComponent_div_4_Template, 41, 9, "div", 4)(5, PlanningDetailComponent_div_5_Template, 30, 1, "div", 3);
+        \u0275\u0275template(2, PlanningDetailComponent_div_2_Template, 19, 18, "div", 2)(3, PlanningDetailComponent_div_3_Template, 29, 9, "div", 3)(4, PlanningDetailComponent_div_4_Template, 41, 9, "div", 4)(5, PlanningDetailComponent_div_5_Template, 30, 1, "div", 3);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
@@ -80788,7 +82672,7 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
 })();
 
 // src/app/components/production/production-dashboard/production-dashboard.component.ts
-var _c018 = (a0) => ["/planning", a0];
+var _c020 = (a0) => ["/planning", a0];
 function ProductionDashboardComponent_section_29_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "section", 22)(1, "div", 23)(2, "div", 24);
@@ -80925,7 +82809,7 @@ function ProductionDashboardComponent_section_30_tr_28_Template(rf, ctx) {
     const row_r2 = ctx.$implicit;
     const ctx_r0 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c018, ctx_r0.encId(row_r2.planningId)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c020, ctx_r0.encId(row_r2.planningId)));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate(row_r2.planningNumber);
     \u0275\u0275advance(2);
@@ -81252,6 +83136,374 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionDashboardComponent, { className: "ProductionDashboardComponent", filePath: "src\\app\\components\\production\\production-dashboard\\production-dashboard.component.ts", lineNumber: 22 });
 })();
 
+// src/app/components/production/process-date-report/process-date-report.component.ts
+function ProcessDateReportComponent_span_37_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span");
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1("(", ctx_r0.totalElements, ")");
+  }
+}
+function ProcessDateReportComponent_tr_59_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td");
+    \u0275\u0275text(2);
+    \u0275\u0275pipe(3, "date");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "td");
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "td");
+    \u0275\u0275text(7);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "td");
+    \u0275\u0275text(9);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "td");
+    \u0275\u0275text(11);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "td");
+    \u0275\u0275text(13);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "td");
+    \u0275\u0275text(15);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(16, "td");
+    \u0275\u0275text(17);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const r_r2 = ctx.$implicit;
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(r_r2.operationDate ? \u0275\u0275pipeBind2(3, 8, r_r2.operationDate, "dd-MM-yyyy HH:mm") : "-");
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(r_r2.planningNumber || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(r_r2.outputProductName);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(r_r2.operationType);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(r_r2.inputProductName || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(r_r2.quantity);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(r_r2.machineRemarks || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(r_r2.remarks || "-");
+  }
+}
+function ProcessDateReportComponent_tr_60_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 25);
+    \u0275\u0275text(2, "No production found for the selected filters");
+    \u0275\u0275elementEnd()();
+  }
+}
+function ProcessDateReportComponent_app_pagination_63_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 26);
+    \u0275\u0275listener("pageChange", function ProcessDateReportComponent_app_pagination_63_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.onPageChange($event));
+    })("pageSizeChange", function ProcessDateReportComponent_app_pagination_63_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.onPageSizeChange($event));
+    });
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r0.currentPage)("pageSize", ctx_r0.pageSize)("totalElements", ctx_r0.totalElements)("pageSizeOptions", ctx_r0.pageSizeOptions);
+  }
+}
+var ProcessDateReportComponent = class _ProcessDateReportComponent {
+  constructor(fb, productionService, snackbar, dateUtils) {
+    this.fb = fb;
+    this.productionService = productionService;
+    this.snackbar = snackbar;
+    this.dateUtils = dateUtils;
+    this.rows = [];
+    this.isLoading = false;
+    this.isExporting = false;
+    this.hasSearched = false;
+    this.processOptions = OPERATION_OPTIONS;
+    this.currentPage = 0;
+    this.pageSize = 10;
+    this.pageSizeOptions = [5, 10, 25, 50, 100];
+    this.totalPages = 0;
+    this.totalElements = 0;
+    this.destroy$ = new Subject();
+    this.filterForm = this.fb.group({
+      startDate: [null],
+      endDate: [null],
+      operationTypes: [[]],
+      search: [""]
+    });
+  }
+  ngOnInit() {
+    this.loadReport();
+  }
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  buildParams(page, size) {
+    const v = this.filterForm.value;
+    return {
+      currentPage: page,
+      perPageRecord: size,
+      startDate: v.startDate ? this.dateUtils.formatDateForApi(v.startDate, true) : null,
+      endDate: v.endDate ? this.dateUtils.formatDateForApi(v.endDate, false) : null,
+      operationTypes: (v.operationTypes || []).filter((t) => !!t),
+      search: (v.search || "").trim()
+    };
+  }
+  loadReport() {
+    this.isLoading = true;
+    this.productionService.getProductionReport(this.buildParams(this.currentPage, this.pageSize)).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.rows = response.data.content;
+          this.totalPages = response.data.totalPages;
+          this.totalElements = response.data.totalElements;
+          this.hasSearched = true;
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || "Failed to load report");
+        this.isLoading = false;
+      }
+    });
+  }
+  onSearch(event2) {
+    if (event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
+    }
+    this.currentPage = 0;
+    this.loadReport();
+  }
+  resetForm() {
+    this.filterForm.reset({ startDate: null, endDate: null, operationTypes: [], search: "" });
+    this.currentPage = 0;
+    this.loadReport();
+  }
+  onPageChange(page) {
+    this.currentPage = page;
+    this.loadReport();
+  }
+  onPageSizeChange(newSize) {
+    this.pageSize = newSize;
+    this.currentPage = 0;
+    this.loadReport();
+  }
+  /** Downloads the Excel sheet for exactly the filtered days/processes. */
+  exportExcel() {
+    if (!this.totalElements) {
+      this.snackbar.error("No data to export for the selected filters");
+      return;
+    }
+    this.isExporting = true;
+    this.productionService.getProductionReport(this.buildParams(0, this.totalElements)).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.writeCsv(response.data.content || []);
+        }
+        this.isExporting = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || "Failed to export");
+        this.isExporting = false;
+      }
+    });
+  }
+  writeCsv(rows) {
+    if (!rows.length) {
+      this.snackbar.error("No data to export for the selected filters");
+      return;
+    }
+    const headers = ["Date", "Planning No", "Product", "Process", "Input Product", "Quantity", "Machine", "Remarks"];
+    const data = rows.map((r) => [
+      r.operationDate ? new Date(r.operationDate).toLocaleString("en-GB") : "",
+      r.planningNumber || "-",
+      r.outputProductName || "",
+      r.operationType || "",
+      r.inputProductName || "-",
+      r.quantity ?? "",
+      r.machineRemarks || "",
+      r.remarks || ""
+    ]);
+    const v = this.filterForm.value;
+    const tag = `${v.startDate || "all"}_to_${v.endDate || "all"}`;
+    downloadCsv(`process-report_${tag}`, headers, data);
+    this.snackbar.success("Excel sheet downloaded successfully");
+  }
+  static {
+    this.\u0275fac = function ProcessDateReportComponent_Factory(t) {
+      return new (t || _ProcessDateReportComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ProductionService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(DateUtils));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProcessDateReportComponent, selectors: [["app-process-date-report"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 64, vars: 15, consts: [[1, "report-container"], [3, "show"], [1, "search-section", "card"], [1, "fas", "fa-calendar-alt"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "date", "formControlName", "startDate", 1, "form-control", 3, "touchstart"], ["type", "date", "formControlName", "endDate", 1, "form-control", 3, "touchstart"], [1, "form-group", "process-group"], ["formControlName", "operationTypes", "labelKey", "label", "valueKey", "value", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "text", "formControlName", "search", "placeholder", "Product or planning no...", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary", 3, "touchstart", "disabled"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "touchstart", "disabled"], [1, "fas", "fa-undo"], [1, "fas", 3, "ngClass"], [1, "report-list", "card"], [4, "ngIf"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["colspan", "8", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProcessDateReportComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0);
+        \u0275\u0275element(1, "app-loader", 1);
+        \u0275\u0275elementStart(2, "div", 2)(3, "h2");
+        \u0275\u0275element(4, "i", 3);
+        \u0275\u0275text(5, " Date & Process Report");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(6, "form", 4);
+        \u0275\u0275listener("ngSubmit", function ProcessDateReportComponent_Template_form_ngSubmit_6_listener($event) {
+          return ctx.onSearch($event);
+        });
+        \u0275\u0275elementStart(7, "div", 5)(8, "div", 6)(9, "label");
+        \u0275\u0275text(10, "Start Date");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(11, "input", 7);
+        \u0275\u0275listener("touchstart", function ProcessDateReportComponent_Template_input_touchstart_11_listener($event) {
+          return $event.stopPropagation();
+        });
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(12, "div", 6)(13, "label");
+        \u0275\u0275text(14, "End Date");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(15, "input", 8);
+        \u0275\u0275listener("touchstart", function ProcessDateReportComponent_Template_input_touchstart_15_listener($event) {
+          return $event.stopPropagation();
+        });
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(16, "div", 9)(17, "label");
+        \u0275\u0275text(18, "Processes (multi-select)");
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(19, "app-searchable-select", 10);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(20, "div", 6)(21, "label");
+        \u0275\u0275text(22, "Search");
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(23, "input", 11);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(24, "div", 12)(25, "button", 13);
+        \u0275\u0275listener("touchstart", function ProcessDateReportComponent_Template_button_touchstart_25_listener($event) {
+          return $event.stopPropagation();
+        });
+        \u0275\u0275element(26, "i", 14);
+        \u0275\u0275text(27, " Search ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(28, "button", 15);
+        \u0275\u0275listener("click", function ProcessDateReportComponent_Template_button_click_28_listener() {
+          return ctx.resetForm();
+        })("touchstart", function ProcessDateReportComponent_Template_button_touchstart_28_listener($event) {
+          return $event.stopPropagation();
+        });
+        \u0275\u0275element(29, "i", 16);
+        \u0275\u0275text(30, " Reset ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(31, "button", 15);
+        \u0275\u0275listener("click", function ProcessDateReportComponent_Template_button_click_31_listener() {
+          return ctx.exportExcel();
+        })("touchstart", function ProcessDateReportComponent_Template_button_touchstart_31_listener($event) {
+          return $event.stopPropagation();
+        });
+        \u0275\u0275element(32, "i", 17);
+        \u0275\u0275text(33);
+        \u0275\u0275elementEnd()()()()();
+        \u0275\u0275elementStart(34, "div", 18)(35, "h2");
+        \u0275\u0275text(36, "Production Rows ");
+        \u0275\u0275template(37, ProcessDateReportComponent_span_37_Template, 2, 1, "span", 19);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(38, "div", 20)(39, "table", 21)(40, "thead")(41, "tr")(42, "th");
+        \u0275\u0275text(43, "Date");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(44, "th");
+        \u0275\u0275text(45, "Planning No");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(46, "th");
+        \u0275\u0275text(47, "Product");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(48, "th");
+        \u0275\u0275text(49, "Process");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(50, "th");
+        \u0275\u0275text(51, "Input Product");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(52, "th");
+        \u0275\u0275text(53, "Quantity");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(54, "th");
+        \u0275\u0275text(55, "Machine");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(56, "th");
+        \u0275\u0275text(57, "Remarks");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(58, "tbody");
+        \u0275\u0275template(59, ProcessDateReportComponent_tr_59_Template, 18, 11, "tr", 22)(60, ProcessDateReportComponent_tr_60_Template, 3, 0, "tr", 19);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(61, "p", 23);
+        \u0275\u0275text(62, "Excel contains exactly the filtered days and processes shown above.");
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(63, ProcessDateReportComponent_app_pagination_63_Template, 1, 4, "app-pagination", 24);
+        \u0275\u0275elementEnd()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance();
+        \u0275\u0275property("show", ctx.isLoading);
+        \u0275\u0275advance(5);
+        \u0275\u0275property("formGroup", ctx.filterForm);
+        \u0275\u0275advance(13);
+        \u0275\u0275property("options", ctx.processOptions)("placeholder", "All processes")("searchPlaceholder", "Search processes...")("multiple", true);
+        \u0275\u0275advance(6);
+        \u0275\u0275property("disabled", ctx.isLoading);
+        \u0275\u0275advance(3);
+        \u0275\u0275property("disabled", ctx.isLoading);
+        \u0275\u0275advance(3);
+        \u0275\u0275property("disabled", ctx.isLoading || ctx.isExporting || !ctx.totalElements);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngClass", ctx.isExporting ? "fa-spinner fa-spin" : "fa-file-excel");
+        \u0275\u0275advance();
+        \u0275\u0275textInterpolate1(" ", ctx.isExporting ? "Exporting\u2026" : "Excel", " ");
+        \u0275\u0275advance(4);
+        \u0275\u0275property("ngIf", ctx.hasSearched);
+        \u0275\u0275advance(22);
+        \u0275\u0275property("ngForOf", ctx.rows);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !(ctx.rows == null ? null : ctx.rows.length));
+        \u0275\u0275advance(3);
+        \u0275\u0275property("ngIf", ctx.totalPages > 0);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgClass,
+      NgForOf,
+      NgIf,
+      DatePipe,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      DefaultValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      FormGroupDirective,
+      FormControlName,
+      FormsModule,
+      RouterModule,
+      LoaderComponent,
+      SearchableSelectComponent,
+      PaginationComponent
+    ], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.report-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.report-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.report-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.report-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 15px;\n  align-items: start;\n}\n.report-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n}\n.report-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%] {\n  margin: 20px 0;\n  display: flex;\n  gap: 10px;\n  flex-wrap: wrap;\n}\n.report-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.report-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 12px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.report-container[_ngcontent-%COMP%]   .status-o[_ngcontent-%COMP%] {\n  color: var(--warning);\n  background-color: rgba(255, 165, 0, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.report-container[_ngcontent-%COMP%]   .status-p[_ngcontent-%COMP%] {\n  color: var(--info);\n  background-color: rgba(0, 153, 156, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.report-container[_ngcontent-%COMP%]   .status-c[_ngcontent-%COMP%] {\n  color: var(--success);\n  background-color: rgba(90, 158, 111, 0.12);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.report-container[_ngcontent-%COMP%]   .status-i[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  background-color: rgba(0, 0, 0, 0.06);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n@media (max-width: 768px) {\n  .report-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .report-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    gap: 10px;\n  }\n  .report-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: flex-end;\n  }\n  .report-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    margin: 0 -15px;\n    padding: 0 15px;\n  }\n}\n/*# sourceMappingURL=process-date-report.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProcessDateReportComponent, { className: "ProcessDateReportComponent", filePath: "src\\app\\components\\production\\process-date-report\\process-date-report.component.ts", lineNumber: 34 });
+})();
+
 // src/app/components/production/stock-movement-list/stock-movement-list.component.ts
 function StockMovementListComponent_tr_46_Template(rf, ctx) {
   if (rf & 1) {
@@ -81491,7 +83743,7 @@ var StockMovementListComponent = class _StockMovementListComponent {
 })();
 
 // src/app/components/all-profits/daily-profit/daily-profit.component.ts
-var _c019 = (a0, a1) => ({ "text-success": a0, "text-danger": a1 });
+var _c021 = (a0, a1) => ({ "text-success": a0, "text-danger": a1 });
 function DailyProfitComponent_tr_34_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
@@ -81525,11 +83777,11 @@ function DailyProfitComponent_tr_34_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(8, 10, profit_r1.totalExpenses, "1.2-2"));
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(19, _c019, profit_r1.grossProfit > 0, profit_r1.grossProfit < 0));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(19, _c021, profit_r1.grossProfit > 0, profit_r1.grossProfit < 0));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", \u0275\u0275pipeBind2(11, 13, profit_r1.grossProfit, "1.2-2"), " ");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(22, _c019, profit_r1.netProfit > 0, profit_r1.netProfit < 0));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(22, _c021, profit_r1.netProfit > 0, profit_r1.netProfit < 0));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", \u0275\u0275pipeBind2(14, 16, profit_r1.netProfit, "1.2-2"), " ");
   }
@@ -81790,11 +84042,11 @@ var DailyProfitComponent = class _DailyProfitComponent {
         \u0275\u0275advance(29);
         \u0275\u0275property("ngForOf", ctx.profits == null ? null : ctx.profits.content);
         \u0275\u0275advance(6);
-        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(20, _c019, ctx.getTotalGrossProfit() > 0, ctx.getTotalGrossProfit() < 0));
+        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(20, _c021, ctx.getTotalGrossProfit() > 0, ctx.getTotalGrossProfit() < 0));
         \u0275\u0275advance(2);
         \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(43, 14, ctx.getTotalGrossProfit(), "1.2-2"));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(23, _c019, ctx.getTotalNetProfit() > 0, ctx.getTotalNetProfit() < 0));
+        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(23, _c021, ctx.getTotalNetProfit() > 0, ctx.getTotalNetProfit() < 0));
         \u0275\u0275advance(2);
         \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(47, 17, ctx.getTotalNetProfit(), "1.2-2"));
         \u0275\u0275advance(3);
@@ -82945,8 +85197,8 @@ var QuotationStatus;
 })(QuotationStatus || (QuotationStatus = {}));
 
 // src/app/components/all-quotation/quotation/quotation.component.ts
-var _c020 = () => ({ label: "All Customers", value: "" });
-var _c18 = () => ({ label: "All Status", value: "" });
+var _c022 = () => ({ label: "All Customers", value: "" });
+var _c19 = () => ({ label: "All Status", value: "" });
 function QuotationComponent_tr_54_button_21_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
@@ -83520,13 +85772,13 @@ var QuotationComponent = class _QuotationComponent {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(6);
-        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(12, _c020))("searchPlaceholder", "Search customers...");
+        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(12, _c022))("searchPlaceholder", "Search customers...");
         \u0275\u0275advance();
         \u0275\u0275property("disabled", ctx.isLoadingCustomers);
         \u0275\u0275advance();
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance(3);
-        \u0275\u0275property("options", ctx.statusOptions)("defaultOption", \u0275\u0275pureFunction0(13, _c18))("searchPlaceholder", "Search status...");
+        \u0275\u0275property("options", ctx.statusOptions)("defaultOption", \u0275\u0275pureFunction0(13, _c19))("searchPlaceholder", "Search status...");
         \u0275\u0275advance(38);
         \u0275\u0275property("ngForOf", ctx.quotations);
         \u0275\u0275advance();
@@ -83644,6 +85896,21 @@ var routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: "plan-dispatch",
+    component: PlanDispatchListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: "plan-dispatch/create",
+    component: PlanDispatchFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: "plan-dispatch/edit/:id",
+    component: PlanDispatchFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
     path: "employee",
     component: EmployeeListComponent,
     canActivate: [AuthGuard]
@@ -83716,6 +85983,11 @@ var routes = [
   {
     path: "stock-movements",
     component: StockMovementListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: "production/report",
+    component: ProcessDateReportComponent,
     canActivate: [AuthGuard]
   },
   {

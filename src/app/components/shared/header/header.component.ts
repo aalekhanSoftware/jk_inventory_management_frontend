@@ -94,7 +94,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   isPlanningActive(): boolean {
     const currentUrl = this.router.url;
-    return ['/planning', '/production/entry', '/dashboard', '/stock-moves', '/stock-movements'].some(path =>
+    return ['/planning', '/production/entry', '/production/report', '/dashboard', '/stock-moves', '/stock-movements', '/plan-dispatch'].some(path =>
       currentUrl.includes(path)
     );
   }

@@ -1,0 +1,92 @@
+<div class="report-container">
+  <app-loader [show]="isLoading"></app-loader>
+
+  <div class="search-section card">
+    <h2><i class="fas fa-calendar-alt"></i> Date &amp; Process Report</h2>
+    <form [formGroup]="filterForm" (ngSubmit)="onSearch($event)">
+      <div class="search-controls">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" formControlName="startDate" class="form-control" (touchstart)="$event.stopPropagation()">
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" formControlName="endDate" class="form-control" (touchstart)="$event.stopPropagation()">
+        </div>
+        <div class="form-group process-group">
+          <label>Processes (multi-select)</label>
+          <app-searchable-select
+            formControlName="operationTypes"
+            [options]="processOptions"
+            labelKey="label"
+            valueKey="value"
+            [placeholder]="'All processes'"
+            [searchPlaceholder]="'Search processes...'"
+            [multiple]="true"
+          ></app-searchable-select>
+        </div>
+        <div class="form-group">
+          <label>Search</label>
+          <input type="text" formControlName="search" class="form-control" placeholder="Product or planning no...">
+        </div>
+        <div class="button-group">
+          <button type="submit" class="btn btn-primary" [disabled]="isLoading" (touchstart)="$event.stopPropagation()">
+            <i class="fas fa-search"></i> Search
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="resetForm()" [disabled]="isLoading" (touchstart)="$event.stopPropagation()">
+            <i class="fas fa-undo"></i> Reset
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="exportExcel()" [disabled]="isLoading || isExporting || !totalElements" (touchstart)="$event.stopPropagation()">
+            <i class="fas" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i>
+            {{ isExporting ? 'Exporting…' : 'Excel' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="report-list card">
+    <h2>Production Rows <span *ngIf="hasSearched">({{ totalElements }})</span></h2>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Planning No</th>
+            <th>Product</th>
+            <th>Process</th>
+            <th>Input Product</th>
+            <th>Quantity</th>
+            <th>Machine</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of rows">
+            <td>{{ r.operationDate ? (r.operationDate | date:'dd-MM-yyyy HH:mm') : '-' }}</td>
+            <td>{{ r.planningNumber || '-' }}</td>
+            <td>{{ r.outputProductName }}</td>
+            <td>{{ r.operationType }}</td>
+            <td>{{ r.inputProductName || '-' }}</td>
+            <td>{{ r.quantity }}</td>
+            <td>{{ r.machineRemarks || '-' }}</td>
+            <td>{{ r.remarks || '-' }}</td>
+          </tr>
+          <tr *ngIf="!rows?.length">
+            <td colspan="8" class="text-center">No production found for the selected filters</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Excel contains exactly the filtered days and processes shown above.</p>
+    <app-pagination
+      *ngIf="totalPages > 0"
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
+      [totalElements]="totalElements"
+      [pageSizeOptions]="pageSizeOptions"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    ></app-pagination>
+  </div>
+</div>

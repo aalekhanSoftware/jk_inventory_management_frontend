@@ -1,0 +1,119 @@
+<div class="transport-list-container">
+  <div class="search-section card">
+    <h2><i class="fas fa-truck"></i> Plan Dispatch List</h2>
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+      <div class="search-controls">
+        <div class="form-group">
+          <input
+            type="text"
+            formControlName="search"
+            class="form-control"
+            placeholder="Search by customer or planning no..."
+          >
+        </div>
+        <div class="form-group">
+          <input
+            type="date"
+            formControlName="startDate"
+            class="form-control"
+            placeholder="Start Date"
+          >
+        </div>
+        <div class="form-group">
+          <input
+            type="date"
+            formControlName="endDate"
+            class="form-control"
+            placeholder="End Date"
+          >
+        </div>
+        <div class="button-group">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i> Search
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="resetForm()">
+            <i class="fas fa-undo"></i> Reset
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="action-buttons">
+      <button routerLink="/plan-dispatch/create" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create Dispatch
+      </button>
+  </div>
+
+  <div class="transports-list card">
+    <h2>Dispatches</h2>
+    <div class="table-container">
+      <app-loader [show]="isLoading"></app-loader>
+
+      <div class="table-responsive" [class.loading]="isLoading">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Customer Name</th>
+              <th>Planning</th>
+              <th>Total Weight</th>
+              <th>Total Bags</th>
+              <th>Created At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dispatch of dispatches; let i = index">
+              <td>{{ startIndex + i + 1 }}</td>
+              <td>{{ dispatch.customerName }}</td>
+              <td>
+                <span *ngIf="dispatch.planningNumbers?.length; else existingRow">
+                  <span *ngFor="let pn of dispatch.planningNumbers" class="plan-badge">{{ pn }}</span>
+                </span>
+                <ng-template #existingRow><span class="existing-badge">Existing</span></ng-template>
+              </td>
+              <td>{{ dispatch.totalWeight | number:'1.3-3' }} kg</td>
+              <td>{{ dispatch.totalBags }}</td>
+              <td>{{ dispatch.createdAt | date:'medium' }}</td>
+              <td class="actions">
+                <button class="btn-icon" [routerLink]="['/plan-dispatch/edit', encId(dispatch.id)]" title="Edit Dispatch">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon print" (click)="onPrintDispatch(dispatch.id)" title="Print Dispatch">
+                  <i class="fas fa-print"></i>
+                </button>
+                <button class="btn-icon delete" (click)="onDeleteDispatch(dispatch.id)" title="Delete Dispatch (linked progress reversed)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!isLoading && (!dispatches || dispatches.length === 0)">
+              <td colspan="7" class="no-data">No dispatches found</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-controls">
+      <app-pagination
+        *ngIf="totalPages > 0"
+        [currentPage]="currentPage"
+        [pageSize]="pageSize"
+        [totalElements]="totalElements"
+        [pageSizeOptions]="pageSizeOptions"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      ></app-pagination>
+    </div>
+  </div>
+</div>
+
+<app-confirm-modal
+  [show]="showDeleteModal"
+  title="Delete Dispatch"
+  message="Are you sure? Linked dispatch progress and stock will be reversed. This action cannot be undone."
+  (confirm)="confirmDelete()"
+  (cancel)="cancelDelete()"
+></app-confirm-modal>

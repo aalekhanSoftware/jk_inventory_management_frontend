@@ -15,6 +15,8 @@ import { PowderCoatingProcessComponent } from './components/powder-coating/powde
 import { AddPowderCoatingProcessComponent } from './components/powder-coating/add-powder-coating-process/add-powder-coating-process.component';
 import { TransportComponent } from './components/Transports/transport/transport.component';
 import { TransportListComponent } from './components/Transports/transport-list/transport-list.component';
+import { PlanDispatchListComponent } from './components/plan-dispatch/plan-dispatch-list/plan-dispatch-list.component';
+import { PlanDispatchFormComponent } from './components/plan-dispatch/plan-dispatch-form/plan-dispatch-form.component';
 import { EmployeeListComponent } from './components/employee/employee-list/employee-list.component';
 import { EmployeeFormComponent } from './components/employee/employee-form/employee-form.component';
 import { EmployeeOrderListComponent } from './components/employee-order/employee-order-list/employee-order-list.component';
@@ -24,6 +26,7 @@ import { PlanningFormComponent } from './components/planning/planning-form/plann
 import { PlanningDetailComponent } from './components/planning/planning-detail/planning-detail.component';
 import { ProductionEntryComponent } from './components/production/production-entry/production-entry.component';
 import { ProductionDashboardComponent } from './components/production/production-dashboard/production-dashboard.component';
+import { ProcessDateReportComponent } from './components/production/process-date-report/process-date-report.component';
 import { StockMovementListComponent } from './components/production/stock-movement-list/stock-movement-list.component';
 import { DailyProfitComponent } from './components/all-profits/daily-profit/daily-profit.component';
 import { AddQuotationComponent } from './components/all-quotation/add-quotation/add-quotation.component';
@@ -112,6 +115,21 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'plan-dispatch',
+    component: PlanDispatchListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'plan-dispatch/create',
+    component: PlanDispatchFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'plan-dispatch/edit/:id',
+    component: PlanDispatchFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'employee',
     component: EmployeeListComponent,
     canActivate: [AuthGuard]
@@ -184,6 +202,11 @@ const routes: Routes = [
   {
     path: 'stock-movements',
     component: StockMovementListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'production/report',
+    component: ProcessDateReportComponent,
     canActivate: [AuthGuard]
   },
   {

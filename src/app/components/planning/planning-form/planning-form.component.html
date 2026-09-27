@@ -77,6 +77,7 @@
                 <th>#</th>
                 <th>Product <span class="required">*</span></th>
                 <th>Planned Qty <span class="required">*</span></th>
+                <th>Bags</th>
                 <th>Coating?</th>
                 <th>Remarks</th>
                 <th>Actions</th>
@@ -107,6 +108,10 @@
                   <div class="invalid-feedback" *ngIf="isItemFieldInvalid(i, 'plannedQuantity')">{{ getItemFieldError(i, 'plannedQuantity') }}</div>
                   <small *ngIf="getItemFloor(i) > 0">Min: {{ getItemFloor(i) }} (already cut)</small>
                 </td>
+                <td>
+                  <input type="number" formControlName="totalBags" class="form-control" [class.is-invalid]="isItemFieldInvalid(i, 'totalBags')" min="0" step="1" placeholder="Optional">
+                  <div class="invalid-feedback" *ngIf="isItemFieldInvalid(i, 'totalBags')">Must be 0 or greater</div>
+                </td>
                 <td class="text-center">
                   <input type="checkbox" formControlName="coatingRequired" title="Coating required?">
                 </td>
@@ -120,14 +125,14 @@
                 </td>
               </tr>
               <tr *ngIf="itemsFormArray.length === 0">
-                <td colspan="6" class="text-center">No products added. Click "Add Product" to get started.</td>
+                <td colspan="7" class="text-center">No products added. Click "Add Product" to get started.</td>
               </tr>
             </tbody>
             <tfoot *ngIf="itemsFormArray.length > 0">
               <tr>
                 <td colspan="2" class="text-end"><strong>Total Planned:</strong></td>
                 <td><strong>{{ getTotalPlanned() }}</strong></td>
-                <td colspan="3"></td>
+                <td colspan="4"></td>
               </tr>
             </tfoot>
           </table>

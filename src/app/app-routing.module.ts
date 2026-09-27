@@ -17,8 +17,12 @@ import { TransportComponent } from './components/Transports/transport/transport.
 import { TransportListComponent } from './components/Transports/transport-list/transport-list.component';
 import { PlanDispatchListComponent } from './components/plan-dispatch/plan-dispatch-list/plan-dispatch-list.component';
 import { PlanDispatchFormComponent } from './components/plan-dispatch/plan-dispatch-form/plan-dispatch-form.component';
+import { PlanCoatingListComponent } from './components/plan-coating/plan-coating-list/plan-coating-list.component';
+import { PlanCoatingFormComponent } from './components/plan-coating/plan-coating-form/plan-coating-form.component';
 import { EmployeeListComponent } from './components/employee/employee-list/employee-list.component';
 import { EmployeeFormComponent } from './components/employee/employee-form/employee-form.component';
+import { MachineryListComponent } from './components/machinery/machinery-list/machinery-list.component';
+import { MachineryFormComponent } from './components/machinery/machinery-form/machinery-form.component';
 import { EmployeeOrderListComponent } from './components/employee-order/employee-order-list/employee-order-list.component';
 import { EmployeeOrderFormComponent } from './components/employee-order/employee-order-form/employee-order-form.component';
 import { PlanningListComponent } from './components/planning/planning-list/planning-list.component';
@@ -130,6 +134,21 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'plan-coating',
+    component: PlanCoatingListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'plan-coating/create',
+    component: PlanCoatingFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'plan-coating/edit/:id',
+    component: PlanCoatingFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'employee',
     component: EmployeeListComponent,
     canActivate: [AuthGuard]
@@ -142,6 +161,21 @@ const routes: Routes = [
   {
     path: 'employee/edit/:id',
     component: EmployeeFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'machinery',
+    component: MachineryListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'machinery/create',
+    component: MachineryFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'machinery/edit/:id',
+    component: MachineryFormComponent,
     canActivate: [AuthGuard]
   },
   {

@@ -80,7 +80,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   isMasterActive(): boolean {
     const currentUrl = this.router.url;
-    return ['/category', '/product', '/customer', '/employee'].some(path => 
+    return ['/category', '/product', '/customer', '/employee', '/machinery'].some(path => 
       currentUrl.includes(path)
     );
   }

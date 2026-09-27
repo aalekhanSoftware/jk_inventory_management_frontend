@@ -7,6 +7,7 @@ import { PlanningService } from '../../../services/planning.service';
 import { ProductionService } from '../../../services/production.service';
 import { ProductService } from '../../../services/product.service';
 import { EmployeeService } from '../../../services/employee.service';
+import { MachineryService } from '../../../services/machinery.service';
 import { OPERATION_OPTIONS } from '../../../models/production.model';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
@@ -28,6 +29,8 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
   planningItems: any[] = [];
   products: any[] = [];
   employees: any[] = [];
+  machineries: any[] = [];
+  isLoadingMachineries = false;
   operationOptions = OPERATION_OPTIONS;
   selectedItem: any = null;
   // Edit mode: type/planning/products are locked (delete + recreate for those);
@@ -46,6 +49,7 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
     private productionService: ProductionService,
     private productService: ProductService,
     private employeeService: EmployeeService,
+    private machineryService: MachineryService,
     private encryptionService: EncryptionService,
     private snackbar: SnackbarService
   ) {
@@ -56,9 +60,11 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
       inputProductId: [null],
       outputProductId: [null, Validators.required],
       quantity: [null, [Validators.required, Validators.min(1)]],
+      totalBags: [null, [Validators.min(0)]],
       operationDate: [new Date().toISOString().substring(0, 10)],
       employeeIds: [[]],
-      machineRemarks: [''],
+      // MACHINERY_MASTER: dropdown-selected machine (optional; replaces machineRemarks).
+      machineryId: [null],
       remarks: ['']
     });
   }
@@ -82,12 +88,14 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
           this.entryForm.get(k)?.updateValueAndValidity({ emitEvent: false });
         });
       this.loadEmployees();
+      this.loadMachineries();
       this.loadOperation(editId);
       return;
     }
     this.loadPlannings();
     this.loadProducts();
     this.loadEmployees();
+    this.loadMachineries();
     // User selection drives the product list (this was missing — products only
     // loaded via query params before this fix).
     this.entryForm.get('planningId')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((id) => {
@@ -251,6 +259,39 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadMachineries(): void {
+    this.isLoadingMachineries = true;
+    this.machineryService.getMachineries().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.machineries = response.data;
+        }
+        this.isLoadingMachineries = false;
+      },
+      error: () => {
+        this.snackbar.error('Failed to load machineries');
+        this.isLoadingMachineries = false;
+      }
+    });
+  }
+
+  refreshMachineries(): void {
+    this.isLoadingMachineries = true;
+    this.machineryService.refreshMachineries().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.machineries = response.data;
+          this.snackbar.success('Machineries refreshed successfully');
+        }
+        this.isLoadingMachineries = false;
+      },
+      error: () => {
+        this.snackbar.error('Failed to refresh machineries');
+        this.isLoadingMachineries = false;
+      }
+    });
+  }
+
   private loadOperation(id: number): void {
     this.isLoading = true;
     this.productionService.getOperationDetail(id).subscribe({
@@ -259,11 +300,12 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
           this.existingOp = response.data;
           this.entryForm.patchValue({
             quantity: this.existingOp.quantity,
+            totalBags: this.existingOp.totalBags ?? null,
             operationDate: this.existingOp.operationDate
               ? formatDate(this.existingOp.operationDate, 'yyyy-MM-dd', 'en')
               : new Date().toISOString().substring(0, 10),
             employeeIds: this.existingOp.employeeIds || [],
-            machineRemarks: this.existingOp.machineRemarks || '',
+            machineryId: this.existingOp.machineryId || null,
             remarks: this.existingOp.remarks || ''
           }, { emitEvent: false });
         }
@@ -289,9 +331,11 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
       this.productionService.updateOperation({
         id: this.operationId,
         quantity: Number(v.quantity),
+        totalBags: v.totalBags === null || v.totalBags === '' || v.totalBags === undefined
+          ? null : Number(v.totalBags),
         operationDate: this.toApiDateTime(v.operationDate),
         employeeIds: v.employeeIds || [],
-        machineRemarks: v.machineRemarks || '',
+        machineryId: v.machineryId ? Number(v.machineryId) : null,
         remarks: v.remarks || ''
       }).subscribe({
         next: (response) => {
@@ -329,9 +373,11 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
       inputProductId: v.inputProductId ? Number(v.inputProductId) : null,
       outputProductId: Number(v.outputProductId),
       quantity: Number(v.quantity),
+      totalBags: v.totalBags === null || v.totalBags === '' || v.totalBags === undefined
+        ? null : Number(v.totalBags),
       operationDate: this.toApiDateTime(v.operationDate),
       employeeIds: v.employeeIds || [],
-      machineRemarks: v.machineRemarks || '',
+      machineryId: v.machineryId ? Number(v.machineryId) : null,
       remarks: v.remarks || ''
     };
     this.productionService.createOperation(payload).subscribe({

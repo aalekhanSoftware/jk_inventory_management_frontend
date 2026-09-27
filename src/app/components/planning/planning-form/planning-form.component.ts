@@ -116,6 +116,7 @@ export class PlanningFormComponent implements OnInit, OnDestroy {
       id: [itemData?.id || null],
       productId: [itemData?.productId || '', Validators.required],
       plannedQuantity: [itemData?.plannedQuantity || '', [Validators.required, Validators.min(1)]],
+      totalBags: [itemData?.totalBags ?? null, [Validators.min(0)]],
       coatingRequired: [itemData?.coatingRequired || false],
       remarks: [itemData?.remarks || '']
     });
@@ -183,6 +184,7 @@ export class PlanningFormComponent implements OnInit, OnDestroy {
                 id: item.id || null,
                 productId: item.productId,
                 plannedQuantity: item.plannedQuantity,
+                totalBags: item.totalBags ?? null,
                 coatingRequired: !!item.coatingRequired,
                 remarks: item.remarks || ''
               });
@@ -308,6 +310,8 @@ export class PlanningFormComponent implements OnInit, OnDestroy {
       const item: any = {
         productId: Number(v.productId),
         plannedQuantity: Number(v.plannedQuantity),
+        totalBags: v.totalBags === null || v.totalBags === '' || v.totalBags === undefined
+          ? null : Number(v.totalBags),
         coatingRequired: !!v.coatingRequired,
         remarks: v.remarks || ''
       };

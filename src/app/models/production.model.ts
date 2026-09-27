@@ -26,9 +26,13 @@ export interface ProductionOperation {
   outputProductId: number;
   outputProductName?: string;
   quantity: number;
+  // PROCESS_BAGS: optional (informational only).
+  totalBags?: number | null;
   operationDate?: string;
   employeeIds?: number[];
-  machineRemarks?: string;
+  // MACHINERY_MASTER: dropdown-selected machine (replaces machineRemarks).
+  machineryId?: number | null;
+  machineryName?: string;
   powderCoatingProcessId?: number | null;
   transportId?: number | null;
   remarks?: string;

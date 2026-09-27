@@ -1,0 +1,337 @@
+<div class="add-process-container">
+  <button class="btn btn-secondary back-btn" routerLink="/plan-coating" type="button">
+    <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Processes
+  </button>
+
+  <div class="form-card">
+    <div class="card-header">
+      <h1 class="form-title">
+        <i class="fas fa-spray-can" aria-hidden="true"></i> {{ isEditMode ? 'Edit' : 'Add New' }} Plan Coating Process
+      </h1>
+    </div>
+
+    <div class="form-content">
+      <app-loader [show]="loading"></app-loader>
+
+      <form [formGroup]="processForm" (ngSubmit)="onSubmit()" class="process-form" [class.loading]="loading" novalidate>
+        <!-- Customer Selection Section -->
+        <div class="section-card">
+          <h2><strong>Customer Information</strong></h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="customerId">
+                <i class="fas fa-user" aria-hidden="true"></i> <strong>Select Customer</strong> <span class="required" aria-label="required">*</span>
+              </label>
+              <div class="select-group">
+                <app-searchable-select
+                  formControlName="customerId"
+                  [options]="customers"
+                  labelKey="name"
+                  valueKey="id"
+                  [placeholder]="'Select Customer'"
+                  [class.is-invalid]="isFieldInvalid(processForm.get('customerId'))"
+                  id="customerId"
+                  aria-required="true"
+                ></app-searchable-select>
+                <button
+                  type="button"
+                  class="btn-icon refresh"
+                  (click)="refreshCustomers()"
+                  [disabled]="isLoadingCustomers"
+                  title="Refresh Customers"
+                  aria-label="Refresh Customers"
+                >
+                  <i class="fas" [ngClass]="isLoadingCustomers ? 'fa-spinner fa-spin' : 'fa-sync-alt'" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback" *ngIf="isFieldInvalid(processForm.get('customerId'))">
+                {{ getFieldError(processForm.get('customerId'), 'customer') }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items Section -->
+        <div class="section-card items-section" formArrayName="items">
+          <div class="items-header">
+            <h2><i class="fas fa-boxes" aria-hidden="true"></i> <strong>Process Items</strong></h2>
+            <button
+              type="button"
+              class="btn btn-primary add-item-btn"
+              (click)="addItem()"
+              [disabled]="loading"
+              aria-label="Add Item"
+            >
+              <i class="fas fa-plus" aria-hidden="true"></i> Add Item
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table items-table" role="table" aria-label="Process Items">
+              <thead>
+                <tr>
+                  <th scope="col"><strong>Plan</strong></th>
+                  <th scope="col"><strong>Product</strong></th>
+                  <th scope="col"><strong>Quantity</strong></th>
+                  <th scope="col"><strong>Total Bags</strong></th>
+                  <th scope="col"><strong>Unit Price</strong></th>
+                  <th scope="col"><strong>Total Amount</strong></th>
+                  <th scope="col"><strong>Remarks</strong></th>
+                  <th scope="col"><strong>Actions</strong></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of itemsFormArray.controls; let i = index" [formGroupName]="i">
+                  <!-- Plan (optional) -->
+                  <td class="plan-cell">
+                    <div class="form-field-container">
+                      <app-searchable-select
+                        [formControlName]="'planningId'"
+                        [options]="plannings"
+                        labelKey="planningNumber"
+                        valueKey="id"
+                        [placeholder]="'No plan'"
+                        [defaultOption]="{ label: 'No plan', value: '' }"
+                        [searchPlaceholder]="'Search plannings...'"
+                        [attr.id]="'planningId_' + i"
+                      ></app-searchable-select>
+                      <small *ngIf="rowPlanningId(item)" class="plan-hint">Linked: progress auto-updated.</small>
+                      <small *ngIf="balanceForRow(item)" class="balance-hint">{{ balanceForRow(item) }}</small>
+                    </div>
+                  </td>
+
+                  <!-- Product Selection -->
+                  <td>
+                    <div class="form-field-container">
+                      <div class="select-group">
+                        <app-searchable-select
+                          [formControlName]="'productId'"
+                          [options]="rowProductOptions(item)"
+                          [labelKey]="'name'"
+                          [valueKey]="'id'"
+                          [placeholder]="'Select Product'"
+                          [searchPlaceholder]="'Search products...'"
+                          [class.is-invalid]="isItemFieldInvalid(i, 'productId')"
+                          [attr.id]="'productId_' + i"
+                          aria-required="true"
+                        ></app-searchable-select>
+                        <button
+                          type="button"
+                          class="btn-icon refresh"
+                          (click)="refreshProducts(); $event.preventDefault(); $event.stopPropagation()"
+                          [disabled]="isLoadingProducts"
+                          title="Refresh Products"
+                          aria-label="Refresh Products"
+                        >
+                          <i class="fas" [ngClass]="isLoadingProducts ? 'fa-spinner fa-spin' : 'fa-sync-alt'" aria-hidden="true"></i>
+                        </button>
+                      </div>
+                      <div class="invalid-feedback" *ngIf="isItemFieldInvalid(i, 'productId')">
+                        {{ getFieldError(itemsFormArray.at(i).get('productId'), 'product') }}
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Quantity -->
+                  <td>
+                    <input
+                      type="number"
+                      formControlName="quantity"
+                      class="form-control"
+                      [class.is-invalid]="isItemFieldInvalid(i, 'quantity')"
+                      [attr.id]="'quantity_' + i"
+                      min="1"
+                      step="1"
+                      aria-required="true"
+                      [attr.aria-label]="'Quantity for item ' + (i + 1)"
+                    >
+                    <div class="invalid-feedback" *ngIf="isItemFieldInvalid(i, 'quantity')">
+                      {{ getFieldError(itemsFormArray.at(i).get('quantity'), 'quantity') }}
+                    </div>
+                  </td>
+
+                  <!-- Total Bags -->
+                  <td>
+                    <input
+                      type="number"
+                      formControlName="totalBags"
+                      class="form-control"
+                      [class.is-invalid]="isItemFieldInvalid(i, 'totalBags')"
+                      [attr.id]="'totalBags_' + i"
+                      min="1"
+                      step="1"
+                      aria-required="true"
+                      [attr.aria-label]="'Total bags for item ' + (i + 1)"
+                    >
+                    <div class="invalid-feedback" *ngIf="isItemFieldInvalid(i, 'totalBags')">
+                      {{ getFieldError(itemsFormArray.at(i).get('totalBags'), 'total bags') }}
+                    </div>
+                  </td>
+
+                  <!-- Unit Price -->
+                  <td>
+                    <input
+                      type="number"
+                      formControlName="unitPrice"
+                      class="form-control"
+                      [class.is-invalid]="isItemFieldInvalid(i, 'unitPrice')"
+                      [attr.id]="'unitPrice_' + i"
+                      min="0"
+                      step="0.01"
+                      aria-required="true"
+                      [attr.aria-label]="'Unit price for item ' + (i + 1)"
+                    >
+                    <div class="invalid-feedback" *ngIf="isItemFieldInvalid(i, 'unitPrice')">
+                      {{ getFieldError(itemsFormArray.at(i).get('unitPrice'), 'unit price') }}
+                    </div>
+                  </td>
+
+                  <!-- Total Amount (Readonly) -->
+                  <td>
+                    <input
+                      type="text"
+                      formControlName="totalAmount"
+                      class="form-control"
+                      readonly
+                      [attr.id]="'totalAmount_' + i"
+                      [attr.aria-label]="'Total amount for item ' + (i + 1)"
+                    >
+                  </td>
+
+                  <!-- Remarks -->
+                  <td>
+                    <input
+                      type="text"
+                      formControlName="remarks"
+                      class="form-control"
+                      [attr.id]="'remarks_' + i"
+                      placeholder="Optional remarks"
+                      [attr.aria-label]="'Remarks for item ' + (i + 1)"
+                    >
+                  </td>
+
+                  <!-- Actions -->
+                  <td>
+                    <button
+                      type="button"
+                      (click)="removeItem(i); $event.preventDefault(); $event.stopPropagation()"
+                      class="btn btn-sm btn-danger"
+                      [disabled]="loading"
+                      [attr.aria-label]="'Remove item ' + (i + 1)"
+                      [title]="'Remove Item ' + (i + 1)"
+                    >
+                      <i class="fas fa-trash" aria-hidden="true"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="itemsFormArray.length === 0">
+                  <td colspan="8" class="text-center">No items added. Click "Add Item" to get started.</td>
+                </tr>
+              </tbody>
+              <tfoot *ngIf="itemsFormArray.length > 0">
+                <tr>
+                  <td colspan="5" class="text-end"><strong>Grand Total:</strong></td>
+                  <td><strong>{{ getGrandTotal() | number:'1.2-2' }}</strong></td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" (click)="resetForm()" [disabled]="loading" aria-label="Reset Form">
+            <i class="fas fa-undo" aria-hidden="true"></i> Reset
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="processForm.invalid || loading || itemsFormArray.length === 0" aria-label="Save Process">
+            <i class="fas" [ngClass]="loading ? 'fa-spinner fa-spin' : 'fa-save'" aria-hidden="true"></i>
+            {{ loading ? 'Saving...' : 'Save Process' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Returns Section (Edit Mode Only) -->
+  <div class="returns-section card" *ngIf="isEditMode">
+    <div class="returns-header" (click)="toggleReturns()" [class.expanded]="showReturns" role="button" tabindex="0" (keydown.enter)="toggleReturns()" (keydown.space)="toggleReturns(); $event.preventDefault()">
+      <div class="header-content">
+        <i class="fas fa-undo" aria-hidden="true"></i>
+        <h2><strong>Process Returns</strong></h2>
+      </div>
+      <i class="fas" [ngClass]="showReturns ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i>
+    </div>
+
+    <div class="returns-content" [class.expanded]="showReturns">
+      <app-loader [show]="isLoadingReturns"></app-loader>
+
+      <div *ngIf="showReturns">
+        <div *ngFor="let itemControl of itemsFormArray.controls; let itemIndex = index" class="item-returns-section">
+          <ng-container *ngIf="itemControl.get('id')?.value">
+            <div class="item-returns-header">
+              <h3>
+                <strong>Item {{ itemIndex + 1 }}</strong>
+                <span *ngIf="getProductName(itemControl.get('productId')?.value)">
+                  - {{ getProductName(itemControl.get('productId')?.value) }}
+                </span>
+              </h3>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm add-return-btn"
+                (click)="openReturnModal(itemControl.get('id')?.value)"
+                [disabled]="isLoadingReturns"
+                [attr.aria-label]="'Add return for item ' + (itemIndex + 1)"
+              >
+                <i class="fas fa-plus" aria-hidden="true"></i> Add Return
+              </button>
+            </div>
+
+            <div class="table-responsive" *ngIf="loadItemReturns(itemControl.get('id')?.value).length > 0">
+              <table class="table returns-table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col"><strong>Return Quantity</strong></th>
+                    <th scope="col"><strong>Return Date</strong></th>
+                    <th scope="col"><strong>Actions</strong></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let returnItem of loadItemReturns(itemControl.get('id')?.value); let returnIndex = index">
+                    <td>{{ returnIndex + 1 }}</td>
+                    <td><strong>{{ returnItem.returnQuantity }}</strong></td>
+                    <td>{{ returnItem.createdAt | date:'medium' }}</td>
+                    <td class="actions-cell">
+                      <button
+                        type="button"
+                        class="btn btn-icon btn-danger"
+                        (click)="deleteReturn(returnItem.id, itemControl.get('id')?.value)"
+                        [disabled]="isLoadingReturns"
+                        [attr.aria-label]="'Delete return ' + (returnIndex + 1) + ' for item ' + (itemIndex + 1)"
+                        title="Delete Return"
+                      >
+                        <i class="fas fa-trash" aria-hidden="true"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td><strong>Total Returns</strong></td>
+                    <td colspan="3"><strong>{{ getTotalReturnsForItem(itemControl.get('id')?.value) }}</strong></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div *ngIf="loadItemReturns(itemControl.get('id')?.value).length === 0" class="no-returns-message">
+              No returns found for this item.
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-return-modal (returnCreated)="loadAllReturns()"></app-return-modal>
+</div>

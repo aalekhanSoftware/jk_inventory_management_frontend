@@ -57,6 +57,7 @@
             <th>Process</th>
             <th>Input Product</th>
             <th>Quantity</th>
+            <th>Bags</th>
             <th>Machine</th>
             <th>Remarks</th>
           </tr>
@@ -69,11 +70,12 @@
             <td>{{ r.operationType }}</td>
             <td>{{ r.inputProductName || '-' }}</td>
             <td>{{ r.quantity }}</td>
-            <td>{{ r.machineRemarks || '-' }}</td>
+            <td>{{ r.totalBags ?? '-' }}</td>
+            <td>{{ r.machineryName || '-' }}</td>
             <td>{{ r.remarks || '-' }}</td>
           </tr>
           <tr *ngIf="!rows?.length">
-            <td colspan="8" class="text-center">No production found for the selected filters</td>
+            <td colspan="9" class="text-center">No production found for the selected filters</td>
           </tr>
         </tbody>
       </table>

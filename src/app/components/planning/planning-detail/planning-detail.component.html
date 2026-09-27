@@ -7,6 +7,7 @@
     <button [routerLink]="['/production/entry']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-plus"></i> Production Entry</button>
     <button [routerLink]="['/dashboard']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Dashboard</button>
     <button [routerLink]="['/plan-dispatch/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-truck"></i> Dispatch</button>
+    <button [routerLink]="['/plan-coating/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-spray-can"></i> Coating</button>
     <button type="button" class="btn btn-secondary" (click)="exportExcel()"><i class="fas fa-file-excel"></i> Excel</button>
   </div>
 
@@ -43,6 +44,7 @@
           <tr>
             <th>Product</th>
             <th>Planned</th>
+            <th>Bags</th>
             <th>Cutting</th>
             <th>Emboss</th>
             <th>Coating</th>
@@ -59,6 +61,7 @@
             <tr>
               <td>{{ item.productName }} <span class="badge" *ngIf="item.coatingRequired">Coating</span></td>
               <td>{{ item.plannedQuantity }}</td>
+              <td>{{ item.totalBags ?? '-' }}</td>
               <td>{{ item.cuttingQty }}</td>
               <td>{{ item.embossQty }}</td>
               <td>{{ item.coatingRequired ? item.coatingQty : 'N/A' }}</td>
@@ -80,18 +83,20 @@
               </td>
             </tr>
             <tr *ngIf="expandedItemId === item.id">
-              <td colspan="11">
+              <td colspan="12">
                 <div *ngIf="loadingTx[item.id]">Loading transactions…</div>
                 <table class="table inner" *ngIf="transactionsByItem[item.id]">
                   <thead>
-                    <tr><th>Type</th><th>Qty</th><th>Date</th><th>Remarks</th><th>Actions</th></tr>
+                    <tr><th>Type</th><th>Qty</th><th>Bags</th><th>Date</th><th>Machine</th><th>Remarks</th><th>Actions</th></tr>
                   </thead>
                   <tbody>
                     <tr *ngFor="let op of transactionsByItem[item.id].operations">
                       <td>{{ op.operationType }}</td>
                       <td>{{ op.quantity }}</td>
+                      <td>{{ op.totalBags ?? '-' }}</td>
                       <td>{{ op.operationDate ? (op.operationDate | date:'dd-MM-yyyy HH:mm') : (op.createdAt | date:'dd-MM-yyyy HH:mm') }}</td>
-                      <td>{{ op.remarks || op.machineRemarks || '-' }}</td>
+                      <td>{{ op.machineryName || '-' }}</td>
+                      <td>{{ op.remarks || '-' }}</td>
                       <td class="actions">
                         <button class="btn-icon edit" [routerLink]="['/production/edit', encId(op.id)]" title="Edit entry (quantity/date/remarks)">
                           <i class="fas fa-edit"></i>
@@ -102,7 +107,7 @@
                       </td>
                     </tr>
                     <tr *ngIf="!transactionsByItem[item.id].operations?.length">
-                      <td colspan="5" class="text-center">No transactions yet</td>
+                      <td colspan="7" class="text-center">No transactions yet</td>
                     </tr>
                   </tbody>
                 </table>

@@ -140,13 +140,13 @@ export class PlanningDetailComponent implements OnInit {
       this.snackbar.error('No data to export');
       return;
     }
-    const headers = ['Product', 'Planned', 'Cutting', 'Emboss', 'Coating', 'Packing', 'Dispatch', 'Remaining', 'Status'];
+    const headers = ['Product', 'Planned', 'Bags', 'Cutting', 'Emboss', 'Coating', 'Packing', 'Dispatch', 'Remaining', 'Status'];
     const rows = this.planning.items.map((item: any) => [
-      item.productName, item.plannedQuantity, item.cuttingQty, item.embossQty,
+      item.productName, item.plannedQuantity, item.totalBags ?? '', item.cuttingQty, item.embossQty,
       item.coatingRequired ? item.coatingQty : 'N/A', item.packingQty, item.dispatchQty,
       item.remainingQty, this.itemStatusLabel(item.itemStatus)
     ]);
-    rows.push(['TOTAL', this.planning.totalPlanned, this.planning.cuttingQty, this.planning.embossQty,
+    rows.push(['TOTAL', this.planning.totalPlanned, '', this.planning.cuttingQty, this.planning.embossQty,
       this.planning.coatingQty, this.planning.packingQty, this.planning.dispatchQty, this.planning.remainingQty, '']);
     downloadCsv(`planning-${this.planning.planningNumber || this.planning.id}`, headers, rows);
     this.snackbar.success('Excel sheet downloaded successfully');

@@ -1,0 +1,50 @@
+<div class="machinery-form-container">
+  <app-loader [show]="isLoading"></app-loader>
+
+  <div class="form-card">
+    <div class="card-header">
+      <h2 class="form-title">
+        <i class="fas fa-cogs"></i>
+        {{ isEditMode ? 'Edit Machinery' : 'Create Machinery' }}
+      </h2>
+    </div>
+
+    <form [formGroup]="machineryForm" (ngSubmit)="onSubmit($event)" class="machinery-form" novalidate>
+      <div class="section-card">
+        <h3><i class="fas fa-cog"></i> Machine Details</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Name <span class="required">*</span></label>
+            <input type="text" formControlName="name" class="form-control" [class.is-invalid]="isFieldInvalid('name')" placeholder="e.g. Cutting Machine 1">
+            <div class="invalid-feedback" *ngIf="isFieldInvalid('name')">Name is required</div>
+          </div>
+          <div class="form-group">
+            <label>Code</label>
+            <input type="text" formControlName="code" class="form-control" placeholder="e.g. M/C-2 (optional)">
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select formControlName="status" class="form-control">
+              <option value="A">Active</option>
+              <option value="I">Inactive</option>
+            </select>
+          </div>
+          <div class="form-group remarks-group">
+            <label>Remarks</label>
+            <textarea formControlName="remarks" class="form-control" rows="3" placeholder="Optional note"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" routerLink="/machinery">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="machineryForm.invalid || isLoading">
+          <i class="fas" [ngClass]="isLoading ? 'fa-spinner fa-spin' : (isEditMode ? 'fa-save' : 'fa-plus')"></i>
+          {{ isLoading ? 'Processing...' : (isEditMode ? 'Update' : 'Create') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

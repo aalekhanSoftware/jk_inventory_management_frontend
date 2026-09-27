@@ -66247,77 +66247,83 @@ function HeaderComponent_div_7_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(17, "li")(18, "a", 18);
     \u0275\u0275text(19, "Employee");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(20, "li")(21, "a", 19);
+    \u0275\u0275text(22, "Machinery");
     \u0275\u0275elementEnd()()()();
-    \u0275\u0275elementStart(20, "li", 10)(21, "a", 11);
-    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_a_click_21_listener($event) {
+    \u0275\u0275elementStart(23, "li", 10)(24, "a", 11);
+    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_a_click_24_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.toggleTransactionMenu($event));
     });
-    \u0275\u0275element(22, "i", 19);
-    \u0275\u0275text(23, " Transaction ");
-    \u0275\u0275element(24, "i", 13);
+    \u0275\u0275element(25, "i", 20);
+    \u0275\u0275text(26, " Transaction ");
+    \u0275\u0275element(27, "i", 13);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(25, "ul", 14)(26, "li")(27, "a", 20);
-    \u0275\u0275text(28, "Purchase");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "li")(30, "a", 21);
-    \u0275\u0275text(31, "Sale");
+    \u0275\u0275elementStart(28, "ul", 14)(29, "li")(30, "a", 21);
+    \u0275\u0275text(31, "Purchase");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(32, "li")(33, "a", 22);
-    \u0275\u0275text(34, "Product Wise Profit");
+    \u0275\u0275text(34, "Sale");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(35, "li")(36, "a", 23);
-    \u0275\u0275text(37, "Daily Profit");
-    \u0275\u0275elementEnd()()()();
-    \u0275\u0275elementStart(38, "li")(39, "a", 24);
-    \u0275\u0275text(40, "Coating");
+    \u0275\u0275text(37, "Product Wise Profit");
     \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(38, "li")(39, "a", 24);
+    \u0275\u0275text(40, "Daily Profit");
+    \u0275\u0275elementEnd()()()();
     \u0275\u0275elementStart(41, "li")(42, "a", 25);
-    \u0275\u0275text(43, "Transport");
+    \u0275\u0275text(43, "Coating");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(44, "li")(45, "a", 26);
-    \u0275\u0275text(46, "Quotation");
+    \u0275\u0275text(46, "Transport");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(47, "li")(48, "a", 27);
-    \u0275\u0275text(49, "Employee Order");
+    \u0275\u0275text(49, "Quotation");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(50, "li", 10)(51, "a", 11);
-    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_a_click_51_listener($event) {
+    \u0275\u0275elementStart(50, "li")(51, "a", 28);
+    \u0275\u0275text(52, "Employee Order");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(53, "li", 10)(54, "a", 11);
+    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_a_click_54_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.togglePlanningMenu($event));
     });
-    \u0275\u0275element(52, "i", 28);
-    \u0275\u0275text(53, " Planning & Production ");
-    \u0275\u0275element(54, "i", 13);
+    \u0275\u0275element(55, "i", 29);
+    \u0275\u0275text(56, " Planning & Production ");
+    \u0275\u0275element(57, "i", 13);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(55, "ul", 14)(56, "li")(57, "a", 29);
-    \u0275\u0275text(58, "Planning");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(59, "li")(60, "a", 30);
-    \u0275\u0275text(61, "Production");
+    \u0275\u0275elementStart(58, "ul", 14)(59, "li")(60, "a", 30);
+    \u0275\u0275text(61, "Planning");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(62, "li")(63, "a", 31);
-    \u0275\u0275text(64, "Dashboard");
+    \u0275\u0275text(64, "Production");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(65, "li")(66, "a", 32);
-    \u0275\u0275text(67, "Stock Moves");
+    \u0275\u0275text(67, "Dashboard");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(68, "li")(69, "a", 33);
-    \u0275\u0275text(70, "Date Report");
+    \u0275\u0275text(70, "Stock Moves");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(71, "li")(72, "a", 34);
-    \u0275\u0275text(73, "Plan Dispatch");
+    \u0275\u0275text(73, "Date Report");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(74, "li")(75, "a", 35);
+    \u0275\u0275text(76, "Plan Dispatch");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(77, "li")(78, "a", 36);
+    \u0275\u0275text(79, "Plan Coating");
     \u0275\u0275elementEnd()()()()();
-    \u0275\u0275elementStart(74, "div", 35)(75, "button", 36);
-    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_button_click_75_listener() {
+    \u0275\u0275elementStart(80, "div", 37)(81, "button", 38);
+    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_button_click_81_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.logout());
     });
-    \u0275\u0275element(76, "i", 37);
-    \u0275\u0275text(77, " Logout ");
+    \u0275\u0275element(82, "i", 39);
+    \u0275\u0275text(83, " Logout ");
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -66327,7 +66333,7 @@ function HeaderComponent_div_7_Template(rf, ctx) {
     \u0275\u0275classProp("active", ctx_r1.isMasterActive());
     \u0275\u0275advance(4);
     \u0275\u0275classProp("show", ctx_r1.showMasterMenu);
-    \u0275\u0275advance(14);
+    \u0275\u0275advance(17);
     \u0275\u0275classProp("active", ctx_r1.isTransactionActive());
     \u0275\u0275advance(4);
     \u0275\u0275classProp("show", ctx_r1.showTransactionMenu);
@@ -66395,7 +66401,7 @@ var HeaderComponent = class _HeaderComponent {
   }
   isMasterActive() {
     const currentUrl = this.router.url;
-    return ["/category", "/product", "/customer", "/employee"].some((path) => currentUrl.includes(path));
+    return ["/category", "/product", "/customer", "/employee", "/machinery"].some((path) => currentUrl.includes(path));
   }
   isTransactionActive() {
     const currentUrl = this.router.url;
@@ -66423,14 +66429,14 @@ var HeaderComponent = class _HeaderComponent {
           return ctx.onDocumentClick($event);
         }, false, \u0275\u0275resolveDocument);
       }
-    }, decls: 8, vars: 2, consts: [[1, "header"], [1, "nav-container"], [1, "nav-top"], [1, "logo"], ["class", "mobile-menu-toggle", 3, "click", 4, "ngIf"], ["class", "nav-content", 3, "show", 4, "ngIf"], [1, "mobile-menu-toggle", 3, "click"], [1, "fas"], [1, "nav-content"], [1, "nav-links"], [1, "dropdown"], [3, "click"], [1, "fas", "fa-th-large"], [1, "fas", "fa-chevron-down"], [1, "dropdown-menu"], ["routerLink", "/category", "routerLinkActive", "active"], ["routerLink", "/product", "routerLinkActive", "active"], ["routerLink", "/customer", "routerLinkActive", "active"], ["routerLink", "/employee", "routerLinkActive", "active"], [1, "fas", "fa-exchange-alt"], ["routerLink", "/purchase", "routerLinkActive", "active"], ["routerLink", "/sale", "routerLinkActive", "active"], ["routerLink", "/profit", "routerLinkActive", "active"], ["routerLink", "/daily-profit", "routerLinkActive", "active"], ["routerLink", "/powder-coating-process", "routerLinkActive", "active"], ["routerLink", "/transport", "routerLinkActive", "active"], ["routerLink", "/quotation", "routerLinkActive", "active"], ["routerLink", "/employee-order", "routerLinkActive", "active"], [1, "fas", "fa-industry"], ["routerLink", "/planning", "routerLinkActive", "active"], ["routerLink", "/production/entry", "routerLinkActive", "active"], ["routerLink", "/dashboard", "routerLinkActive", "active"], ["routerLink", "/stock-movements", "routerLinkActive", "active"], ["routerLink", "/production/report", "routerLinkActive", "active"], ["routerLink", "/plan-dispatch", "routerLinkActive", "active"], [1, "nav-actions"], [1, "btn", "btn-logout", 3, "click"], [1, "fas", "fa-sign-out-alt"]], template: function HeaderComponent_Template(rf, ctx) {
+    }, decls: 8, vars: 2, consts: [[1, "header"], [1, "nav-container"], [1, "nav-top"], [1, "logo"], ["class", "mobile-menu-toggle", 3, "click", 4, "ngIf"], ["class", "nav-content", 3, "show", 4, "ngIf"], [1, "mobile-menu-toggle", 3, "click"], [1, "fas"], [1, "nav-content"], [1, "nav-links"], [1, "dropdown"], [3, "click"], [1, "fas", "fa-th-large"], [1, "fas", "fa-chevron-down"], [1, "dropdown-menu"], ["routerLink", "/category", "routerLinkActive", "active"], ["routerLink", "/product", "routerLinkActive", "active"], ["routerLink", "/customer", "routerLinkActive", "active"], ["routerLink", "/employee", "routerLinkActive", "active"], ["routerLink", "/machinery", "routerLinkActive", "active"], [1, "fas", "fa-exchange-alt"], ["routerLink", "/purchase", "routerLinkActive", "active"], ["routerLink", "/sale", "routerLinkActive", "active"], ["routerLink", "/profit", "routerLinkActive", "active"], ["routerLink", "/daily-profit", "routerLinkActive", "active"], ["routerLink", "/powder-coating-process", "routerLinkActive", "active"], ["routerLink", "/transport", "routerLinkActive", "active"], ["routerLink", "/quotation", "routerLinkActive", "active"], ["routerLink", "/employee-order", "routerLinkActive", "active"], [1, "fas", "fa-industry"], ["routerLink", "/planning", "routerLinkActive", "active"], ["routerLink", "/production/entry", "routerLinkActive", "active"], ["routerLink", "/dashboard", "routerLinkActive", "active"], ["routerLink", "/stock-movements", "routerLinkActive", "active"], ["routerLink", "/production/report", "routerLinkActive", "active"], ["routerLink", "/plan-dispatch", "routerLinkActive", "active"], ["routerLink", "/plan-coating", "routerLinkActive", "active"], [1, "nav-actions"], [1, "btn", "btn-logout", 3, "click"], [1, "fas", "fa-sign-out-alt"]], template: function HeaderComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "header", 0)(1, "nav", 1)(2, "div", 2)(3, "div", 3)(4, "span");
         \u0275\u0275text(5, "Inventory System");
         \u0275\u0275elementEnd()();
         \u0275\u0275template(6, HeaderComponent_button_6_Template, 2, 4, "button", 4);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(7, HeaderComponent_div_7_Template, 78, 14, "div", 5);
+        \u0275\u0275template(7, HeaderComponent_div_7_Template, 84, 14, "div", 5);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
@@ -78581,6 +78587,1808 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchFormComponent, { className: "PlanDispatchFormComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-form\\plan-dispatch-form.component.ts", lineNumber: 49 });
 })();
 
+// src/app/services/plan-coating.service.ts
+var PlanCoatingService = class _PlanCoatingService {
+  constructor(http) {
+    this.http = http;
+    this.apiUrl = `${environment.apiUrl}/api/plan-coating`;
+  }
+  createProcess(data) {
+    return this.http.post(`${this.apiUrl}/create`, data);
+  }
+  updateProcess(data) {
+    return this.http.post(`${this.apiUrl}/update`, data);
+  }
+  deleteProcess(id) {
+    return this.http.post(`${this.apiUrl}/delete`, { id });
+  }
+  searchProcesses(params) {
+    return this.http.post(`${this.apiUrl}/search`, params);
+  }
+  getDetail(id) {
+    return this.http.post(`${this.apiUrl}/detail`, { id });
+  }
+  getItemBalances(planningId) {
+    return this.http.post(`${this.apiUrl}/item-balances`, { planningId });
+  }
+  static {
+    this.\u0275fac = function PlanCoatingService_Factory(t) {
+      return new (t || _PlanCoatingService)(\u0275\u0275inject(HttpClient));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _PlanCoatingService, factory: _PlanCoatingService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// src/app/components/plan-coating/plan-coating-list/plan-coating-list.component.ts
+var _c016 = () => ({ label: "All Customers", value: "" });
+var _c16 = (a0) => ["/plan-coating/edit", a0];
+function PlanCoatingListComponent_div_26_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 31)(1, "button", 32);
+    \u0275\u0275listener("click", function PlanCoatingListComponent_div_26_Template_button_click_1_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.generatePdf());
+    });
+    \u0275\u0275element(2, "i", 11);
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275property("disabled", ctx_r1.isGeneratingPdf);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", ctx_r1.isGeneratingPdf ? "fa-spinner fa-spin" : "fa-file-pdf");
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r1.isGeneratingPdf ? "Generating..." : "Generate PDF", " ");
+  }
+}
+function PlanCoatingListComponent_tr_64_span_7_span_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 42);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const pn_r5 = ctx.$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(pn_r5);
+  }
+}
+function PlanCoatingListComponent_tr_64_span_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span");
+    \u0275\u0275template(1, PlanCoatingListComponent_tr_64_span_7_span_1_Template, 2, 1, "span", 41);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const process_r4 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275property("ngForOf", process_r4.planningNumbers);
+  }
+}
+function PlanCoatingListComponent_tr_64_ng_template_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 43);
+    \u0275\u0275text(1, "Existing");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanCoatingListComponent_tr_64_div_15_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 44)(1, "small");
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const process_r4 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r1.getItemNames(process_r4));
+  }
+}
+function PlanCoatingListComponent_tr_64_Conditional_38_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 45);
+    \u0275\u0275listener("click", function PlanCoatingListComponent_tr_64_Conditional_38_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r6);
+      const process_r4 = \u0275\u0275nextContext().$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.deleteProcess(process_r4.id));
+    });
+    \u0275\u0275element(1, "i", 46);
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanCoatingListComponent_tr_64_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr")(1, "td", 23)(2, "div", 24)(3, "input", 33);
+    \u0275\u0275listener("click", function PlanCoatingListComponent_tr_64_Template_input_click_3_listener($event) {
+      const process_r4 = \u0275\u0275restoreView(_r3).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.toggleProcessSelection(process_r4, $event));
+    });
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(4, "td");
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "td");
+    \u0275\u0275template(7, PlanCoatingListComponent_tr_64_span_7_Template, 2, 1, "span", 34)(8, PlanCoatingListComponent_tr_64_ng_template_8_Template, 2, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "td")(11, "div", 35)(12, "strong");
+    \u0275\u0275text(13);
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(14, " item(s) ");
+    \u0275\u0275template(15, PlanCoatingListComponent_tr_64_div_15_Template, 3, 1, "div", 36);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(16, "td")(17, "strong");
+    \u0275\u0275text(18);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(19, "td")(20, "strong");
+    \u0275\u0275text(21);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(22, "td")(23, "strong");
+    \u0275\u0275text(24);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(25, "td")(26, "strong");
+    \u0275\u0275text(27);
+    \u0275\u0275pipe(28, "number");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(29, "td")(30, "span");
+    \u0275\u0275text(31);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(32, "td");
+    \u0275\u0275text(33);
+    \u0275\u0275pipe(34, "date");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(35, "td", 37)(36, "button", 38);
+    \u0275\u0275element(37, "i", 39);
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(38, PlanCoatingListComponent_tr_64_Conditional_38_Template, 2, 0, "button", 40);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const process_r4 = ctx.$implicit;
+    const i_r7 = ctx.index;
+    const plainRow_r8 = \u0275\u0275reference(9);
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(3);
+    \u0275\u0275property("checked", ctx_r1.selectedProcesses.has(process_r4.id))("disabled", ctx_r1.isCheckboxDisabled(process_r4));
+    \u0275\u0275attribute("aria-label", "Select process " + (ctx_r1.startIndex + i_r7 + 1));
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r1.startIndex + i_r7 + 1);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", process_r4.planningNumbers == null ? null : process_r4.planningNumbers.length)("ngIfElse", plainRow_r8);
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate(ctx_r1.getItemCount(process_r4));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r1.getItemNames(process_r4));
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(process_r4.customerName);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(ctx_r1.getTotalQuantity(process_r4));
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(ctx_r1.getTotalBags(process_r4));
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(28, 18, ctx_r1.getTotalAmount(process_r4), "1.2-2"));
+    \u0275\u0275advance(3);
+    \u0275\u0275classMap("status-badge " + (ctx_r1.isProcessCompleted(process_r4) ? "completed" : "active"));
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r1.isProcessCompleted(process_r4) ? "Completed" : "Active", " ");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(34, 21, process_r4.createdAt, "medium"));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(24, _c16, ctx_r1.encId(process_r4.id)));
+    \u0275\u0275advance(2);
+    \u0275\u0275conditional(38, ctx_r1.isProcessCompleted(process_r4) ? 38 : -1);
+  }
+}
+function PlanCoatingListComponent_app_pagination_66_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r9 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 47);
+    \u0275\u0275listener("pageChange", function PlanCoatingListComponent_app_pagination_66_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r9);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageChange($event));
+    })("pageSizeChange", function PlanCoatingListComponent_app_pagination_66_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r9);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageSizeChange($event));
+    });
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r1.currentPage)("pageSize", ctx_r1.pageSize)("totalElements", ctx_r1.totalElements)("pageSizeOptions", ctx_r1.pageSizeOptions);
+  }
+}
+var PlanCoatingListComponent = class _PlanCoatingListComponent {
+  constructor(planCoatingService, powderCoatingService, fb, snackbar, customerService, encryptionService) {
+    this.planCoatingService = planCoatingService;
+    this.powderCoatingService = powderCoatingService;
+    this.fb = fb;
+    this.snackbar = snackbar;
+    this.customerService = customerService;
+    this.encryptionService = encryptionService;
+    this.processes = [];
+    this.isLoading = false;
+    this.customers = [];
+    this.isLoadingCustomers = false;
+    this.selectedProcesses = /* @__PURE__ */ new Set();
+    this.isGeneratingPdf = false;
+    this.currentPage = 0;
+    this.pageSize = 10;
+    this.pageSizeOptions = [5, 10, 25, 50, 100];
+    this.totalPages = 0;
+    this.totalElements = 0;
+    this.startIndex = 0;
+    this.endIndex = 0;
+    this.initializeForm();
+  }
+  ngOnInit() {
+    this.loadProcesses();
+    this.loadCustomers();
+  }
+  /** Encrypted id for URLs (medonix pattern); numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
+  }
+  initializeForm() {
+    this.searchForm = this.fb.group({
+      search: [""],
+      customerId: [""]
+    });
+  }
+  loadProcesses() {
+    this.isLoading = true;
+    this.selectedCustomerId = void 0;
+    this.selectedProcesses.clear();
+    const params = __spreadProps(__spreadValues({}, this.searchForm.value), {
+      currentPage: this.currentPage,
+      perPageRecord: this.pageSize,
+      sortBy: "id",
+      sortDir: "desc"
+    });
+    this.planCoatingService.searchProcesses(params).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.processes = response.data.content;
+          this.totalPages = response.data.totalPages;
+          this.totalElements = response.data.totalElements;
+          this.updatePaginationIndexes();
+        }
+        this.isLoading = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to load processes");
+        this.isLoading = false;
+      }
+    });
+  }
+  updatePaginationIndexes() {
+    this.startIndex = this.currentPage * this.pageSize;
+    this.endIndex = Math.min((this.currentPage + 1) * this.pageSize, this.totalElements);
+  }
+  onSearch() {
+    this.currentPage = 0;
+    this.loadProcesses();
+  }
+  onPageChange(page) {
+    this.currentPage = page;
+    this.loadProcesses();
+  }
+  onPageSizeChange(newSize) {
+    this.pageSize = newSize;
+    this.currentPage = 0;
+    this.loadProcesses();
+  }
+  getPageNumbers() {
+    const pageNumbers = [];
+    const totalPages = this.totalPages;
+    const currentPage = this.currentPage + 1;
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 5; i++) {
+          pageNumbers.push(i);
+        }
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+          pageNumbers.push(i);
+        }
+      }
+    }
+    return pageNumbers;
+  }
+  deleteProcess(id) {
+    if (confirm("Are you sure you want to delete this process? Linked plan progress will be reversed.")) {
+      this.planCoatingService.deleteProcess(id).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.snackbar.success("Process deleted successfully");
+            this.loadProcesses();
+          }
+        },
+        error: () => {
+          this.snackbar.error("Failed to delete process");
+        }
+      });
+    }
+  }
+  resetForm() {
+    this.searchForm.reset();
+    this.currentPage = 0;
+    this.loadProcesses();
+  }
+  loadCustomers() {
+    this.isLoadingCustomers = true;
+    this.customerService.getCustomers({ status: "A" }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.customers = response.data;
+        }
+        this.isLoadingCustomers = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to load customers");
+        this.isLoadingCustomers = false;
+      }
+    });
+  }
+  refreshCustomers() {
+    this.isLoadingCustomers = true;
+    this.customerService.refreshCustomers().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.customers = response.data;
+          this.snackbar.success("Customers refreshed successfully");
+        }
+        this.isLoadingCustomers = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to refresh customers");
+        this.isLoadingCustomers = false;
+      }
+    });
+  }
+  isCheckboxDisabled(process2) {
+    return this.selectedCustomerId !== void 0 && this.selectedCustomerId !== process2.customerId;
+  }
+  getTotalQuantity(process2) {
+    if (!process2.items || process2.items.length === 0)
+      return 0;
+    return process2.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  }
+  getTotalBags(process2) {
+    if (!process2.items || process2.items.length === 0)
+      return 0;
+    return process2.items.reduce((sum, item) => sum + (item.totalBags || 0), 0);
+  }
+  getTotalAmount(process2) {
+    if (!process2.items || process2.items.length === 0)
+      return 0;
+    return process2.items.reduce((sum, item) => {
+      const itemTotal = item.totalAmount || item.quantity * item.unitPrice;
+      return sum + itemTotal;
+    }, 0);
+  }
+  isProcessCompleted(process2) {
+    if (!process2.items || process2.items.length === 0)
+      return false;
+    return process2.items.every((item) => (item.remainingQuantity || item.quantity) === 0);
+  }
+  getItemCount(process2) {
+    return process2.items?.length || 0;
+  }
+  getItemNames(process2) {
+    if (!process2.items || process2.items.length === 0)
+      return "";
+    const names = process2.items.map((item) => item.productName || "Unknown").filter(Boolean);
+    if (names.length === 0)
+      return "";
+    if (names.length === 1)
+      return names[0];
+    if (names.length <= 3)
+      return names.join(", ");
+    return `${names.slice(0, 3).join(", ")} +${names.length - 3} more`;
+  }
+  toggleProcessSelection(process2, event2) {
+    if (this.isCheckboxDisabled(process2)) {
+      event2.preventDefault();
+      this.snackbar.error("You can select records of only one customer");
+      return;
+    }
+    if (this.selectedProcesses.size === 0) {
+      this.selectedCustomerId = process2.customerId;
+      this.selectedProcesses.add(process2.id);
+    } else {
+      if (this.selectedProcesses.has(process2.id)) {
+        this.selectedProcesses.delete(process2.id);
+        if (this.selectedProcesses.size === 0) {
+          this.selectedCustomerId = void 0;
+        }
+      } else {
+        this.selectedProcesses.add(process2.id);
+      }
+    }
+  }
+  generatePdf() {
+    if (!this.selectedCustomerId || this.selectedProcesses.size === 0) {
+      this.snackbar.error("Please select at least one process");
+      return;
+    }
+    this.isGeneratingPdf = true;
+    const data = {
+      customerId: this.selectedCustomerId,
+      processIds: Array.from(this.selectedProcesses)
+    };
+    this.powderCoatingService.generatePdf(data).subscribe({
+      next: (response) => {
+        const url = window.URL.createObjectURL(response.blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = response.filename;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        this.isGeneratingPdf = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to generate PDF");
+        this.isGeneratingPdf = false;
+      }
+    });
+  }
+  static {
+    this.\u0275fac = function PlanCoatingListComponent_Factory(t) {
+      return new (t || _PlanCoatingListComponent)(\u0275\u0275directiveInject(PlanCoatingService), \u0275\u0275directiveInject(PowderCoatingService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(EncryptionService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanCoatingListComponent, selectors: [["app-plan-coating-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 67, vars: 11, consts: [["plainRow", ""], [1, "process-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group", "search-input"], ["type", "text", "formControlName", "search", "placeholder", "Search by customer...", 1, "form-control"], [1, "form-group", "customer-select"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "add-process-btn"], ["routerLink", "/plan-coating/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "processes-list", "card"], ["class", "table-actions", 4, "ngIf"], [1, "table-responsive"], [1, "table"], [1, "select-column"], [1, "checkbox-wrapper"], ["type", "checkbox", "disabled", ""], ["scope", "col"], ["scope", "col", 1, "actions-cell"], [4, "ngFor", "ngForOf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "table-actions"], [1, "btn", "btn-primary", 3, "click", "disabled"], ["type", "checkbox", 3, "click", "checked", "disabled"], [4, "ngIf", "ngIfElse"], [1, "items-info"], ["class", "item-names", 4, "ngIf"], [1, "actions-cell"], ["title", "Edit Process", "aria-label", "Edit Process", 1, "btn", "btn-icon", "btn-primary", 3, "routerLink"], ["aria-hidden", "true", 1, "fas", "fa-edit"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger"], ["class", "plan-badge", 4, "ngFor", "ngForOf"], [1, "plan-badge"], [1, "existing-badge"], [1, "item-names"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger", 3, "click"], ["aria-hidden", "true", 1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PlanCoatingListComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 1);
+        \u0275\u0275element(1, "app-loader", 2);
+        \u0275\u0275elementStart(2, "div", 3)(3, "h2");
+        \u0275\u0275text(4, "Search Plan Coating Processes");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(5, "form", 4);
+        \u0275\u0275listener("ngSubmit", function PlanCoatingListComponent_Template_form_ngSubmit_5_listener() {
+          return ctx.onSearch();
+        });
+        \u0275\u0275elementStart(6, "div", 5)(7, "div", 6);
+        \u0275\u0275element(8, "input", 7);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(9, "div", 8);
+        \u0275\u0275element(10, "app-searchable-select", 9);
+        \u0275\u0275elementStart(11, "button", 10);
+        \u0275\u0275listener("click", function PlanCoatingListComponent_Template_button_click_11_listener() {
+          return ctx.refreshCustomers();
+        });
+        \u0275\u0275element(12, "i", 11);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(13, "button", 12);
+        \u0275\u0275element(14, "i", 13);
+        \u0275\u0275text(15, " Search ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(16, "button", 14);
+        \u0275\u0275listener("click", function PlanCoatingListComponent_Template_button_click_16_listener() {
+          return ctx.resetForm();
+        });
+        \u0275\u0275element(17, "i", 15);
+        \u0275\u0275text(18, " Reset ");
+        \u0275\u0275elementEnd()()()();
+        \u0275\u0275elementStart(19, "div", 16)(20, "button", 17);
+        \u0275\u0275element(21, "i", 18);
+        \u0275\u0275text(22, " Add New Process ");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(23, "div", 19)(24, "h2");
+        \u0275\u0275text(25, "Plan Coating Processes");
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(26, PlanCoatingListComponent_div_26_Template, 4, 3, "div", 20);
+        \u0275\u0275elementStart(27, "div", 21)(28, "table", 22)(29, "thead")(30, "tr")(31, "th", 23)(32, "div", 24);
+        \u0275\u0275element(33, "input", 25);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(34, "th", 26);
+        \u0275\u0275text(35, "#");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(36, "th", 26)(37, "strong");
+        \u0275\u0275text(38, "Planning");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(39, "th", 26)(40, "strong");
+        \u0275\u0275text(41, "Items");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(42, "th", 26)(43, "strong");
+        \u0275\u0275text(44, "Customer");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(45, "th", 26)(46, "strong");
+        \u0275\u0275text(47, "Total Quantity");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(48, "th", 26)(49, "strong");
+        \u0275\u0275text(50, "Total Bags");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(51, "th", 26)(52, "strong");
+        \u0275\u0275text(53, "Total Amount");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(54, "th", 26)(55, "strong");
+        \u0275\u0275text(56, "Status");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(57, "th", 26)(58, "strong");
+        \u0275\u0275text(59, "Created At");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(60, "th", 27)(61, "strong");
+        \u0275\u0275text(62, "Actions");
+        \u0275\u0275elementEnd()()()();
+        \u0275\u0275elementStart(63, "tbody");
+        \u0275\u0275template(64, PlanCoatingListComponent_tr_64_Template, 39, 26, "tr", 28);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(65, "div", 29);
+        \u0275\u0275template(66, PlanCoatingListComponent_app_pagination_66_Template, 1, 4, "app-pagination", 30);
+        \u0275\u0275elementEnd()()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance();
+        \u0275\u0275property("show", ctx.isLoading);
+        \u0275\u0275advance(4);
+        \u0275\u0275property("formGroup", ctx.searchForm);
+        \u0275\u0275advance(5);
+        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(10, _c016))("searchPlaceholder", "Search customers...");
+        \u0275\u0275advance();
+        \u0275\u0275property("disabled", ctx.isLoadingCustomers);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
+        \u0275\u0275advance(14);
+        \u0275\u0275property("ngIf", ctx.selectedProcesses.size > 0);
+        \u0275\u0275advance(38);
+        \u0275\u0275property("ngForOf", ctx.processes);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ctx.totalPages > 0);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgClass,
+      NgForOf,
+      NgIf,
+      DecimalPipe,
+      DatePipe,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      DefaultValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      FormGroupDirective,
+      FormControlName,
+      LoaderComponent,
+      SearchableSelectComponent,
+      FormsModule,
+      RouterLink,
+      PaginationComponent
+    ], styles: ['\n\n.process-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  position: relative;\n  min-height: 200px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n  background: white;\n  border-radius: var(--border-radius);\n  box-shadow: var(--card-shadow);\n  padding: 1.5rem;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 1.5rem;\n  color: var(--text-primary);\n  font-size: 1.25rem;\n  font-weight: 500;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  flex-wrap: wrap;\n  align-items: flex-start;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 200px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.search-input[_ngcontent-%COMP%] {\n  max-width: 300px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  padding: 8px;\n  cursor: pointer;\n  border-radius: 6px;\n  color: var(--secondary);\n  background-color: rgba(var(--secondary-rgb), 0.1);\n  transition: all 0.2s ease;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled), .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--secondary);\n  color: white;\n  transform: translateY(-1px);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active:not(:disabled), .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active:not(:disabled) {\n  transform: translateY(0);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled, .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.5;\n  cursor: not-allowed;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 16px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%] {\n  height: 30px;\n  padding: 0 1.5rem;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  white-space: nowrap;\n  background: var(--primary);\n  color: white;\n  border: none;\n  border-radius: var(--border-radius);\n  transition: all 0.2s ease;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%]:hover {\n  transform: scale(1.02);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%] {\n  min-width: 1200px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  min-width: 120px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th.select-column[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td.select-column[_ngcontent-%COMP%] {\n  width: 40px;\n  min-width: 40px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th.actions-cell[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td.actions-cell[_ngcontent-%COMP%] {\n  width: 120px;\n  min-width: 120px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%] {\n  white-space: normal;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%]   .item-names[_ngcontent-%COMP%] {\n  margin-top: 0.25rem;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%]   .item-names[_ngcontent-%COMP%]   small[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.875rem;\n  display: block;\n}\n@media (max-width: 768px) {\n  .process-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n    min-width: unset;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.search-input[_ngcontent-%COMP%] {\n    max-width: unset;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n    padding: 6px;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n    font-size: 14px;\n  }\n}\n.product-select-group[_ngcontent-%COMP%] {\n  gap: 0.5rem;\n  align-items: stretch;\n}\n.product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  color: var(--primary);\n  width: 30px;\n  height: 30px;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.form-control[_ngcontent-%COMP%] {\n  width: 90%;\n  padding: 0.5rem 1rem;\n  border-radius: 4px;\n  background: white;\n  color: var(--text-primary);\n  transition: border-color 0.2s ease;\n}\n.form-control[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);\n}\n.form-control[_ngcontent-%COMP%]::placeholder {\n  color: var(--text-secondary);\n}\n.actions-cell[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  width: 100px;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  width: 32px;\n  height: 32px;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin: 0 0.25rem;\n  border-radius: var(--border-radius);\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-primary[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  border-color: var(--primary);\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-danger[_ngcontent-%COMP%] {\n  background-color: #dc3545;\n  border-color: #dc3545;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-danger[_ngcontent-%COMP%]:hover {\n  background-color: #c82333;\n  border-color: #bd2130;\n}\n.table-actions[_ngcontent-%COMP%] {\n  margin: 1rem 0;\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.5rem;\n}\n.table-actions[_ngcontent-%COMP%]   .btn-primary[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.5rem 1rem;\n}\n.table-actions[_ngcontent-%COMP%]   .btn-primary[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1rem;\n}\n.select-column[_ngcontent-%COMP%] {\n  width: 40px;\n  text-align: center;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  width: 18px;\n  height: 18px;\n  cursor: pointer;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  cursor: not-allowed;\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  appearance: none;\n  -webkit-appearance: none;\n  width: 18px;\n  height: 18px;\n  border: 2px solid var(--primary);\n  border-radius: 4px;\n  cursor: pointer;\n  position: relative;\n  margin: 0;\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:checked {\n  background-color: var(--primary);\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:checked::after {\n  content: "";\n  position: absolute;\n  left: 5px;\n  top: 2px;\n  width: 5px;\n  height: 10px;\n  border: solid white;\n  border-width: 0 2px 2px 0;\n  transform: rotate(45deg);\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  border-color: var(--border-color);\n  background-color: var(--background-light);\n  cursor: not-allowed;\n  opacity: 0.5;\n}\n.plan-badge[_ngcontent-%COMP%] {\n  display: inline-block;\n  color: var(--secondary);\n  background-color: rgba(0, 153, 156, 0.12);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n  white-space: nowrap;\n  margin: 2px 4px 2px 0;\n}\n.existing-badge[_ngcontent-%COMP%] {\n  display: inline-block;\n  color: var(--text-secondary);\n  background-color: var(--bg-secondary, #f1f3f5);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n  white-space: nowrap;\n}\n/*# sourceMappingURL=plan-coating-list.component.css.map */'] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanCoatingListComponent, { className: "PlanCoatingListComponent", filePath: "src\\app\\components\\plan-coating\\plan-coating-list\\plan-coating-list.component.ts", lineNumber: 36 });
+})();
+
+// src/app/components/plan-coating/plan-coating-form/plan-coating-form.component.ts
+var _c017 = () => ({ label: "No plan", value: "" });
+function PlanCoatingFormComponent_div_28_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.processForm.get("customerId"), "customer"), " ");
+  }
+}
+function PlanCoatingFormComponent_tr_67_small_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "small", 53);
+    \u0275\u0275text(1, "Linked: progress auto-updated.");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanCoatingFormComponent_tr_67_small_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "small", 54);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const item_r3 = \u0275\u0275nextContext().$implicit;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r0.balanceForRow(item_r3));
+  }
+}
+function PlanCoatingFormComponent_tr_67_div_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const i_r4 = \u0275\u0275nextContext().index;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r4).get("productId"), "product"), " ");
+  }
+}
+function PlanCoatingFormComponent_tr_67_div_15_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const i_r4 = \u0275\u0275nextContext().index;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r4).get("quantity"), "quantity"), " ");
+  }
+}
+function PlanCoatingFormComponent_tr_67_div_18_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const i_r4 = \u0275\u0275nextContext().index;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r4).get("totalBags"), "total bags"), " ");
+  }
+}
+function PlanCoatingFormComponent_tr_67_div_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const i_r4 = \u0275\u0275nextContext().index;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r4).get("unitPrice"), "unit price"), " ");
+  }
+}
+function PlanCoatingFormComponent_tr_67_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr", 38)(1, "td", 39)(2, "div", 40);
+    \u0275\u0275element(3, "app-searchable-select", 41);
+    \u0275\u0275template(4, PlanCoatingFormComponent_tr_67_small_4_Template, 2, 0, "small", 42)(5, PlanCoatingFormComponent_tr_67_small_5_Template, 2, 1, "small", 43);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(6, "td")(7, "div", 40)(8, "div", 16);
+    \u0275\u0275element(9, "app-searchable-select", 44);
+    \u0275\u0275elementStart(10, "button", 45);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_tr_67_Template_button_click_10_listener($event) {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r0 = \u0275\u0275nextContext();
+      ctx_r0.refreshProducts();
+      $event.preventDefault();
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275element(11, "i", 19);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275template(12, PlanCoatingFormComponent_tr_67_div_12_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(13, "td");
+    \u0275\u0275element(14, "input", 46);
+    \u0275\u0275template(15, PlanCoatingFormComponent_tr_67_div_15_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(16, "td");
+    \u0275\u0275element(17, "input", 47);
+    \u0275\u0275template(18, PlanCoatingFormComponent_tr_67_div_18_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(19, "td");
+    \u0275\u0275element(20, "input", 48);
+    \u0275\u0275template(21, PlanCoatingFormComponent_tr_67_div_21_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(22, "td");
+    \u0275\u0275element(23, "input", 49);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(24, "td");
+    \u0275\u0275element(25, "input", 50);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(26, "td")(27, "button", 51);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_tr_67_Template_button_click_27_listener($event) {
+      const i_r4 = \u0275\u0275restoreView(_r2).index;
+      const ctx_r0 = \u0275\u0275nextContext();
+      ctx_r0.removeItem(i_r4);
+      $event.preventDefault();
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275element(28, "i", 52);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const item_r3 = ctx.$implicit;
+    const i_r4 = ctx.index;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("formGroupName", i_r4);
+    \u0275\u0275advance(3);
+    \u0275\u0275property("formControlName", "planningId")("options", ctx_r0.plannings)("placeholder", "No plan")("defaultOption", \u0275\u0275pureFunction0(43, _c017))("searchPlaceholder", "Search plannings...");
+    \u0275\u0275attribute("id", "planningId_" + i_r4);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.rowPlanningId(item_r3));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.balanceForRow(item_r3));
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("is-invalid", ctx_r0.isItemFieldInvalid(i_r4, "productId"));
+    \u0275\u0275property("formControlName", "productId")("options", ctx_r0.rowProductOptions(item_r3))("labelKey", "name")("valueKey", "id")("placeholder", "Select Product")("searchPlaceholder", "Search products...");
+    \u0275\u0275attribute("id", "productId_" + i_r4);
+    \u0275\u0275advance();
+    \u0275\u0275property("disabled", ctx_r0.isLoadingProducts);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", ctx_r0.isLoadingProducts ? "fa-spinner fa-spin" : "fa-sync-alt");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.isItemFieldInvalid(i_r4, "productId"));
+    \u0275\u0275advance(2);
+    \u0275\u0275classProp("is-invalid", ctx_r0.isItemFieldInvalid(i_r4, "quantity"));
+    \u0275\u0275attribute("id", "quantity_" + i_r4)("aria-label", "Quantity for item " + (i_r4 + 1));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.isItemFieldInvalid(i_r4, "quantity"));
+    \u0275\u0275advance(2);
+    \u0275\u0275classProp("is-invalid", ctx_r0.isItemFieldInvalid(i_r4, "totalBags"));
+    \u0275\u0275attribute("id", "totalBags_" + i_r4)("aria-label", "Total bags for item " + (i_r4 + 1));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.isItemFieldInvalid(i_r4, "totalBags"));
+    \u0275\u0275advance(2);
+    \u0275\u0275classProp("is-invalid", ctx_r0.isItemFieldInvalid(i_r4, "unitPrice"));
+    \u0275\u0275attribute("id", "unitPrice_" + i_r4)("aria-label", "Unit price for item " + (i_r4 + 1));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.isItemFieldInvalid(i_r4, "unitPrice"));
+    \u0275\u0275advance(2);
+    \u0275\u0275attribute("id", "totalAmount_" + i_r4)("aria-label", "Total amount for item " + (i_r4 + 1));
+    \u0275\u0275advance(2);
+    \u0275\u0275attribute("id", "remarks_" + i_r4)("aria-label", "Remarks for item " + (i_r4 + 1));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("disabled", ctx_r0.loading)("title", "Remove Item " + (i_r4 + 1));
+    \u0275\u0275attribute("aria-label", "Remove item " + (i_r4 + 1));
+  }
+}
+function PlanCoatingFormComponent_tr_68_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 55);
+    \u0275\u0275text(2, 'No items added. Click "Add Item" to get started.');
+    \u0275\u0275elementEnd()();
+  }
+}
+function PlanCoatingFormComponent_tfoot_69_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 56)(3, "strong");
+    \u0275\u0275text(4, "Grand Total:");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(5, "td")(6, "strong");
+    \u0275\u0275text(7);
+    \u0275\u0275pipe(8, "number");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275element(9, "td", 57);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance(7);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(8, 1, ctx_r0.getGrandTotal(), "1.2-2"));
+  }
+}
+function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_span_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span");
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    let tmp_7_0;
+    const itemControl_r7 = \u0275\u0275nextContext(2).$implicit;
+    const ctx_r0 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" - ", ctx_r0.getProductName((tmp_7_0 = itemControl_r7.get("productId")) == null ? null : tmp_7_0.value), " ");
+  }
+}
+function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_tr_16_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r8 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr")(1, "td");
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "td")(4, "strong");
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(6, "td");
+    \u0275\u0275text(7);
+    \u0275\u0275pipe(8, "date");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(9, "td", 71)(10, "button", 72);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_tr_16_Template_button_click_10_listener() {
+      let tmp_11_0;
+      const returnItem_r9 = \u0275\u0275restoreView(_r8).$implicit;
+      const itemControl_r7 = \u0275\u0275nextContext(3).$implicit;
+      const ctx_r0 = \u0275\u0275nextContext(3);
+      return \u0275\u0275resetView(ctx_r0.deleteReturn(returnItem_r9.id, (tmp_11_0 = itemControl_r7.get("id")) == null ? null : tmp_11_0.value));
+    });
+    \u0275\u0275element(11, "i", 52);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const returnItem_r9 = ctx.$implicit;
+    const returnIndex_r10 = ctx.index;
+    const itemIndex_r11 = \u0275\u0275nextContext(3).index;
+    const ctx_r0 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(returnIndex_r10 + 1);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(returnItem_r9.returnQuantity);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(8, 5, returnItem_r9.createdAt, "medium"));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("disabled", ctx_r0.isLoadingReturns);
+    \u0275\u0275attribute("aria-label", "Delete return " + (returnIndex_r10 + 1) + " for item " + (itemIndex_r11 + 1));
+  }
+}
+function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 26)(1, "table", 68)(2, "thead")(3, "tr")(4, "th", 28);
+    \u0275\u0275text(5, "#");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "th", 28)(7, "strong");
+    \u0275\u0275text(8, "Return Quantity");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(9, "th", 28)(10, "strong");
+    \u0275\u0275text(11, "Return Date");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(12, "th", 28)(13, "strong");
+    \u0275\u0275text(14, "Actions");
+    \u0275\u0275elementEnd()()()();
+    \u0275\u0275elementStart(15, "tbody");
+    \u0275\u0275template(16, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_tr_16_Template, 12, 8, "tr", 69);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(17, "tfoot")(18, "tr")(19, "td")(20, "strong");
+    \u0275\u0275text(21, "Total Returns");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(22, "td", 70)(23, "strong");
+    \u0275\u0275text(24);
+    \u0275\u0275elementEnd()()()()()();
+  }
+  if (rf & 2) {
+    let tmp_7_0;
+    let tmp_8_0;
+    const itemControl_r7 = \u0275\u0275nextContext(2).$implicit;
+    const ctx_r0 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(16);
+    \u0275\u0275property("ngForOf", ctx_r0.loadItemReturns((tmp_7_0 = itemControl_r7.get("id")) == null ? null : tmp_7_0.value));
+    \u0275\u0275advance(8);
+    \u0275\u0275textInterpolate(ctx_r0.getTotalReturnsForItem((tmp_8_0 = itemControl_r7.get("id")) == null ? null : tmp_8_0.value));
+  }
+}
+function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 73);
+    \u0275\u0275text(1, " No returns found for this item. ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 64)(2, "h3")(3, "strong");
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(5, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_span_5_Template, 2, 1, "span", 30);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "button", 65);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_Template_button_click_6_listener() {
+      let tmp_7_0;
+      \u0275\u0275restoreView(_r6);
+      const itemControl_r7 = \u0275\u0275nextContext().$implicit;
+      const ctx_r0 = \u0275\u0275nextContext(3);
+      return \u0275\u0275resetView(ctx_r0.openReturnModal((tmp_7_0 = itemControl_r7.get("id")) == null ? null : tmp_7_0.value));
+    });
+    \u0275\u0275element(7, "i", 25);
+    \u0275\u0275text(8, " Add Return ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275template(9, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_Template, 25, 2, "div", 66)(10, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_10_Template, 2, 0, "div", 67);
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    let tmp_7_0;
+    let tmp_10_0;
+    let tmp_11_0;
+    const ctx_r11 = \u0275\u0275nextContext();
+    const itemControl_r7 = ctx_r11.$implicit;
+    const itemIndex_r11 = ctx_r11.index;
+    const ctx_r0 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1("Item ", itemIndex_r11 + 1, "");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.getProductName((tmp_7_0 = itemControl_r7.get("productId")) == null ? null : tmp_7_0.value));
+    \u0275\u0275advance();
+    \u0275\u0275property("disabled", ctx_r0.isLoadingReturns);
+    \u0275\u0275attribute("aria-label", "Add return for item " + (itemIndex_r11 + 1));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngIf", ctx_r0.loadItemReturns((tmp_10_0 = itemControl_r7.get("id")) == null ? null : tmp_10_0.value).length > 0);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.loadItemReturns((tmp_11_0 = itemControl_r7.get("id")) == null ? null : tmp_11_0.value).length === 0);
+  }
+}
+function PlanCoatingFormComponent_div_77_div_10_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 63);
+    \u0275\u0275template(1, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_Template, 11, 6, "ng-container", 30);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    let tmp_5_0;
+    const itemControl_r7 = ctx.$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", (tmp_5_0 = itemControl_r7.get("id")) == null ? null : tmp_5_0.value);
+  }
+}
+function PlanCoatingFormComponent_div_77_div_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div");
+    \u0275\u0275template(1, PlanCoatingFormComponent_div_77_div_10_div_1_Template, 2, 1, "div", 62);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngForOf", ctx_r0.itemsFormArray.controls);
+  }
+}
+function PlanCoatingFormComponent_div_77_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 58)(1, "div", 59);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_77_Template_div_click_1_listener() {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.toggleReturns());
+    })("keydown.enter", function PlanCoatingFormComponent_div_77_Template_div_keydown_enter_1_listener() {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.toggleReturns());
+    })("keydown.space", function PlanCoatingFormComponent_div_77_Template_div_keydown_space_1_listener($event) {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r0 = \u0275\u0275nextContext();
+      ctx_r0.toggleReturns();
+      return \u0275\u0275resetView($event.preventDefault());
+    });
+    \u0275\u0275elementStart(2, "div", 60);
+    \u0275\u0275element(3, "i", 33);
+    \u0275\u0275elementStart(4, "h2")(5, "strong");
+    \u0275\u0275text(6, "Process Returns");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275element(7, "i", 19);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "div", 61);
+    \u0275\u0275element(9, "app-loader", 8);
+    \u0275\u0275template(10, PlanCoatingFormComponent_div_77_div_10_Template, 2, 1, "div", 30);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275classProp("expanded", ctx_r0.showReturns);
+    \u0275\u0275advance(6);
+    \u0275\u0275property("ngClass", ctx_r0.showReturns ? "fa-chevron-up" : "fa-chevron-down");
+    \u0275\u0275advance();
+    \u0275\u0275classProp("expanded", ctx_r0.showReturns);
+    \u0275\u0275advance();
+    \u0275\u0275property("show", ctx_r0.isLoadingReturns);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.showReturns);
+  }
+}
+var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
+  get itemsFormArray() {
+    return this.processForm.get("items");
+  }
+  constructor(fb, router, route, productService, customerService, planningService, planCoatingService, powderCoatingService, snackbar, modalService, encryptionService) {
+    this.fb = fb;
+    this.router = router;
+    this.route = route;
+    this.productService = productService;
+    this.customerService = customerService;
+    this.planningService = planningService;
+    this.planCoatingService = planCoatingService;
+    this.powderCoatingService = powderCoatingService;
+    this.snackbar = snackbar;
+    this.modalService = modalService;
+    this.encryptionService = encryptionService;
+    this.products = [];
+    this.customers = [];
+    this.plannings = [];
+    this.planItemsCache = /* @__PURE__ */ new Map();
+    this.prodOptionsMemo = /* @__PURE__ */ new WeakMap();
+    this.defaultPlanningId = null;
+    this.loading = false;
+    this.isLoadingProducts = false;
+    this.isLoadingCustomers = false;
+    this.isLoadingPlannings = false;
+    this.isEditMode = false;
+    this.showReturns = false;
+    this.isLoadingReturns = false;
+    this.itemReturns = /* @__PURE__ */ new Map();
+    this.destroy$ = new Subject();
+    this.initializeForm();
+  }
+  ngOnInit() {
+    this.loadProducts();
+    this.loadCustomers();
+    this.loadPlannings();
+    this.setupCustomerChange();
+    const rawId = this.route.snapshot.paramMap.get("id");
+    if (rawId) {
+      const id = Number(this.encryptionService.decrypt(rawId));
+      if (!id) {
+        this.snackbar.error("Invalid link");
+        this.router.navigate(["/plan-coating"]);
+        return;
+      }
+      this.processId = id;
+      this.isEditMode = true;
+      this.loadProcess();
+      return;
+    }
+    const rawPlanningId = this.route.snapshot.queryParamMap.get("planningId");
+    const preselect = rawPlanningId ? Number(this.encryptionService.decrypt(rawPlanningId)) : NaN;
+    if (preselect) {
+      this.defaultPlanningId = preselect;
+      this.ensurePlanItems([preselect], () => {
+      });
+    }
+    this.addItem();
+  }
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  /** Encrypted id for URLs (medonix pattern); numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
+  }
+  initializeForm() {
+    this.processForm = this.fb.group({
+      customerId: ["", [Validators.required]],
+      status: ["A"],
+      items: this.fb.array([])
+    });
+  }
+  // --- Plan-aware row helpers (mirrors plan-dispatch) ---
+  rowPlanningId(itemGroup) {
+    const v = itemGroup.get("planningId")?.value;
+    return v ? Number(v) : null;
+  }
+  rowPlanItems(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    return pid ? this.planItemsCache.get(pid) || [] : [];
+  }
+  /** Product options for a row: its plan's coating products (or all products
+      when no plan), plus the row's current product as a fallback so stored
+      values always display. Memoized per row for dropdown stability. */
+  rowProductOptions(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    if (!pid) {
+      return this.products;
+    }
+    const list = this.planItemsCache.get(pid) || [];
+    const cur = Number(itemGroup.get("productId")?.value) || 0;
+    const sig = [
+      pid,
+      cur,
+      list.length,
+      list.map((p) => p.productId).join(","),
+      this.products.length
+    ].join("|");
+    const hit = this.prodOptionsMemo.get(itemGroup);
+    if (hit && hit.sig === sig) {
+      return hit.arr;
+    }
+    const arr = list.map((pi) => ({ id: Number(pi.productId), name: pi.productName }));
+    if (cur && !arr.some((o) => o.id === cur)) {
+      const fallback = (this.products || []).find((p) => Number(p.id) === cur);
+      arr.push({ id: cur, name: fallback ? fallback.name : `Product #${cur}` });
+    }
+    this.prodOptionsMemo.set(itemGroup, { sig, arr });
+    return arr;
+  }
+  balanceForRow(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    const piId = itemGroup.get("planningItemId")?.value;
+    if (!pid || !piId) {
+      return "";
+    }
+    const pi = (this.planItemsCache.get(pid) || []).find((p) => Number(p.planningItemId ?? p.id) === Number(piId));
+    if (!pi) {
+      return "";
+    }
+    return `Emboss: ${pi.emboss ?? 0} \xB7 Coated: ${pi.coating ?? 0} \xB7 Can coat: ${pi.coatable ?? 0}`;
+  }
+  loadPlannings() {
+    this.isLoadingPlannings = true;
+    this.planningService.searchPlannings({ currentPage: 0, perPageRecord: 100, sortBy: "id", sortDir: "desc" }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.plannings = response.data.content;
+        }
+        this.isLoadingPlannings = false;
+      },
+      error: () => {
+        this.isLoadingPlannings = false;
+      }
+    });
+  }
+  /** Cached balances for plans (one backend call per plan). */
+  ensurePlanItems(ids, done) {
+    const missing = ids.filter((id) => id && !this.planItemsCache.has(id));
+    if (!missing.length) {
+      done();
+      return;
+    }
+    let pending = missing.length;
+    const check = () => {
+      if (--pending === 0) {
+        done();
+      }
+    };
+    missing.forEach((id) => {
+      this.planCoatingService.getItemBalances(id).subscribe({
+        next: (r) => {
+          if (r.success) {
+            this.planItemsCache.set(id, r.data || []);
+          }
+          check();
+        },
+        error: () => {
+          this.snackbar.error("Failed to load planning products");
+          check();
+        }
+      });
+    });
+  }
+  onRowPlanningChange(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    if (!pid) {
+      itemGroup.patchValue({ planningItemId: null }, { emitEvent: false });
+      return;
+    }
+    this.ensurePlanItems([pid], () => {
+      const list = this.planItemsCache.get(pid) || [];
+      if (!list.length) {
+        itemGroup.patchValue({ productId: "", planningItemId: null }, { emitEvent: false });
+        this.snackbar.error("Selected plan has no products with Coating enabled");
+        return;
+      }
+      const prodId = Number(itemGroup.get("productId")?.value);
+      const match2 = prodId ? list.find((p) => Number(p.productId) === prodId) : null;
+      if (prodId && !match2) {
+        itemGroup.patchValue({ productId: "", planningItemId: null }, { emitEvent: false });
+        this.snackbar.error("Row product is not in the selected plan and was cleared");
+      } else {
+        itemGroup.patchValue({ planningItemId: match2 ? Number(match2.planningItemId ?? match2.id) : null }, { emitEvent: false });
+      }
+    });
+  }
+  onRowProductChange(itemGroup) {
+    const pid = this.rowPlanningId(itemGroup);
+    if (!pid) {
+      itemGroup.patchValue({ planningItemId: null }, { emitEvent: false });
+      return;
+    }
+    const prodId = Number(itemGroup.get("productId")?.value);
+    const match2 = prodId ? (this.planItemsCache.get(pid) || []).find((p) => Number(p.productId) === prodId) : null;
+    itemGroup.patchValue({ planningItemId: match2 ? Number(match2.planningItemId ?? match2.id) : null }, { emitEvent: false });
+  }
+  // --- Items (same shape as the old coating form + plan controls) ---
+  addItem(itemData) {
+    const itemGroup = this.fb.group({
+      id: [itemData?.id || null],
+      planningId: [itemData?.planningId ?? this.defaultPlanningId],
+      planningItemId: [itemData?.planningItemId ?? null],
+      productId: [itemData?.productId || "", [Validators.required]],
+      quantity: [itemData?.quantity || "", [Validators.required, Validators.min(1)]],
+      totalBags: [itemData?.totalBags || "", [Validators.required, Validators.min(1)]],
+      unitPrice: [itemData?.unitPrice || 0, [Validators.required, Validators.min(0)]],
+      totalAmount: [{ value: itemData?.totalAmount || "", disabled: true }],
+      remarks: [itemData?.remarks || ""]
+    });
+    this.itemsFormArray.push(itemGroup);
+    const index = this.itemsFormArray.length - 1;
+    itemGroup.get("quantity")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.calculateItemTotal(index);
+    });
+    itemGroup.get("unitPrice")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.calculateItemTotal(index);
+    });
+    itemGroup.get("planningId")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.onRowPlanningChange(itemGroup);
+    });
+    itemGroup.get("productId")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.onRowProductChange(itemGroup);
+    });
+    const rowPid = this.rowPlanningId(itemGroup);
+    if (rowPid) {
+      this.ensurePlanItems([rowPid], () => {
+      });
+    }
+  }
+  removeItem(index) {
+    const itemGroup = this.itemsFormArray.at(index);
+    const itemId = itemGroup.get("id")?.value;
+    if (itemId && this.itemReturns.has(itemId) && this.itemReturns.get(itemId).length > 0) {
+      this.snackbar.error("Cannot remove item with existing returns");
+      return;
+    }
+    this.itemsFormArray.removeAt(index);
+  }
+  calculateItemTotal(index) {
+    const itemGroup = this.itemsFormArray.at(index);
+    const quantity = Number(itemGroup.get("quantity")?.value) || 0;
+    const unitPrice = Number(itemGroup.get("unitPrice")?.value) || 0;
+    const totalAmount = quantity * unitPrice;
+    itemGroup.patchValue({
+      totalAmount: totalAmount.toFixed(2)
+    }, { emitEvent: false });
+  }
+  getGrandTotal() {
+    return this.itemsFormArray.controls.reduce((total, control) => {
+      const itemGroup = control;
+      const quantity = Number(itemGroup.get("quantity")?.value) || 0;
+      const unitPrice = Number(itemGroup.get("unitPrice")?.value) || 0;
+      return total + quantity * unitPrice;
+    }, 0);
+  }
+  loadProducts() {
+    this.isLoadingProducts = true;
+    this.productService.getProducts({ status: "A" }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.products = response.data;
+        }
+        this.isLoadingProducts = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to load products");
+        this.isLoadingProducts = false;
+      }
+    });
+  }
+  loadCustomers() {
+    this.isLoadingCustomers = true;
+    this.customerService.getCustomers({ status: "A" }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.customers = response.data;
+        }
+        this.isLoadingCustomers = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to load customers");
+        this.isLoadingCustomers = false;
+      }
+    });
+  }
+  refreshProducts() {
+    this.isLoadingProducts = true;
+    this.productService.refreshProducts().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.products = response.data;
+          this.snackbar.success("Products refreshed successfully");
+        }
+        this.isLoadingProducts = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to refresh products");
+        this.isLoadingProducts = false;
+      }
+    });
+  }
+  refreshCustomers() {
+    this.isLoadingCustomers = true;
+    this.customerService.refreshCustomers().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.customers = response.data;
+          this.snackbar.success("Customers refreshed successfully");
+        }
+        this.isLoadingCustomers = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to refresh customers");
+        this.isLoadingCustomers = false;
+      }
+    });
+  }
+  isFieldInvalid(control) {
+    return control ? control.invalid && (control.dirty || control.touched) : false;
+  }
+  isItemFieldInvalid(index, fieldName) {
+    const itemGroup = this.itemsFormArray.at(index);
+    const field = itemGroup.get(fieldName);
+    return this.isFieldInvalid(field);
+  }
+  getFieldError(control, fieldName) {
+    if (control?.errors && control.touched) {
+      if (control.errors["required"])
+        return `${fieldName} is required`;
+      if (control.errors["min"])
+        return `${fieldName} must be at least ${control.errors["min"].min}`;
+    }
+    return "";
+  }
+  resetForm() {
+    while (this.itemsFormArray.length > 0) {
+      this.itemsFormArray.removeAt(0);
+    }
+    this.processForm.reset({ status: "A" });
+    this.addItem();
+  }
+  loadProcess() {
+    this.loading = true;
+    this.planCoatingService.getDetail(this.processId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          const data = response.data;
+          while (this.itemsFormArray.length > 0) {
+            this.itemsFormArray.removeAt(0);
+          }
+          this.processForm.patchValue({
+            customerId: data.customerId,
+            status: data.status || "A"
+          });
+          if (data.items && data.items.length > 0) {
+            data.items.forEach((item) => {
+              this.addItem({
+                id: item.id,
+                productId: item.productId,
+                planningId: item.planningId || null,
+                planningItemId: item.planningItemId || null,
+                quantity: item.quantity,
+                totalBags: item.totalBags,
+                unitPrice: item.unitPrice,
+                totalAmount: item.totalAmount,
+                remarks: item.remarks
+              });
+            });
+          } else {
+            this.addItem();
+          }
+        } else {
+          this.snackbar.error("Failed to load process details");
+          this.router.navigate(["/plan-coating"]);
+        }
+        this.loading = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to load process details");
+        this.loading = false;
+        this.router.navigate(["/plan-coating"]);
+      }
+    });
+  }
+  /** Client-side plan rule per row (re-resolved so submit always carries a
+      valid link), plus the plain form checks from the old screen. */
+  validateForm() {
+    const errors = [];
+    if (!this.processForm.get("customerId")?.value) {
+      errors.push("Please select a customer");
+    }
+    if (this.itemsFormArray.length === 0) {
+      errors.push("Please add at least one item");
+    }
+    this.itemsFormArray.controls.forEach((control, index) => {
+      const itemGroup = control;
+      const label = `item ${index + 1}`;
+      const rowPid = this.rowPlanningId(itemGroup);
+      if (!itemGroup.get("productId")?.value) {
+        errors.push(`Please select product for ${label}`);
+      }
+      if (!itemGroup.get("quantity")?.value) {
+        errors.push(`Please enter quantity for ${label}`);
+      } else if (itemGroup.get("quantity")?.errors?.["min"]) {
+        errors.push(`Quantity must be greater than 0 for ${label}`);
+      }
+      if (!itemGroup.get("totalBags")?.value) {
+        errors.push(`Please enter total bags for ${label}`);
+      }
+      if (itemGroup.get("unitPrice")?.value === null || itemGroup.get("unitPrice")?.value === "" || Number(itemGroup.get("unitPrice")?.value) < 0) {
+        errors.push(`Please enter a valid unit price for ${label}`);
+      }
+      if (rowPid) {
+        const prodId = Number(itemGroup.get("productId")?.value);
+        const match2 = prodId ? (this.planItemsCache.get(rowPid) || []).find((p) => Number(p.productId) === prodId) : null;
+        if (!match2) {
+          errors.push(`Please select a coating product of the chosen plan for ${label}`);
+        } else {
+          itemGroup.patchValue({ planningItemId: Number(match2.planningItemId ?? match2.id) }, { emitEvent: false });
+        }
+      } else {
+        itemGroup.patchValue({ planningItemId: null }, { emitEvent: false });
+      }
+    });
+    return { isValid: errors.length === 0, errors };
+  }
+  onSubmit(event2) {
+    if (event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
+    }
+    const checked = this.validateForm();
+    if (!checked.isValid) {
+      this.markFormGroupTouched(this.processForm);
+      this.snackbar.error(checked.errors[0]);
+      return;
+    }
+    if (this.processForm.invalid) {
+      this.markFormGroupTouched(this.processForm);
+      this.snackbar.error("Please fix validation errors");
+      return;
+    }
+    this.loading = true;
+    const formValue = this.processForm.getRawValue();
+    const requestData = {
+      id: this.isEditMode ? this.processId : void 0,
+      customerId: formValue.customerId,
+      status: formValue.status,
+      items: this.itemsFormArray.controls.map((control) => {
+        const itemGroup = control;
+        const itemValue = itemGroup.getRawValue();
+        const item = {
+          productId: Number(itemValue.productId),
+          planningId: itemValue.planningId ? Number(itemValue.planningId) : null,
+          planningItemId: itemValue.planningItemId ? Number(itemValue.planningItemId) : null,
+          quantity: itemValue.quantity,
+          totalBags: itemValue.totalBags,
+          unitPrice: itemValue.unitPrice,
+          remarks: itemValue.remarks || ""
+        };
+        if (this.isEditMode && itemValue.id) {
+          item.id = itemValue.id;
+        }
+        return item;
+      })
+    };
+    const request = this.isEditMode ? this.planCoatingService.updateProcess(requestData) : this.planCoatingService.createProcess(requestData);
+    request.subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.snackbar.success(`Process ${this.isEditMode ? "updated" : "created"} successfully`);
+          this.router.navigate(["/plan-coating"]);
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || `Failed to ${this.isEditMode ? "update" : "create"} process`);
+        this.loading = false;
+      }
+    });
+  }
+  markFormGroupTouched(formGroup) {
+    if (formGroup instanceof FormArray) {
+      formGroup.controls.forEach((control) => {
+        control.markAsTouched();
+        if (control instanceof FormGroup || control instanceof FormArray) {
+          this.markFormGroupTouched(control);
+        }
+      });
+    } else if (formGroup instanceof FormGroup) {
+      Object.keys(formGroup.controls).forEach((key) => {
+        const control = formGroup.controls[key];
+        control.markAsTouched();
+        if (control instanceof FormGroup || control instanceof FormArray) {
+          this.markFormGroupTouched(control);
+        }
+      });
+    }
+  }
+  // --- Returns (same as the old screen; edit mode only) ---
+  toggleReturns() {
+    this.showReturns = !this.showReturns;
+    if (this.showReturns && this.itemReturns.size === 0) {
+      this.loadAllReturns();
+    }
+  }
+  loadAllReturns() {
+    if (!this.processId)
+      return;
+    this.isLoadingReturns = true;
+    const itemIds = [];
+    this.itemsFormArray.controls.forEach((control) => {
+      const itemGroup = control;
+      const itemId = itemGroup.get("id")?.value;
+      if (itemId) {
+        itemIds.push(itemId);
+      }
+    });
+    if (itemIds.length === 0) {
+      this.isLoadingReturns = false;
+      return;
+    }
+    let completed = 0;
+    itemIds.forEach((itemId) => {
+      this.powderCoatingService.getProcessItemReturns(itemId).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.itemReturns.set(itemId, response.data || []);
+          }
+          completed++;
+          if (completed === itemIds.length) {
+            this.isLoadingReturns = false;
+          }
+        },
+        error: () => {
+          completed++;
+          if (completed === itemIds.length) {
+            this.isLoadingReturns = false;
+          }
+        }
+      });
+    });
+  }
+  loadItemReturns(itemId) {
+    return this.itemReturns.get(itemId) || [];
+  }
+  getTotalReturnsForItem(itemId) {
+    const returns = this.itemReturns.get(itemId) || [];
+    return returns.reduce((sum, ret) => sum + ret.returnQuantity, 0);
+  }
+  deleteReturn(returnId, itemId) {
+    if (confirm("Are you sure you want to delete this return?")) {
+      this.isLoadingReturns = true;
+      this.powderCoatingService.deleteReturn(returnId).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.snackbar.success("Return deleted successfully");
+            this.powderCoatingService.getProcessItemReturns(itemId).subscribe({
+              next: (resp) => {
+                if (resp.success) {
+                  this.itemReturns.set(itemId, resp.data || []);
+                }
+                this.isLoadingReturns = false;
+              },
+              error: () => {
+                this.isLoadingReturns = false;
+              }
+            });
+          } else {
+            this.isLoadingReturns = false;
+          }
+        },
+        error: () => {
+          this.snackbar.error("Failed to delete return");
+          this.isLoadingReturns = false;
+        }
+      });
+    }
+  }
+  openReturnModal(processItemId) {
+    if (processItemId) {
+      this.modalService.open("return", processItemId);
+    } else {
+      this.snackbar.error("Unable to open return modal");
+    }
+  }
+  getProductName(productId) {
+    const product = this.products.find((p) => p.id === productId);
+    return product ? product.name : "";
+  }
+  setupCustomerChange() {
+    this.processForm.get("customerId")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((customerId) => {
+      if (customerId) {
+        this.customerService.getCustomerCoatingPrice(customerId).subscribe({
+          next: (response) => {
+            if (response.success) {
+              const unitPrice = response.data?.coatingUnitPrice || 0;
+              this.itemsFormArray.controls.forEach((control) => {
+                const itemGroup = control;
+                if (!itemGroup.get("id")?.value) {
+                  itemGroup.patchValue({ unitPrice });
+                }
+              });
+            }
+          },
+          error: () => {
+          }
+        });
+      }
+    });
+  }
+  static {
+    this.\u0275fac = function PlanCoatingFormComponent_Factory(t) {
+      return new (t || _PlanCoatingFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(PlanCoatingService), \u0275\u0275directiveInject(PowderCoatingService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(ModalService), \u0275\u0275directiveInject(EncryptionService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanCoatingFormComponent, selectors: [["app-plan-coating-form"]], viewQuery: function PlanCoatingFormComponent_Query(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275viewQuery(ReturnModalComponent, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.returnModal = _t.first);
+      }
+    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 79, vars: 21, consts: [[1, "add-process-container"], ["routerLink", "/plan-coating", "type", "button", 1, "btn", "btn-secondary", "back-btn"], ["aria-hidden", "true", 1, "fas", "fa-arrow-left"], [1, "form-card"], [1, "card-header"], [1, "form-title"], ["aria-hidden", "true", 1, "fas", "fa-spray-can"], [1, "form-content"], [3, "show"], ["novalidate", "", 1, "process-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], ["for", "customerId"], ["aria-hidden", "true", 1, "fas", "fa-user"], ["aria-label", "required", 1, "required"], [1, "select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", "id", "customerId", "aria-required", "true", 3, "options", "placeholder"], ["type", "button", "title", "Refresh Customers", "aria-label", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], ["aria-hidden", "true", 1, "fas", "fa-boxes"], ["type", "button", "aria-label", "Add Item", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-plus"], [1, "table-responsive"], ["role", "table", "aria-label", "Process Items", 1, "table", "items-table"], ["scope", "col"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "form-actions"], ["type", "button", "aria-label", "Reset Form", 1, "btn", "btn-secondary", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-undo"], ["type", "submit", "aria-label", "Save Process", 1, "btn", "btn-primary", 3, "disabled"], ["class", "returns-section card", 4, "ngIf"], [3, "returnCreated"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "plan-cell"], [1, "form-field-container"], ["labelKey", "planningNumber", "valueKey", "id", 3, "formControlName", "options", "placeholder", "defaultOption", "searchPlaceholder"], ["class", "plan-hint", 4, "ngIf"], ["class", "balance-hint", 4, "ngIf"], ["aria-required", "true", 3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", "aria-label", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "unitPrice", "min", "0", "step", "0.01", "aria-required", "true", 1, "form-control"], ["type", "text", "formControlName", "totalAmount", "readonly", "", 1, "form-control"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled", "title"], ["aria-hidden", "true", 1, "fas", "fa-trash"], [1, "plan-hint"], [1, "balance-hint"], ["colspan", "8", 1, "text-center"], ["colspan", "5", 1, "text-end"], ["colspan", "2"], [1, "returns-section", "card"], ["role", "button", "tabindex", "0", 1, "returns-header", 3, "click", "keydown.enter", "keydown.space"], [1, "header-content"], [1, "returns-content"], ["class", "item-returns-section", 4, "ngFor", "ngForOf"], [1, "item-returns-section"], [1, "item-returns-header"], ["type", "button", 1, "btn", "btn-primary", "btn-sm", "add-return-btn", 3, "click", "disabled"], ["class", "table-responsive", 4, "ngIf"], ["class", "no-returns-message", 4, "ngIf"], [1, "table", "returns-table"], [4, "ngFor", "ngForOf"], ["colspan", "3"], [1, "actions-cell"], ["type", "button", "title", "Delete Return", 1, "btn", "btn-icon", "btn-danger", 3, "click", "disabled"], [1, "no-returns-message"]], template: function PlanCoatingFormComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0)(1, "button", 1);
+        \u0275\u0275element(2, "i", 2);
+        \u0275\u0275text(3, " Back to Processes ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(4, "div", 3)(5, "div", 4)(6, "h1", 5);
+        \u0275\u0275element(7, "i", 6);
+        \u0275\u0275text(8);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(9, "div", 7);
+        \u0275\u0275element(10, "app-loader", 8);
+        \u0275\u0275elementStart(11, "form", 9);
+        \u0275\u0275listener("ngSubmit", function PlanCoatingFormComponent_Template_form_ngSubmit_11_listener() {
+          return ctx.onSubmit();
+        });
+        \u0275\u0275elementStart(12, "div", 10)(13, "h2")(14, "strong");
+        \u0275\u0275text(15, "Customer Information");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(16, "div", 11)(17, "div", 12)(18, "label", 13);
+        \u0275\u0275element(19, "i", 14);
+        \u0275\u0275elementStart(20, "strong");
+        \u0275\u0275text(21, "Select Customer");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(22, "span", 15);
+        \u0275\u0275text(23, "*");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(24, "div", 16);
+        \u0275\u0275element(25, "app-searchable-select", 17);
+        \u0275\u0275elementStart(26, "button", 18);
+        \u0275\u0275listener("click", function PlanCoatingFormComponent_Template_button_click_26_listener() {
+          return ctx.refreshCustomers();
+        });
+        \u0275\u0275element(27, "i", 19);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275template(28, PlanCoatingFormComponent_div_28_Template, 2, 1, "div", 20);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(29, "div", 21)(30, "div", 22)(31, "h2");
+        \u0275\u0275element(32, "i", 23);
+        \u0275\u0275elementStart(33, "strong");
+        \u0275\u0275text(34, "Process Items");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(35, "button", 24);
+        \u0275\u0275listener("click", function PlanCoatingFormComponent_Template_button_click_35_listener() {
+          return ctx.addItem();
+        });
+        \u0275\u0275element(36, "i", 25);
+        \u0275\u0275text(37, " Add Item ");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(38, "div", 26)(39, "table", 27)(40, "thead")(41, "tr")(42, "th", 28)(43, "strong");
+        \u0275\u0275text(44, "Plan");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(45, "th", 28)(46, "strong");
+        \u0275\u0275text(47, "Product");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(48, "th", 28)(49, "strong");
+        \u0275\u0275text(50, "Quantity");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(51, "th", 28)(52, "strong");
+        \u0275\u0275text(53, "Total Bags");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(54, "th", 28)(55, "strong");
+        \u0275\u0275text(56, "Unit Price");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(57, "th", 28)(58, "strong");
+        \u0275\u0275text(59, "Total Amount");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(60, "th", 28)(61, "strong");
+        \u0275\u0275text(62, "Remarks");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(63, "th", 28)(64, "strong");
+        \u0275\u0275text(65, "Actions");
+        \u0275\u0275elementEnd()()()();
+        \u0275\u0275elementStart(66, "tbody");
+        \u0275\u0275template(67, PlanCoatingFormComponent_tr_67_Template, 29, 44, "tr", 29)(68, PlanCoatingFormComponent_tr_68_Template, 3, 0, "tr", 30);
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(69, PlanCoatingFormComponent_tfoot_69_Template, 10, 4, "tfoot", 30);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(70, "div", 31)(71, "button", 32);
+        \u0275\u0275listener("click", function PlanCoatingFormComponent_Template_button_click_71_listener() {
+          return ctx.resetForm();
+        });
+        \u0275\u0275element(72, "i", 33);
+        \u0275\u0275text(73, " Reset ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(74, "button", 34);
+        \u0275\u0275element(75, "i", 19);
+        \u0275\u0275text(76);
+        \u0275\u0275elementEnd()()()()();
+        \u0275\u0275template(77, PlanCoatingFormComponent_div_77_Template, 11, 7, "div", 35);
+        \u0275\u0275elementStart(78, "app-return-modal", 36);
+        \u0275\u0275listener("returnCreated", function PlanCoatingFormComponent_Template_app_return_modal_returnCreated_78_listener() {
+          return ctx.loadAllReturns();
+        });
+        \u0275\u0275elementEnd()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(8);
+        \u0275\u0275textInterpolate1(" ", ctx.isEditMode ? "Edit" : "Add New", " Plan Coating Process ");
+        \u0275\u0275advance(2);
+        \u0275\u0275property("show", ctx.loading);
+        \u0275\u0275advance();
+        \u0275\u0275classProp("loading", ctx.loading);
+        \u0275\u0275property("formGroup", ctx.processForm);
+        \u0275\u0275advance(14);
+        \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid(ctx.processForm.get("customerId")));
+        \u0275\u0275property("options", ctx.customers)("placeholder", "Select Customer");
+        \u0275\u0275advance();
+        \u0275\u0275property("disabled", ctx.isLoadingCustomers);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.processForm.get("customerId")));
+        \u0275\u0275advance(7);
+        \u0275\u0275property("disabled", ctx.loading);
+        \u0275\u0275advance(32);
+        \u0275\u0275property("ngForOf", ctx.itemsFormArray.controls);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.itemsFormArray.length === 0);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.itemsFormArray.length > 0);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("disabled", ctx.loading);
+        \u0275\u0275advance(3);
+        \u0275\u0275property("disabled", ctx.processForm.invalid || ctx.loading || ctx.itemsFormArray.length === 0);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngClass", ctx.loading ? "fa-spinner fa-spin" : "fa-save");
+        \u0275\u0275advance();
+        \u0275\u0275textInterpolate1(" ", ctx.loading ? "Saving..." : "Save Process", " ");
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isEditMode);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgClass,
+      NgForOf,
+      NgIf,
+      DecimalPipe,
+      DatePipe,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      DefaultValueAccessor,
+      NumberValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      MinValidator,
+      FormGroupDirective,
+      FormControlName,
+      FormGroupName,
+      FormArrayName,
+      SearchableSelectComponent,
+      LoaderComponent,
+      RouterLink,
+      ReturnModalComponent
+    ], styles: ["\n\n.add-process-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  margin: 0 auto;\n}\n.back-btn[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.form-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 12px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  overflow: hidden;\n  min-height: 500px;\n}\n.form-card.loading[_ngcontent-%COMP%] {\n  opacity: 0.7;\n  pointer-events: none;\n}\n.card-header[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  padding: 1.5rem;\n}\n.card-header[_ngcontent-%COMP%]   .form-title[_ngcontent-%COMP%] {\n  color: white;\n  margin: 0;\n  font-size: 1.5rem;\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.card-header[_ngcontent-%COMP%]   h1[_ngcontent-%COMP%] {\n  color: white;\n  margin: 0;\n  font-size: 1.5rem;\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.card-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1.25rem;\n  font-weight: 500;\n  color: var(--text-primary);\n}\n.process-form[_ngcontent-%COMP%] {\n  padding: 2rem;\n}\n.form-grid[_ngcontent-%COMP%] {\n  display: grid;\n  gap: 1.5rem;\n  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));\n}\n.form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #dc3545;\n  margin-left: 4px;\n}\n.customer-select-group[_ngcontent-%COMP%], .product-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.customer-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%], .product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.customer-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  color: var(--primary);\n  width: 32px;\n  height: 32px;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n}\n.customer-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled), .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.customer-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled, .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n}\n.customer-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active, .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.form-control[_ngcontent-%COMP%] {\n  padding: 0.5rem 0.75rem;\n  border: 2px solid var(--primary);\n  border-radius: var(--border-radius);\n  transition: all 0.3s ease;\n}\n.form-control[_ngcontent-%COMP%]:focus {\n  border-color: var(--primary);\n  box-shadow: 0 0 0 0.2rem rgba(253, 120, 35, 0.25);\n  outline: none;\n}\n.form-control.is-invalid[_ngcontent-%COMP%] {\n  border-color: #dc3545;\n}\n.form-control.is-invalid[_ngcontent-%COMP%]:focus {\n  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);\n}\n.invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  margin-top: 2rem;\n  padding-top: 1rem;\n  border-top: 1px solid var(--background);\n}\n.form-actions[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.5rem 1rem;\n  min-width: 120px;\n  justify-content: center;\n}\n@media (max-width: 768px) {\n  .add-process-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .process-form[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .form-actions[_ngcontent-%COMP%] {\n    flex-direction: column;\n  }\n  .form-actions[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n.form-content[_ngcontent-%COMP%] {\n  position: relative;\n  min-height: 400px;\n}\n.form-content[_ngcontent-%COMP%]   app-loader[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  z-index: 10;\n}\n.form-content[_ngcontent-%COMP%]   .process-form.loading[_ngcontent-%COMP%] {\n  opacity: 0.6;\n  pointer-events: none;\n}\n.returns-section[_ngcontent-%COMP%] {\n  margin-top: 2rem;\n  background: white;\n  border-radius: 12px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  overflow: hidden;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%] {\n  padding: 0.5rem;\n  background-color: var(--background);\n  cursor: pointer;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  transition: background-color 0.3s ease;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%]:hover {\n  background-color: #eff1f4;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.75rem;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 1.2rem;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1.2rem;\n  font-weight: 500;\n  color: var(--text-primary);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%]   i[_ngcontent-%COMP%]:last-child {\n  color: var(--text-secondary);\n  transition: transform 0.3s ease;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-header.expanded[_ngcontent-%COMP%]   i[_ngcontent-%COMP%]:last-child {\n  transform: rotate(180deg);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%] {\n  max-height: 0;\n  overflow: hidden;\n  transition: max-height 0.3s ease-out;\n  position: relative;\n  padding: 0 1.5rem;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content.expanded[_ngcontent-%COMP%] {\n  max-height: none;\n  padding: 1.5rem;\n  overflow-y: auto;\n  max-height: 800px;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n  padding: 1rem;\n  background: white;\n  border-radius: 8px;\n  border: 1px solid #e0e0e0;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]:last-child {\n  margin-bottom: 0;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .item-returns-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1rem;\n  padding-bottom: 0.5rem;\n  border-bottom: 1px solid #e0e0e0;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .item-returns-header[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1.1rem;\n  font-weight: 600;\n  color: var(--text-primary);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .item-returns-header[_ngcontent-%COMP%]   .add-return-btn[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.375rem 0.75rem;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .returns-table[_ngcontent-%COMP%] {\n  width: 100%;\n  border-collapse: collapse;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .returns-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .returns-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  padding: 0.75rem;\n  text-align: left;\n  font-weight: 600;\n  color: var(--text-primary);\n  border-bottom: 2px solid var(--supporting);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .returns-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-bottom: 1px solid #e0e0e0;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .returns-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:hover {\n  background-color: rgba(253, 120, 35, 0.05);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .returns-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 0.75rem;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .returns-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  font-weight: 600;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .returns-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 0.75rem;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .no-returns-message[_ngcontent-%COMP%] {\n  padding: 1rem;\n  text-align: center;\n  color: var(--text-secondary);\n  font-style: italic;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  padding: 0.5rem;\n  overflow: auto;\n  max-height: 400px;\n  border: 1px solid var(--supporting);\n  border-radius: var(--border-radius);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar {\n  width: 8px;\n  height: 8px;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n  border-radius: 4px;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 4px;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive.loading[_ngcontent-%COMP%] {\n  opacity: 0.6;\n  pointer-events: none;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 600px;\n  margin-bottom: 0;\n  border-collapse: collapse;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n  background-color: var(--background);\n  white-space: nowrap;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  white-space: nowrap;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 1rem;\n  text-align: left;\n  border-bottom: 1px solid var(--border-color);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:last-child   td[_ngcontent-%COMP%] {\n  border-bottom: none;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  position: sticky;\n  bottom: 0;\n  background-color: var(--background);\n  font-weight: 600;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-actions[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n  display: flex;\n  justify-content: flex-end;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-actions[_ngcontent-%COMP%]   .add-return-btn[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.5rem 1rem;\n  font-weight: 500;\n  transition: all 0.3s ease;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-actions[_ngcontent-%COMP%]   .add-return-btn[_ngcontent-%COMP%]:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-actions[_ngcontent-%COMP%]   .add-return-btn[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  transform: none;\n  box-shadow: none;\n}\n.returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-actions[_ngcontent-%COMP%]   .add-return-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 0.875rem;\n}\n.returns-section[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%] {\n  width: 100%;\n  border-collapse: collapse;\n}\n.returns-section[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  color: var(--primary);\n  font-weight: 600;\n  text-align: left;\n  padding: 1rem;\n}\n.returns-section[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 1rem;\n  border-bottom: 1px solid var(--border-color);\n}\n.returns-section[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:last-child   td[_ngcontent-%COMP%] {\n  border-bottom: none;\n}\n.returns-section[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  font-weight: 600;\n}\n@media (max-width: 768px) {\n  .returns-section[_ngcontent-%COMP%] {\n    margin-top: 1rem;\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%] {\n    gap: 0.5rem;\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n    font-size: 1.1rem;\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-content[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .returns-section[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .returns-section[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n    padding: 0.75rem;\n    font-size: 0.9rem;\n  }\n}\n.actions-cell[_ngcontent-%COMP%] {\n  width: 100px;\n  text-align: center;\n  white-space: nowrap;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  width: 32px;\n  height: 32px;\n  padding: 0;\n  background-color: var(--danger);\n  color: white;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  border-radius: var(--border-radius);\n  transition: all 0.2s ease;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:hover:not(:disabled) {\n  transform: translateY(-1px);\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-danger[_ngcontent-%COMP%] {\n  background-color: white;\n  color: var(--danger);\n  border: none;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-danger[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: #d32535;\n}\n@media (max-width: 768px) {\n  .actions-cell[_ngcontent-%COMP%] {\n    width: auto;\n  }\n  .actions-cell[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n    width: 28px;\n    height: 28px;\n  }\n  .actions-cell[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n    font-size: 0.875rem;\n  }\n}\n.form-row[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 1.5rem;\n  margin-bottom: 1.5rem;\n}\n.select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  color: var(--primary);\n  width: 32px;\n  height: 32px;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n}\n.select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n}\n.select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n@media (max-width: 992px) {\n  .form-row[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n@media (max-width: 768px) {\n  .form-row[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.form-section[_ngcontent-%COMP%] {\n  padding: 1rem;\n}\n.form-row[_ngcontent-%COMP%] {\n  margin-bottom: 1.5rem;\n}\n.form-row.customer-product[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(2, 1fr);\n  gap: 1.5rem;\n}\n.form-row.details-row[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 1rem;\n}\n.calculation-group[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 1rem;\n  padding: 1rem;\n  background: var(--background-light);\n  border-radius: 8px;\n  border: 1px solid var(--border-color);\n}\n.remarks-group[_ngcontent-%COMP%] {\n  width: 100%;\n}\n.remarks-group[_ngcontent-%COMP%]   textarea[_ngcontent-%COMP%] {\n  resize: vertical;\n  min-height: 80px;\n}\n@media (max-width: 768px) {\n  .form-row.customer-product[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n  .calculation-group[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    padding: 0.75rem;\n  }\n}\n.section-card[_ngcontent-%COMP%] {\n  background: var(--background);\n  border-radius: 8px;\n  padding: 1.5rem;\n  margin-bottom: 1.5rem;\n  border: 1px solid #e0e0e0;\n}\n.section-card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0 0 1.5rem 0;\n  font-size: 1.25rem;\n  font-weight: 600;\n  color: var(--text-primary);\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.section-card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.form-group[_ngcontent-%COMP%] {\n  margin-bottom: 0;\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  margin-bottom: 0.5rem;\n  color: var(--text-secondary);\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.form-group[_ngcontent-%COMP%]   .select-group[_ngcontent-%COMP%] {\n  position: relative;\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1.5rem;\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0;\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.5rem 1rem;\n  font-weight: 500;\n  transition: all 0.3s ease;\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%]:hover:not(:disabled) {\n  transform: translateY(-1px);\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n  transform: none;\n}\n.items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n  -webkit-overflow-scrolling: touch;\n  border: 1px solid #e0e0e0;\n  border-radius: 8px;\n  margin-bottom: 1rem;\n}\n.items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar {\n  height: 8px;\n}\n.items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n  border-radius: 4px;\n}\n.items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 4px;\n}\n.items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-thumb:hover {\n  background: #8db4c3;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 800px;\n  border-collapse: collapse;\n  background: white;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%] {\n  background-color: var(--secondary);\n  color: white;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  padding: 1rem;\n  text-align: left;\n  font-weight: 600;\n  white-space: nowrap;\n  border-bottom: 2px solid var(--secondary);\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-bottom: 1px solid #e0e0e0;\n  transition: background-color 0.2s ease;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:hover {\n  background-color: rgba(253, 120, 35, 0.05);\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:last-child {\n  border-bottom: none;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 1rem;\n  vertical-align: middle;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 100px;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .form-field-container[_ngcontent-%COMP%] {\n  min-width: 200px;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .select-group[_ngcontent-%COMP%] {\n  min-width: 200px;\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-top: 2px solid var(--primary);\n}\n.items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 1rem;\n  font-weight: 600;\n  font-size: 1.1rem;\n}\n@media (max-width: 1200px) {\n  .form-row.three-columns[_ngcontent-%COMP%], .form-row.four-columns[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n@media (max-width: 768px) {\n  .form-row.three-columns[_ngcontent-%COMP%], .form-row.four-columns[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n  .section-card[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .section-card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n    font-size: 1.1rem;\n  }\n  .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: flex-start;\n    gap: 1rem;\n  }\n  .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n  .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%] {\n    min-width: 900px;\n  }\n  .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n    padding: 0.5rem;\n    font-size: 0.875rem;\n  }\n  .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n    padding: 0.375rem 0.5rem;\n    font-size: 0.875rem;\n  }\n  .form-control[_ngcontent-%COMP%] {\n    width: 100%;\n    padding: 0.5rem 0.75rem;\n    font-size: 1rem;\n    touch-action: manipulation;\n  }\n  .select-group[_ngcontent-%COMP%] {\n    position: relative;\n    width: 100%;\n  }\n  .select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n    min-width: 32px;\n    min-height: 32px;\n    touch-action: manipulation;\n  }\n  .btn[_ngcontent-%COMP%] {\n    min-height: 44px;\n    padding: 0.75rem 1rem;\n    touch-action: manipulation;\n    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-header[_ngcontent-%COMP%] {\n    padding: 1rem;\n    touch-action: manipulation;\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-content.expanded[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-content.expanded[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%] {\n    padding: 0.75rem;\n    margin-bottom: 1rem;\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-content.expanded[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .item-returns-header[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: flex-start;\n    gap: 0.75rem;\n  }\n  .returns-section[_ngcontent-%COMP%]   .returns-content.expanded[_ngcontent-%COMP%]   .item-returns-section[_ngcontent-%COMP%]   .item-returns-header[_ngcontent-%COMP%]   .add-return-btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n}\n.plan-cell[_ngcontent-%COMP%] {\n  min-width: 170px;\n}\n.plan-cell[_ngcontent-%COMP%]   .plan-hint[_ngcontent-%COMP%], .plan-cell[_ngcontent-%COMP%]   .balance-hint[_ngcontent-%COMP%] {\n  display: block;\n  margin-top: 4px;\n  font-size: 0.78rem;\n  color: var(--secondary);\n  white-space: nowrap;\n}\n.plan-cell[_ngcontent-%COMP%]   .balance-hint[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n}\n/*# sourceMappingURL=plan-coating-form.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanCoatingFormComponent, { className: "PlanCoatingFormComponent", filePath: "src\\app\\components\\plan-coating\\plan-coating-form\\plan-coating-form.component.ts", lineNumber: 40 });
+})();
+
 // src/app/services/employee.service.ts
 var EmployeeService = class _EmployeeService {
   constructor(http) {
@@ -78616,8 +80424,8 @@ var EmployeeService = class _EmployeeService {
 };
 
 // src/app/components/employee/employee-list/employee-list.component.ts
-var _c016 = (a0, a1) => ({ "active": a0, "inactive": a1 });
-var _c16 = (a0) => ["/employee/edit", a0];
+var _c018 = (a0, a1) => ({ "active": a0, "inactive": a1 });
+var _c17 = (a0) => ["/employee/edit", a0];
 function EmployeeListComponent_tr_44_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -78664,11 +80472,11 @@ function EmployeeListComponent_tr_44_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(employee_r2.department);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(8, _c016, employee_r2.status === "A", employee_r2.status !== "A"));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(8, _c018, employee_r2.status === "A", employee_r2.status !== "A"));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", employee_r2.status === "A" ? "Active" : "Inactive", " ");
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c16, employee_r2.id));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c17, employee_r2.id));
   }
 }
 function EmployeeListComponent_tr_45_Template(rf, ctx) {
@@ -79228,6 +81036,589 @@ var EmployeeFormComponent = class _EmployeeFormComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeFormComponent, { className: "EmployeeFormComponent", filePath: "src\\app\\components\\employee\\employee-form\\employee-form.component.ts", lineNumber: 21 });
 })();
 
+// src/app/models/machinery.model.ts
+var MACHINERY_STATUS_OPTIONS = [
+  { label: "All", value: "" },
+  { label: "Active", value: "A" },
+  { label: "Inactive", value: "I" }
+];
+function machineryStatusLabel(status) {
+  switch (status) {
+    case "A":
+      return "Active";
+    case "I":
+      return "Inactive";
+    default:
+      return status || "-";
+  }
+}
+
+// src/app/services/machinery.service.ts
+var MachineryService = class _MachineryService {
+  constructor(http, cacheService, encryptionService) {
+    this.http = http;
+    this.cacheService = cacheService;
+    this.encryptionService = encryptionService;
+    this.CACHE_KEY = "active_machineries";
+    this.apiUrl = `${environment.apiUrl}/api/machinery`;
+  }
+  searchMachineries(params) {
+    return this.http.post(`${this.apiUrl}/search`, params);
+  }
+  /** Active machineries for dropdowns (cached). */
+  getMachineries() {
+    const encryptedData = localStorage.getItem(this.CACHE_KEY);
+    if (encryptedData) {
+      const decryptedData = this.encryptionService.decrypt(encryptedData);
+      if (decryptedData) {
+        return of(decryptedData);
+      }
+    }
+    return this.http.post(`${this.apiUrl}/getMachineries`, {}).pipe(tap((response) => {
+      if (response.success) {
+        localStorage.setItem(this.CACHE_KEY, this.encryptionService.encrypt(response));
+      }
+    }));
+  }
+  refreshMachineries() {
+    localStorage.removeItem(this.CACHE_KEY);
+    return this.getMachineries();
+  }
+  createMachinery(payload) {
+    return this.http.post(`${this.apiUrl}/create`, payload);
+  }
+  updateMachinery(payload) {
+    return this.http.post(`${this.apiUrl}/update`, payload);
+  }
+  deleteMachinery(id) {
+    return this.http.post(`${this.apiUrl}/delete`, { id });
+  }
+  getMachineryDetail(id) {
+    return this.http.post(`${this.apiUrl}/detail`, { id });
+  }
+  static {
+    this.\u0275fac = function MachineryService_Factory(t) {
+      return new (t || _MachineryService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(CacheService), \u0275\u0275inject(EncryptionService));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _MachineryService, factory: _MachineryService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// src/app/components/machinery/machinery-list/machinery-list.component.ts
+var _c019 = (a0) => ["/machinery/edit", a0];
+function MachineryListComponent_option_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 26);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const s_r1 = ctx.$implicit;
+    \u0275\u0275property("value", s_r1.value);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(s_r1.label);
+  }
+}
+function MachineryListComponent_tr_47_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr")(1, "td");
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "td");
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "td");
+    \u0275\u0275text(6);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "td")(8, "span", 27);
+    \u0275\u0275text(9);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(10, "td");
+    \u0275\u0275text(11);
+    \u0275\u0275pipe(12, "date");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(13, "td", 28)(14, "button", 29);
+    \u0275\u0275element(15, "i", 30);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(16, "button", 31);
+    \u0275\u0275listener("click", function MachineryListComponent_tr_47_Template_button_click_16_listener() {
+      let tmp_3_0;
+      const m_r3 = \u0275\u0275restoreView(_r2).$implicit;
+      const ctx_r3 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r3.deleteMachinery((tmp_3_0 = m_r3.id) !== null && tmp_3_0 !== void 0 ? tmp_3_0 : 0));
+    });
+    \u0275\u0275element(17, "i", 32);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const m_r3 = ctx.$implicit;
+    const ctx_r3 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(m_r3.name);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(m_r3.code || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(m_r3.remarks || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngClass", "status-" + (m_r3.status || "a").toLowerCase());
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r3.statusLabel(m_r3.status));
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(m_r3.updatedAt ? \u0275\u0275pipeBind2(12, 7, m_r3.updatedAt, "dd-MM-yyyy HH:mm") : "-");
+    \u0275\u0275advance(3);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(10, _c019, ctx_r3.encId(m_r3.id)));
+  }
+}
+function MachineryListComponent_tr_48_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 33);
+    \u0275\u0275text(2, "No machinery found");
+    \u0275\u0275elementEnd()();
+  }
+}
+function MachineryListComponent_app_pagination_50_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 34);
+    \u0275\u0275listener("pageChange", function MachineryListComponent_app_pagination_50_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r3 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r3.onPageChange($event));
+    })("pageSizeChange", function MachineryListComponent_app_pagination_50_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r3 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r3.onPageSizeChange($event));
+    });
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r3 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r3.currentPage)("pageSize", ctx_r3.pageSize)("totalElements", ctx_r3.totalElements)("pageSizeOptions", ctx_r3.pageSizeOptions);
+  }
+}
+var MachineryListComponent = class _MachineryListComponent {
+  constructor(machineryService, fb, snackbar, encryptionService, dateUtils) {
+    this.machineryService = machineryService;
+    this.fb = fb;
+    this.snackbar = snackbar;
+    this.encryptionService = encryptionService;
+    this.dateUtils = dateUtils;
+    this.machineries = [];
+    this.isLoading = false;
+    this.currentPage = 0;
+    this.pageSize = 10;
+    this.pageSizeOptions = [5, 10, 25, 50, 100];
+    this.totalPages = 0;
+    this.totalElements = 0;
+    this.startIndex = 0;
+    this.endIndex = 0;
+    this.statusOptions = MACHINERY_STATUS_OPTIONS;
+    this.statusLabel = machineryStatusLabel;
+    this.initializeForm();
+  }
+  ngOnInit() {
+    this.loadMachineries();
+  }
+  /** Encrypted id for URLs (medonix pattern); numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
+  }
+  initializeForm() {
+    this.searchForm = this.fb.group({
+      search: [""],
+      status: [""],
+      startDate: [null],
+      endDate: [null]
+    });
+  }
+  loadMachineries() {
+    this.isLoading = true;
+    const formValues = this.searchForm.value;
+    const params = __spreadProps(__spreadValues({
+      currentPage: this.currentPage,
+      perPageRecord: this.pageSize
+    }, formValues), {
+      startDate: formValues.startDate ? this.dateUtils.formatDateForApi(formValues.startDate, true) : null,
+      endDate: formValues.endDate ? this.dateUtils.formatDateForApi(formValues.endDate, true) : null
+    });
+    this.machineryService.searchMachineries(params).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.machineries = response.data.content;
+          this.totalPages = response.data.totalPages;
+          this.totalElements = response.data.totalElements;
+          this.updatePaginationIndexes();
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || "Failed to load machineries");
+        this.isLoading = false;
+      }
+    });
+  }
+  updatePaginationIndexes() {
+    this.startIndex = this.currentPage * this.pageSize;
+    this.endIndex = Math.min((this.currentPage + 1) * this.pageSize, this.totalElements);
+  }
+  onSearch() {
+    this.currentPage = 0;
+    this.loadMachineries();
+  }
+  resetForm() {
+    this.searchForm.reset();
+    this.currentPage = 0;
+    this.loadMachineries();
+  }
+  onPageChange(page) {
+    this.currentPage = page;
+    this.loadMachineries();
+  }
+  onPageSizeChange(newSize) {
+    this.pageSize = newSize;
+    this.currentPage = 0;
+    this.loadMachineries();
+  }
+  deleteMachinery(id) {
+    if (confirm("Are you sure you want to delete this machinery?")) {
+      this.isLoading = true;
+      this.machineryService.deleteMachinery(id).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.snackbar.success("Machinery deleted successfully");
+            this.loadMachineries();
+          } else {
+            this.isLoading = false;
+          }
+        },
+        error: (error) => {
+          this.snackbar.error(error?.error?.message || "Failed to delete machinery");
+          this.isLoading = false;
+        }
+      });
+    }
+  }
+  static {
+    this.\u0275fac = function MachineryListComponent_Factory(t) {
+      return new (t || _MachineryListComponent)(\u0275\u0275directiveInject(MachineryService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(DateUtils));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _MachineryListComponent, selectors: [["app-machinery-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 51, vars: 6, consts: [[1, "machinery-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by name or code...", 1, "form-control"], ["formControlName", "status", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/machinery/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "machinery-list", "card"], [1, "table-responsive"], [3, "show"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "value"], [3, "ngClass"], [1, "actions"], ["title", "Edit", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "6", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function MachineryListComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
+        \u0275\u0275text(3, "Search Machinery");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(4, "form", 2);
+        \u0275\u0275listener("ngSubmit", function MachineryListComponent_Template_form_ngSubmit_4_listener() {
+          return ctx.onSearch();
+        });
+        \u0275\u0275elementStart(5, "div", 3)(6, "div", 4);
+        \u0275\u0275element(7, "input", 5);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(8, "div", 4)(9, "select", 6);
+        \u0275\u0275template(10, MachineryListComponent_option_10_Template, 2, 2, "option", 7);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(11, "div", 4);
+        \u0275\u0275element(12, "input", 8);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(13, "div", 4);
+        \u0275\u0275element(14, "input", 9);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(15, "div", 10)(16, "button", 11);
+        \u0275\u0275element(17, "i", 12);
+        \u0275\u0275text(18, " Search ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(19, "button", 13);
+        \u0275\u0275listener("click", function MachineryListComponent_Template_button_click_19_listener() {
+          return ctx.resetForm();
+        });
+        \u0275\u0275element(20, "i", 14);
+        \u0275\u0275text(21, " Reset ");
+        \u0275\u0275elementEnd()()()()();
+        \u0275\u0275elementStart(22, "div", 15)(23, "button", 16);
+        \u0275\u0275element(24, "i", 17);
+        \u0275\u0275text(25, " Create Machinery ");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(26, "div", 18)(27, "h2");
+        \u0275\u0275text(28, "Machinery");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(29, "div", 19);
+        \u0275\u0275element(30, "app-loader", 20);
+        \u0275\u0275elementStart(31, "table", 21)(32, "thead")(33, "tr")(34, "th");
+        \u0275\u0275text(35, "Name");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(36, "th");
+        \u0275\u0275text(37, "Code");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(38, "th");
+        \u0275\u0275text(39, "Remarks");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(40, "th");
+        \u0275\u0275text(41, "Status");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(42, "th");
+        \u0275\u0275text(43, "Updated At");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(44, "th");
+        \u0275\u0275text(45, "Actions");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(46, "tbody");
+        \u0275\u0275template(47, MachineryListComponent_tr_47_Template, 18, 12, "tr", 22)(48, MachineryListComponent_tr_48_Template, 3, 0, "tr", 23);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(49, "div", 24);
+        \u0275\u0275template(50, MachineryListComponent_app_pagination_50_Template, 1, 4, "app-pagination", 25);
+        \u0275\u0275elementEnd()()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(4);
+        \u0275\u0275property("formGroup", ctx.searchForm);
+        \u0275\u0275advance(6);
+        \u0275\u0275property("ngForOf", ctx.statusOptions);
+        \u0275\u0275advance(20);
+        \u0275\u0275property("show", ctx.isLoading);
+        \u0275\u0275advance(17);
+        \u0275\u0275property("ngForOf", ctx.machineries);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !(ctx.machineries == null ? null : ctx.machineries.length));
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ctx.totalPages > 0);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgClass,
+      NgForOf,
+      NgIf,
+      DatePipe,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      NgSelectOption,
+      \u0275NgSelectMultipleOption,
+      DefaultValueAccessor,
+      SelectControlValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      FormGroupDirective,
+      FormControlName,
+      FormsModule,
+      RouterModule,
+      RouterLink,
+      LoaderComponent,
+      PaginationComponent
+    ], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.machinery-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.machinery-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.machinery-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 15px;\n  align-items: start;\n}\n.machinery-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n}\n.machinery-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%] {\n  margin: 20px 0;\n  display: flex;\n  gap: 10px;\n  flex-wrap: wrap;\n}\n.machinery-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.machinery-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 12px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .status-o[_ngcontent-%COMP%] {\n  color: var(--warning);\n  background-color: rgba(255, 165, 0, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .status-p[_ngcontent-%COMP%] {\n  color: var(--info);\n  background-color: rgba(0, 153, 156, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .status-c[_ngcontent-%COMP%] {\n  color: var(--success);\n  background-color: rgba(90, 158, 111, 0.12);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .status-i[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  background-color: rgba(0, 0, 0, 0.06);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n@media (max-width: 768px) {\n  .machinery-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .machinery-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    gap: 10px;\n  }\n  .machinery-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: flex-end;\n  }\n  .machinery-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    margin: 0 -15px;\n    padding: 0 15px;\n  }\n}\n/*# sourceMappingURL=machinery-list.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(MachineryListComponent, { className: "MachineryListComponent", filePath: "src\\app\\components\\machinery\\machinery-list\\machinery-list.component.ts", lineNumber: 28 });
+})();
+
+// src/app/components/machinery/machinery-form/machinery-form.component.ts
+function MachineryFormComponent_div_19_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 25);
+    \u0275\u0275text(1, "Name is required");
+    \u0275\u0275elementEnd();
+  }
+}
+var MachineryFormComponent = class _MachineryFormComponent {
+  constructor(fb, machineryService, router, route, encryptionService, snackbar) {
+    this.fb = fb;
+    this.machineryService = machineryService;
+    this.router = router;
+    this.route = route;
+    this.encryptionService = encryptionService;
+    this.snackbar = snackbar;
+    this.isLoading = false;
+    this.isEditMode = false;
+    this.destroy$ = new Subject();
+    this.machineryForm = this.fb.group({
+      name: ["", Validators.required],
+      code: [""],
+      remarks: [""],
+      status: ["A", Validators.required]
+    });
+  }
+  ngOnInit() {
+    const rawId = this.route.snapshot.paramMap.get("id");
+    const decrypted = rawId ? Number(this.encryptionService.decrypt(rawId)) : NaN;
+    if (rawId && !decrypted) {
+      this.snackbar.error("Invalid link");
+      this.router.navigate(["/machinery"]);
+      return;
+    }
+    if (decrypted) {
+      this.isEditMode = true;
+      this.machineryId = decrypted;
+      this.loadMachinery();
+    }
+  }
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  loadMachinery() {
+    if (!this.machineryId)
+      return;
+    this.isLoading = true;
+    this.machineryService.getMachineryDetail(this.machineryId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.machineryForm.patchValue({
+            name: response.data.name || "",
+            code: response.data.code || "",
+            remarks: response.data.remarks || "",
+            status: response.data.status || "A"
+          });
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || "Failed to load machinery details");
+        this.isLoading = false;
+      }
+    });
+  }
+  isFieldInvalid(fieldName) {
+    const field = this.machineryForm.get(fieldName);
+    return field ? field.invalid && field.touched : false;
+  }
+  onSubmit(event2) {
+    if (event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
+    }
+    Object.keys(this.machineryForm.controls).forEach((k) => this.machineryForm.get(k)?.markAsTouched());
+    if (this.machineryForm.invalid) {
+      this.snackbar.error("Please fix validation errors");
+      return;
+    }
+    this.isLoading = true;
+    const v = this.machineryForm.getRawValue();
+    const payload = {
+      name: (v.name || "").trim(),
+      code: (v.code || "").trim() || null,
+      remarks: v.remarks || "",
+      status: v.status
+    };
+    const request = this.isEditMode ? this.machineryService.updateMachinery(__spreadProps(__spreadValues({}, payload), { id: this.machineryId })) : this.machineryService.createMachinery(payload);
+    request.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.snackbar.success(response.message);
+          this.router.navigate(["/machinery"]);
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || `Failed to ${this.isEditMode ? "update" : "create"} machinery`);
+        this.isLoading = false;
+      }
+    });
+  }
+  static {
+    this.\u0275fac = function MachineryFormComponent_Factory(t) {
+      return new (t || _MachineryFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(MachineryService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(SnackbarService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _MachineryFormComponent, selectors: [["app-machinery-form"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 43, vars: 9, consts: [[1, "machinery-form-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-cogs"], ["novalidate", "", 1, "machinery-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "fas", "fa-cog"], [1, "form-row"], [1, "form-group"], [1, "required"], ["type", "text", "formControlName", "name", "placeholder", "e.g. Cutting Machine 1", 1, "form-control"], ["class", "invalid-feedback", 4, "ngIf"], ["type", "text", "formControlName", "code", "placeholder", "e.g. M/C-2 (optional)", 1, "form-control"], ["formControlName", "status", 1, "form-control"], ["value", "A"], ["value", "I"], [1, "form-group", "remarks-group"], ["formControlName", "remarks", "rows", "3", "placeholder", "Optional note", 1, "form-control"], [1, "form-actions"], ["type", "button", "routerLink", "/machinery", 1, "btn", "btn-secondary"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", 3, "ngClass"], [1, "invalid-feedback"]], template: function MachineryFormComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0);
+        \u0275\u0275element(1, "app-loader", 1);
+        \u0275\u0275elementStart(2, "div", 2)(3, "div", 3)(4, "h2", 4);
+        \u0275\u0275element(5, "i", 5);
+        \u0275\u0275text(6);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(7, "form", 6);
+        \u0275\u0275listener("ngSubmit", function MachineryFormComponent_Template_form_ngSubmit_7_listener($event) {
+          return ctx.onSubmit($event);
+        });
+        \u0275\u0275elementStart(8, "div", 7)(9, "h3");
+        \u0275\u0275element(10, "i", 8);
+        \u0275\u0275text(11, " Machine Details");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(12, "div", 9)(13, "div", 10)(14, "label");
+        \u0275\u0275text(15, "Name ");
+        \u0275\u0275elementStart(16, "span", 11);
+        \u0275\u0275text(17, "*");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275element(18, "input", 12);
+        \u0275\u0275template(19, MachineryFormComponent_div_19_Template, 2, 0, "div", 13);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(20, "div", 10)(21, "label");
+        \u0275\u0275text(22, "Code");
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(23, "input", 14);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(24, "div", 10)(25, "label");
+        \u0275\u0275text(26, "Status");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(27, "select", 15)(28, "option", 16);
+        \u0275\u0275text(29, "Active");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(30, "option", 17);
+        \u0275\u0275text(31, "Inactive");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(32, "div", 18)(33, "label");
+        \u0275\u0275text(34, "Remarks");
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(35, "textarea", 19);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(36, "div", 20)(37, "button", 21);
+        \u0275\u0275element(38, "i", 22);
+        \u0275\u0275text(39, " Cancel ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(40, "button", 23);
+        \u0275\u0275element(41, "i", 24);
+        \u0275\u0275text(42);
+        \u0275\u0275elementEnd()()()()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance();
+        \u0275\u0275property("show", ctx.isLoading);
+        \u0275\u0275advance(5);
+        \u0275\u0275textInterpolate1(" ", ctx.isEditMode ? "Edit Machinery" : "Create Machinery", " ");
+        \u0275\u0275advance();
+        \u0275\u0275property("formGroup", ctx.machineryForm);
+        \u0275\u0275advance(11);
+        \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid("name"));
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isFieldInvalid("name"));
+        \u0275\u0275advance(21);
+        \u0275\u0275property("disabled", ctx.machineryForm.invalid || ctx.isLoading);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngClass", ctx.isLoading ? "fa-spinner fa-spin" : ctx.isEditMode ? "fa-save" : "fa-plus");
+        \u0275\u0275advance();
+        \u0275\u0275textInterpolate1(" ", ctx.isLoading ? "Processing..." : ctx.isEditMode ? "Update" : "Create", " ");
+      }
+    }, dependencies: [
+      CommonModule,
+      NgClass,
+      NgIf,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      NgSelectOption,
+      \u0275NgSelectMultipleOption,
+      DefaultValueAccessor,
+      SelectControlValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      FormGroupDirective,
+      FormControlName,
+      LoaderComponent,
+      RouterLink,
+      FormsModule,
+      RouterModule
+    ], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.machinery-form-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  margin: 0 auto;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 12px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  overflow: hidden;\n  margin-bottom: 2rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%]   .card-header[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  padding: 1.5rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%]   .card-header[_ngcontent-%COMP%]   .form-title[_ngcontent-%COMP%] {\n  color: white;\n  margin: 0;\n  font-size: 1.5rem;\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%] {\n  padding: 2rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%] {\n  background: var(--background);\n  border-radius: 8px;\n  padding: 1.5rem;\n  margin-bottom: 1.5rem;\n  border: 1px solid #e0e0e0;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0 0 1.25rem 0;\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: var(--text-primary);\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-row[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));\n  gap: 1.5rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%], .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n  flex-wrap: nowrap;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%], .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-width: 0;\n  display: block;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n  width: 40px;\n  height: 40px;\n  margin: 0;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  border: 1px solid var(--supporting);\n  border-radius: 8px;\n  background: white;\n  color: var(--primary);\n  font-size: 1rem;\n  line-height: 1;\n  cursor: pointer;\n  transition: all 0.3s ease;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: inherit;\n  font-size: 1rem;\n  line-height: 1;\n  margin: 0;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled), .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background: var(--primary);\n  border-color: var(--primary);\n  color: white;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled, .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.6;\n  cursor: not-allowed;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n  font-weight: 500;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #dc3545;\n  margin-left: 4px;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: 100%;\n  font-size: 1rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .remarks-group[_ngcontent-%COMP%] {\n  margin-bottom: 0;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .remarks-group[_ngcontent-%COMP%]   textarea[_ngcontent-%COMP%] {\n  resize: vertical;\n  min-height: 80px;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1.25rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  min-height: 44px;\n  touch-action: manipulation;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%]   .kbd-hint[_ngcontent-%COMP%] {\n  font-size: 0.72rem;\n  font-weight: 600;\n  padding: 0.1rem 0.4rem;\n  border-radius: 4px;\n  background: rgba(255, 255, 255, 0.22);\n  border: 1px solid rgba(255, 255, 255, 0.35);\n  line-height: 1.4;\n  white-space: nowrap;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n  -webkit-overflow-scrolling: touch;\n  border: 1px solid #e0e0e0;\n  border-radius: 8px;\n  background: white;\n  min-height: 340px;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 640px;\n  border-collapse: collapse;\n  background: white;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%] {\n  background-color: var(--secondary);\n  color: white;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  text-align: left;\n  font-weight: 600;\n  white-space: nowrap;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #ffd9d9;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-bottom: 1px solid #e0e0e0;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:hover {\n  background-color: rgba(253, 120, 35, 0.05);\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:last-child {\n  border-bottom: none;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  vertical-align: middle;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td.row-index[_ngcontent-%COMP%] {\n  font-weight: 600;\n  color: var(--text-secondary);\n  white-space: nowrap;\n  width: 48px;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .form-field-container[_ngcontent-%COMP%] {\n  min-width: 240px;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 100px;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-top: 2px solid var(--primary);\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  font-weight: 600;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  margin-top: 2rem;\n}\n.machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n  min-height: 44px;\n  touch-action: manipulation;\n}\n@media (max-width: 768px) {\n  .machinery-form-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-row[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n    width: 44px;\n    height: 44px;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n    gap: 0.75rem;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%] {\n    min-width: 560px;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n    padding: 0.6rem;\n    font-size: 0.9rem;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n    font-size: 1rem;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    min-height: 260px;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n    flex-direction: column;\n  }\n  .machinery-form-container[_ngcontent-%COMP%]   .machinery-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n}\n/*# sourceMappingURL=machinery-form.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(MachineryFormComponent, { className: "MachineryFormComponent", filePath: "src\\app\\components\\machinery\\machinery-form\\machinery-form.component.ts", lineNumber: 25 });
+})();
+
 // src/app/services/employee-order.service.ts
 var EmployeeOrderService = class _EmployeeOrderService {
   constructor(http) {
@@ -79260,7 +81651,7 @@ var EmployeeOrderService = class _EmployeeOrderService {
 };
 
 // src/app/components/employee-order/employee-order-list/employee-order-list.component.ts
-var _c017 = (a0) => ["/employee-order/edit", a0];
+var _c020 = (a0) => ["/employee-order/edit", a0];
 function EmployeeOrderListComponent_tr_60_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -79325,7 +81716,7 @@ function EmployeeOrderListComponent_tr_60_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 13, order_r2.createdAt, "medium"));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c017, order_r2.id));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c020, order_r2.id));
   }
 }
 function EmployeeOrderListComponent_tr_61_Template(rf, ctx) {
@@ -80276,8 +82667,8 @@ function planningStatusLabel(status) {
 }
 
 // src/app/components/planning/planning-list/planning-list.component.ts
-var _c018 = (a0) => ["/planning", a0];
-var _c17 = (a0) => ["/planning/edit", a0];
+var _c021 = (a0) => ["/planning", a0];
+var _c18 = (a0) => ["/planning/edit", a0];
 function PlanningListComponent_option_10_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "option", 31);
@@ -80360,7 +82751,7 @@ function PlanningListComponent_tr_67_Template(rf, ctx) {
     const p_r3 = ctx.$implicit;
     const ctx_r3 = \u0275\u0275nextContext();
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(21, _c018, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(21, _c021, ctx_r3.encId(p_r3.id)));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate(p_r3.planningNumber || "-");
     \u0275\u0275advance(2);
@@ -80390,9 +82781,9 @@ function PlanningListComponent_tr_67_Template(rf, ctx) {
     \u0275\u0275advance();
     \u0275\u0275textInterpolate(ctx_r3.statusLabel(p_r3.status));
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(23, _c018, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(23, _c021, ctx_r3.encId(p_r3.id)));
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(25, _c17, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(25, _c18, ctx_r3.encId(p_r3.id)));
   }
 }
 function PlanningListComponent_tr_68_Template(rf, ctx) {
@@ -80695,7 +83086,7 @@ function PlanningFormComponent_div_24_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.getFieldError("employeeIds"));
   }
 }
-function PlanningFormComponent_tr_81_div_8_Template(rf, ctx) {
+function PlanningFormComponent_tr_83_div_8_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 44);
     \u0275\u0275text(1);
@@ -80708,7 +83099,7 @@ function PlanningFormComponent_tr_81_div_8_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.getItemFieldError(i_r3, "productId"));
   }
 }
-function PlanningFormComponent_tr_81_div_11_Template(rf, ctx) {
+function PlanningFormComponent_tr_83_div_11_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 44);
     \u0275\u0275text(1);
@@ -80721,7 +83112,7 @@ function PlanningFormComponent_tr_81_div_11_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.getItemFieldError(i_r3, "plannedQuantity"));
   }
 }
-function PlanningFormComponent_tr_81_small_12_Template(rf, ctx) {
+function PlanningFormComponent_tr_83_small_12_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "small");
     \u0275\u0275text(1);
@@ -80734,7 +83125,14 @@ function PlanningFormComponent_tr_81_small_12_Template(rf, ctx) {
     \u0275\u0275textInterpolate1("Min: ", ctx_r0.getItemFloor(i_r3), " (already cut)");
   }
 }
-function PlanningFormComponent_tr_81_Template(rf, ctx) {
+function PlanningFormComponent_tr_83_div_15_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 44);
+    \u0275\u0275text(1, "Must be 0 or greater");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanningFormComponent_tr_83_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr", 45)(1, "td", 46);
@@ -80743,7 +83141,7 @@ function PlanningFormComponent_tr_81_Template(rf, ctx) {
     \u0275\u0275elementStart(3, "td")(4, "div", 47);
     \u0275\u0275element(5, "app-searchable-select", 48);
     \u0275\u0275elementStart(6, "button", 49);
-    \u0275\u0275listener("click", function PlanningFormComponent_tr_81_Template_button_click_6_listener($event) {
+    \u0275\u0275listener("click", function PlanningFormComponent_tr_83_Template_button_click_6_listener($event) {
       \u0275\u0275restoreView(_r2);
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.refreshProducts();
@@ -80752,27 +83150,31 @@ function PlanningFormComponent_tr_81_Template(rf, ctx) {
     });
     \u0275\u0275element(7, "i", 16);
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(8, PlanningFormComponent_tr_81_div_8_Template, 2, 1, "div", 17);
+    \u0275\u0275template(8, PlanningFormComponent_tr_83_div_8_Template, 2, 1, "div", 17);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(9, "td");
     \u0275\u0275element(10, "input", 50);
-    \u0275\u0275template(11, PlanningFormComponent_tr_81_div_11_Template, 2, 1, "div", 17)(12, PlanningFormComponent_tr_81_small_12_Template, 2, 1, "small", 6);
+    \u0275\u0275template(11, PlanningFormComponent_tr_83_div_11_Template, 2, 1, "div", 17)(12, PlanningFormComponent_tr_83_small_12_Template, 2, 1, "small", 6);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "td", 51);
-    \u0275\u0275element(14, "input", 52);
+    \u0275\u0275elementStart(13, "td");
+    \u0275\u0275element(14, "input", 51);
+    \u0275\u0275template(15, PlanningFormComponent_tr_83_div_15_Template, 2, 0, "div", 17);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(15, "td");
-    \u0275\u0275element(16, "input", 53);
+    \u0275\u0275elementStart(16, "td", 52);
+    \u0275\u0275element(17, "input", 53);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "td")(18, "button", 54);
-    \u0275\u0275listener("click", function PlanningFormComponent_tr_81_Template_button_click_18_listener($event) {
+    \u0275\u0275elementStart(18, "td");
+    \u0275\u0275element(19, "input", 54);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(20, "td")(21, "button", 55);
+    \u0275\u0275listener("click", function PlanningFormComponent_tr_83_Template_button_click_21_listener($event) {
       const i_r3 = \u0275\u0275restoreView(_r2).index;
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.removeItem(i_r3);
       $event.preventDefault();
       return \u0275\u0275resetView($event.stopPropagation());
     });
-    \u0275\u0275element(19, "i", 55);
+    \u0275\u0275element(22, "i", 56);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -80796,26 +83198,30 @@ function PlanningFormComponent_tr_81_Template(rf, ctx) {
     \u0275\u0275property("ngIf", ctx_r0.isItemFieldInvalid(i_r3, "plannedQuantity"));
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r0.getItemFloor(i_r3) > 0);
+    \u0275\u0275advance(2);
+    \u0275\u0275classProp("is-invalid", ctx_r0.isItemFieldInvalid(i_r3, "totalBags"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.isItemFieldInvalid(i_r3, "totalBags"));
     \u0275\u0275advance(6);
     \u0275\u0275property("disabled", ctx_r0.isLoading || ctx_r0.itemsFormArray.length <= 1);
   }
 }
-function PlanningFormComponent_tr_82_Template(rf, ctx) {
+function PlanningFormComponent_tr_84_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 56);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 57);
     \u0275\u0275text(2, 'No products added. Click "Add Product" to get started.');
     \u0275\u0275elementEnd()();
   }
 }
-function PlanningFormComponent_tfoot_83_Template(rf, ctx) {
+function PlanningFormComponent_tfoot_85_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 57)(3, "strong");
+    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 58)(3, "strong");
     \u0275\u0275text(4, "Total Planned:");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(5, "td")(6, "strong");
     \u0275\u0275text(7);
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(8, "td", 58);
+    \u0275\u0275element(8, "td", 59);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -80898,6 +83304,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
       id: [itemData?.id || null],
       productId: [itemData?.productId || "", Validators.required],
       plannedQuantity: [itemData?.plannedQuantity || "", [Validators.required, Validators.min(1)]],
+      totalBags: [itemData?.totalBags ?? null, [Validators.min(0)]],
       coatingRequired: [itemData?.coatingRequired || false],
       remarks: [itemData?.remarks || ""]
     });
@@ -80959,6 +83366,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
                 id: item.id || null,
                 productId: item.productId,
                 plannedQuantity: item.plannedQuantity,
+                totalBags: item.totalBags ?? null,
                 coatingRequired: !!item.coatingRequired,
                 remarks: item.remarks || ""
               });
@@ -81071,6 +83479,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
       const item = {
         productId: Number(v.productId),
         plannedQuantity: Number(v.plannedQuantity),
+        totalBags: v.totalBags === null || v.totalBags === "" || v.totalBags === void 0 ? null : Number(v.totalBags),
         coatingRequired: !!v.coatingRequired,
         remarks: v.remarks || ""
       };
@@ -81178,7 +83587,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
           return ctx.onGlobalKeydown($event);
         }, false, \u0275\u0275resolveDocument);
       }
-    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 97, vars: 25, consts: [[1, "planning-form-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-clipboard-list"], [4, "ngIf"], ["novalidate", "", 1, "planning-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], [1, "fas", "fa-users"], [1, "required"], [1, "employee-select-group"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "button", "title", "Refresh Employees", "aria-label", "Refresh Employees", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "fas", "fa-user"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [1, "fas", "fa-info-circle"], ["formControlName", "status", 1, "form-control"], ["value", "O"], ["value", "P"], ["value", "C"], ["value", "I"], [1, "fas", "fa-calendar-alt"], ["type", "date", "formControlName", "planningDate", 1, "form-control"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], [1, "fas", "fa-boxes"], ["type", "button", "title", "Add Product (Alt+P)", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "kbd-hint"], [1, "table-responsive"], [1, "table", "items-table"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "form-group", "remarks-group"], [1, "fas", "fa-comment"], ["formControlName", "remarks", "rows", "3", "placeholder", "Optional note for this planning", 1, "form-control"], [1, "form-actions"], ["type", "button", "routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "row-index"], [1, "product-select-group"], [3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "plannedQuantity", "min", "1", "step", "1", 1, "form-control"], [1, "text-center"], ["type", "checkbox", "formControlName", "coatingRequired", "title", "Coating required?"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["colspan", "6", 1, "text-center"], ["colspan", "2", 1, "text-end"], ["colspan", "3"]], template: function PlanningFormComponent_Template(rf, ctx) {
+    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 99, vars: 25, consts: [[1, "planning-form-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-clipboard-list"], [4, "ngIf"], ["novalidate", "", 1, "planning-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], [1, "fas", "fa-users"], [1, "required"], [1, "employee-select-group"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "button", "title", "Refresh Employees", "aria-label", "Refresh Employees", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "fas", "fa-user"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [1, "fas", "fa-info-circle"], ["formControlName", "status", 1, "form-control"], ["value", "O"], ["value", "P"], ["value", "C"], ["value", "I"], [1, "fas", "fa-calendar-alt"], ["type", "date", "formControlName", "planningDate", 1, "form-control"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], [1, "fas", "fa-boxes"], ["type", "button", "title", "Add Product (Alt+P)", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "kbd-hint"], [1, "table-responsive"], [1, "table", "items-table"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "form-group", "remarks-group"], [1, "fas", "fa-comment"], ["formControlName", "remarks", "rows", "3", "placeholder", "Optional note for this planning", 1, "form-control"], [1, "form-actions"], ["type", "button", "routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "row-index"], [1, "product-select-group"], [3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "plannedQuantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"], [1, "text-center"], ["type", "checkbox", "formControlName", "coatingRequired", "title", "Coating required?"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"], ["colspan", "2", 1, "text-end"], ["colspan", "4"]], template: function PlanningFormComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -81272,32 +83681,35 @@ var PlanningFormComponent = class _PlanningFormComponent {
         \u0275\u0275text(73, "*");
         \u0275\u0275elementEnd()();
         \u0275\u0275elementStart(74, "th");
-        \u0275\u0275text(75, "Coating?");
+        \u0275\u0275text(75, "Bags");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(76, "th");
-        \u0275\u0275text(77, "Remarks");
+        \u0275\u0275text(77, "Coating?");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(78, "th");
-        \u0275\u0275text(79, "Actions");
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(80, "tbody");
-        \u0275\u0275template(81, PlanningFormComponent_tr_81_Template, 20, 17, "tr", 36)(82, PlanningFormComponent_tr_82_Template, 3, 0, "tr", 6);
+        \u0275\u0275text(79, "Remarks");
         \u0275\u0275elementEnd();
-        \u0275\u0275template(83, PlanningFormComponent_tfoot_83_Template, 9, 1, "tfoot", 6);
+        \u0275\u0275elementStart(80, "th");
+        \u0275\u0275text(81, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(84, "div", 8)(85, "div", 37)(86, "label");
-        \u0275\u0275element(87, "i", 38);
-        \u0275\u0275text(88, " Remarks");
+        \u0275\u0275elementStart(82, "tbody");
+        \u0275\u0275template(83, PlanningFormComponent_tr_83_Template, 23, 20, "tr", 36)(84, PlanningFormComponent_tr_84_Template, 3, 0, "tr", 6);
         \u0275\u0275elementEnd();
-        \u0275\u0275element(89, "textarea", 39);
+        \u0275\u0275template(85, PlanningFormComponent_tfoot_85_Template, 9, 1, "tfoot", 6);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(86, "div", 8)(87, "div", 37)(88, "label");
+        \u0275\u0275element(89, "i", 38);
+        \u0275\u0275text(90, " Remarks");
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(91, "textarea", 39);
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(90, "div", 40)(91, "button", 41);
-        \u0275\u0275element(92, "i", 42);
-        \u0275\u0275text(93, " Cancel ");
+        \u0275\u0275elementStart(92, "div", 40)(93, "button", 41);
+        \u0275\u0275element(94, "i", 42);
+        \u0275\u0275text(95, " Cancel ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(94, "button", 43);
-        \u0275\u0275element(95, "i", 16);
-        \u0275\u0275text(96);
+        \u0275\u0275elementStart(96, "button", 43);
+        \u0275\u0275element(97, "i", 16);
+        \u0275\u0275text(98);
         \u0275\u0275elementEnd()()()()();
       }
       if (rf & 2) {
@@ -81325,7 +83737,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
         \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid("planningDate"));
         \u0275\u0275advance(6);
         \u0275\u0275property("disabled", ctx.isLoading);
-        \u0275\u0275advance(26);
+        \u0275\u0275advance(28);
         \u0275\u0275property("ngForOf", ctx.itemsFormArray.controls);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.itemsFormArray.length === 0);
@@ -81448,13 +83860,14 @@ var ProductionService = class _ProductionService {
 };
 
 // src/app/components/planning/planning-detail/planning-detail.component.ts
-var _c019 = (a0) => ["/planning/edit", a0];
-var _c18 = () => ["/production/entry"];
+var _c022 = (a0) => ["/planning/edit", a0];
+var _c19 = () => ["/production/entry"];
 var _c24 = (a0) => ({ planningId: a0 });
 var _c33 = () => ["/dashboard"];
 var _c43 = () => ["/plan-dispatch/create"];
-var _c53 = (a0, a1) => ({ planningId: a0, planningItemId: a1 });
-var _c63 = (a0) => ["/production/edit", a0];
+var _c53 = () => ["/plan-coating/create"];
+var _c63 = (a0, a1) => ({ planningId: a0, planningItemId: a1 });
+var _c72 = (a0) => ["/production/edit", a0];
 function PlanningDetailComponent_div_2_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -81478,34 +83891,40 @@ function PlanningDetailComponent_div_2_Template(rf, ctx) {
     \u0275\u0275element(14, "i", 14);
     \u0275\u0275text(15, " Dispatch");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "button", 15);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_16_listener() {
+    \u0275\u0275elementStart(16, "button", 10);
+    \u0275\u0275element(17, "i", 15);
+    \u0275\u0275text(18, " Coating");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(19, "button", 16);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_19_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.exportExcel());
     });
-    \u0275\u0275element(17, "i", 16);
-    \u0275\u0275text(18, " Excel");
+    \u0275\u0275element(20, "i", 17);
+    \u0275\u0275text(21, " Excel");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(4);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(7, _c019, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(9, _c022, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(9, _c18))("queryParams", \u0275\u0275pureFunction1(10, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(11, _c19))("queryParams", \u0275\u0275pureFunction1(12, _c24, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(12, _c33))("queryParams", \u0275\u0275pureFunction1(13, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(14, _c33))("queryParams", \u0275\u0275pureFunction1(15, _c24, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(15, _c43))("queryParams", \u0275\u0275pureFunction1(16, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(17, _c43))("queryParams", \u0275\u0275pureFunction1(18, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(20, _c53))("queryParams", \u0275\u0275pureFunction1(21, _c24, ctx_r1.encId(ctx_r1.planning.id)));
   }
 }
 function PlanningDetailComponent_div_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 17)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 18)(1, "h2");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 18)(4, "div")(5, "span");
+    \u0275\u0275elementStart(3, "div", 19)(4, "div")(5, "span");
     \u0275\u0275text(6, "Planning No:");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(7, "strong");
@@ -81530,7 +83949,7 @@ function PlanningDetailComponent_div_3_Template(rf, ctx) {
     \u0275\u0275elementStart(23, "strong");
     \u0275\u0275text(24);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(25, "div", 19)(26, "span");
+    \u0275\u0275elementStart(25, "div", 20)(26, "span");
     \u0275\u0275text(27, "Remarks:");
     \u0275\u0275elementEnd();
     \u0275\u0275text(28);
@@ -81554,52 +83973,52 @@ function PlanningDetailComponent_div_3_Template(rf, ctx) {
 }
 function PlanningDetailComponent_div_4_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 20)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 21)(1, "h2");
     \u0275\u0275text(2, "Production Summary");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 21)(4, "div", 22)(5, "span", 23);
+    \u0275\u0275elementStart(3, "div", 22)(4, "div", 23)(5, "span", 24);
     \u0275\u0275text(6, "Planned");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "span", 24);
+    \u0275\u0275elementStart(7, "span", 25);
     \u0275\u0275text(8);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "div", 22)(10, "span", 23);
+    \u0275\u0275elementStart(9, "div", 23)(10, "span", 24);
     \u0275\u0275text(11, "Cutting");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "span", 24);
+    \u0275\u0275elementStart(12, "span", 25);
     \u0275\u0275text(13);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "div", 22)(15, "span", 23);
+    \u0275\u0275elementStart(14, "div", 23)(15, "span", 24);
     \u0275\u0275text(16, "Emboss");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "span", 24);
+    \u0275\u0275elementStart(17, "span", 25);
     \u0275\u0275text(18);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(19, "div", 22)(20, "span", 23);
+    \u0275\u0275elementStart(19, "div", 23)(20, "span", 24);
     \u0275\u0275text(21, "Coating");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "span", 24);
+    \u0275\u0275elementStart(22, "span", 25);
     \u0275\u0275text(23);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(24, "div", 22)(25, "span", 23);
+    \u0275\u0275elementStart(24, "div", 23)(25, "span", 24);
     \u0275\u0275text(26, "Packing");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(27, "span", 24);
+    \u0275\u0275elementStart(27, "span", 25);
     \u0275\u0275text(28);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "div", 22)(30, "span", 23);
+    \u0275\u0275elementStart(29, "div", 23)(30, "span", 24);
     \u0275\u0275text(31, "Dispatch");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(32, "span", 24);
+    \u0275\u0275elementStart(32, "span", 25);
     \u0275\u0275text(33);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(34, "div", 22)(35, "span", 23);
+    \u0275\u0275elementStart(34, "div", 23)(35, "span", 24);
     \u0275\u0275text(36, "Remaining");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(37, "span", 24);
+    \u0275\u0275elementStart(37, "span", 25);
     \u0275\u0275text(38);
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(39, "p", 25);
+    \u0275\u0275elementStart(39, "p", 26);
     \u0275\u0275text(40, "Remaining = Planned \u2212 Cutting (combined Cutting+Emboss counts inside Cutting)");
     \u0275\u0275elementEnd()();
   }
@@ -81624,21 +84043,21 @@ function PlanningDetailComponent_div_4_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.planning.remainingQty);
   }
 }
-function PlanningDetailComponent_div_5_ng_container_29_span_4_Template(rf, ctx) {
+function PlanningDetailComponent_div_5_ng_container_31_span_4_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 35);
+    \u0275\u0275elementStart(0, "span", 36);
     \u0275\u0275text(1, "Coating");
     \u0275\u0275elementEnd();
   }
 }
-function PlanningDetailComponent_div_5_ng_container_29_tr_32_div_2_Template(rf, ctx) {
+function PlanningDetailComponent_div_5_ng_container_31_tr_34_div_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div");
     \u0275\u0275text(1, "Loading transactions\u2026");
     \u0275\u0275elementEnd();
   }
 }
-function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Template(rf, ctx) {
+function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_18_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr")(1, "td");
@@ -81649,26 +84068,33 @@ function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Templ
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "td");
     \u0275\u0275text(6);
-    \u0275\u0275pipe(7, "date");
-    \u0275\u0275pipe(8, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "td");
-    \u0275\u0275text(10);
+    \u0275\u0275elementStart(7, "td");
+    \u0275\u0275text(8);
+    \u0275\u0275pipe(9, "date");
+    \u0275\u0275pipe(10, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(11, "td", 39)(12, "button", 40);
-    \u0275\u0275element(13, "i", 9);
+    \u0275\u0275elementStart(11, "td");
+    \u0275\u0275text(12);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "button", 41);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Template_button_click_14_listener() {
+    \u0275\u0275elementStart(13, "td");
+    \u0275\u0275text(14);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(15, "td", 40)(16, "button", 41);
+    \u0275\u0275element(17, "i", 9);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(18, "button", 42);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_18_Template_button_click_18_listener() {
       const op_r6 = \u0275\u0275restoreView(_r5).$implicit;
       const item_r4 = \u0275\u0275nextContext(3).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.deleteEntry(op_r6.id, item_r4));
     });
-    \u0275\u0275element(15, "i", 42);
+    \u0275\u0275element(19, "i", 43);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
+    let tmp_9_0;
     const op_r6 = ctx.$implicit;
     const ctx_r1 = \u0275\u0275nextContext(5);
     \u0275\u0275advance(2);
@@ -81676,54 +84102,64 @@ function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Templ
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(op_r6.quantity);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(op_r6.operationDate ? \u0275\u0275pipeBind2(7, 5, op_r6.operationDate, "dd-MM-yyyy HH:mm") : \u0275\u0275pipeBind2(8, 8, op_r6.createdAt, "dd-MM-yyyy HH:mm"));
-    \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(op_r6.remarks || op_r6.machineRemarks || "-");
+    \u0275\u0275textInterpolate((tmp_9_0 = op_r6.totalBags) !== null && tmp_9_0 !== void 0 ? tmp_9_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c63, ctx_r1.encId(op_r6.id)));
+    \u0275\u0275textInterpolate(op_r6.operationDate ? \u0275\u0275pipeBind2(9, 7, op_r6.operationDate, "dd-MM-yyyy HH:mm") : \u0275\u0275pipeBind2(10, 10, op_r6.createdAt, "dd-MM-yyyy HH:mm"));
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate(op_r6.machineryName || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(op_r6.remarks || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(13, _c72, ctx_r1.encId(op_r6.id)));
   }
 }
-function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_15_Template(rf, ctx) {
+function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_19_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 43);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 44);
     \u0275\u0275text(2, "No transactions yet");
     \u0275\u0275elementEnd()();
   }
 }
-function PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_Template(rf, ctx) {
+function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "table", 38)(1, "thead")(2, "tr")(3, "th");
+    \u0275\u0275elementStart(0, "table", 39)(1, "thead")(2, "tr")(3, "th");
     \u0275\u0275text(4, "Type");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "th");
     \u0275\u0275text(6, "Qty");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(7, "th");
-    \u0275\u0275text(8, "Date");
+    \u0275\u0275text(8, "Bags");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(9, "th");
-    \u0275\u0275text(10, "Remarks");
+    \u0275\u0275text(10, "Date");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(11, "th");
-    \u0275\u0275text(12, "Actions");
+    \u0275\u0275text(12, "Machine");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(13, "th");
+    \u0275\u0275text(14, "Remarks");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(15, "th");
+    \u0275\u0275text(16, "Actions");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(13, "tbody");
-    \u0275\u0275template(14, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_14_Template, 16, 13, "tr", 28)(15, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_tr_15_Template, 3, 0, "tr", 34);
+    \u0275\u0275elementStart(17, "tbody");
+    \u0275\u0275template(18, PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_18_Template, 20, 15, "tr", 29)(19, PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_19_Template, 3, 0, "tr", 35);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const item_r4 = \u0275\u0275nextContext(2).$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance(14);
+    \u0275\u0275advance(18);
     \u0275\u0275property("ngForOf", ctx_r1.transactionsByItem[item_r4.id].operations);
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", !(ctx_r1.transactionsByItem[item_r4.id].operations == null ? null : ctx_r1.transactionsByItem[item_r4.id].operations.length));
   }
 }
-function PlanningDetailComponent_div_5_ng_container_29_tr_32_Template(rf, ctx) {
+function PlanningDetailComponent_div_5_ng_container_31_tr_34_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 36);
-    \u0275\u0275template(2, PlanningDetailComponent_div_5_ng_container_29_tr_32_div_2_Template, 2, 0, "div", 34)(3, PlanningDetailComponent_div_5_ng_container_29_tr_32_table_3_Template, 16, 2, "table", 37);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 37);
+    \u0275\u0275template(2, PlanningDetailComponent_div_5_ng_container_31_tr_34_div_2_Template, 2, 0, "div", 35)(3, PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_Template, 20, 2, "table", 38);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -81735,13 +84171,13 @@ function PlanningDetailComponent_div_5_ng_container_29_tr_32_Template(rf, ctx) {
     \u0275\u0275property("ngIf", ctx_r1.transactionsByItem[item_r4.id]);
   }
 }
-function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
+function PlanningDetailComponent_div_5_ng_container_31_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
     \u0275\u0275elementStart(1, "tr")(2, "td");
     \u0275\u0275text(3);
-    \u0275\u0275template(4, PlanningDetailComponent_div_5_ng_container_29_span_4_Template, 2, 0, "span", 29);
+    \u0275\u0275template(4, PlanningDetailComponent_div_5_ng_container_31_span_4_Template, 2, 0, "span", 30);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "td");
     \u0275\u0275text(6);
@@ -81764,32 +84200,36 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     \u0275\u0275elementStart(17, "td");
     \u0275\u0275text(18);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(19, "td")(20, "div", 30);
-    \u0275\u0275element(21, "div", 31);
+    \u0275\u0275elementStart(19, "td");
+    \u0275\u0275text(20);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "small");
-    \u0275\u0275text(23);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(24, "td");
+    \u0275\u0275elementStart(21, "td")(22, "div", 31);
+    \u0275\u0275element(23, "div", 32);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(24, "small");
     \u0275\u0275text(25);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(26, "td");
+    \u0275\u0275text(27);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(26, "td")(27, "button", 32);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_5_ng_container_29_Template_button_click_27_listener() {
+    \u0275\u0275elementStart(28, "td")(29, "button", 33);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_5_ng_container_31_Template_button_click_29_listener() {
       const item_r4 = \u0275\u0275restoreView(_r3).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.toggleTransactions(item_r4));
     });
-    \u0275\u0275text(28);
+    \u0275\u0275text(30);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(29, "button", 33);
-    \u0275\u0275element(30, "i", 11);
-    \u0275\u0275text(31, " Entry ");
+    \u0275\u0275elementStart(31, "button", 34);
+    \u0275\u0275element(32, "i", 11);
+    \u0275\u0275text(33, " Entry ");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275template(32, PlanningDetailComponent_div_5_ng_container_29_tr_32_Template, 4, 2, "tr", 34);
+    \u0275\u0275template(34, PlanningDetailComponent_div_5_ng_container_31_tr_34_Template, 4, 2, "tr", 35);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
-    let tmp_11_0;
+    let tmp_6_0;
+    let tmp_12_0;
     const item_r4 = ctx.$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(3);
@@ -81798,6 +84238,8 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     \u0275\u0275property("ngIf", item_r4.coatingRequired);
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(item_r4.plannedQuantity);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate((tmp_6_0 = item_r4.totalBags) !== null && tmp_6_0 !== void 0 ? tmp_6_0 : "-");
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(item_r4.cuttingQty);
     \u0275\u0275advance(2);
@@ -81809,7 +84251,7 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(item_r4.dispatchQty);
     \u0275\u0275advance();
-    \u0275\u0275classProp("negative", ((tmp_11_0 = item_r4.remainingQty) !== null && tmp_11_0 !== void 0 ? tmp_11_0 : 0) < 0);
+    \u0275\u0275classProp("negative", ((tmp_12_0 = item_r4.remainingQty) !== null && tmp_12_0 !== void 0 ? tmp_12_0 : 0) < 0);
     \u0275\u0275advance();
     \u0275\u0275textInterpolate(item_r4.remainingQty);
     \u0275\u0275advance(3);
@@ -81821,55 +84263,58 @@ function PlanningDetailComponent_div_5_ng_container_29_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate1(" ", ctx_r1.expandedItemId === item_r4.id ? "Hide" : "Transactions", " ");
     \u0275\u0275advance();
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(19, _c18))("queryParams", \u0275\u0275pureFunction2(20, _c53, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r4.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(20, _c19))("queryParams", \u0275\u0275pureFunction2(21, _c63, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r4.id)));
     \u0275\u0275advance(3);
     \u0275\u0275property("ngIf", ctx_r1.expandedItemId === item_r4.id);
   }
 }
 function PlanningDetailComponent_div_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 17)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 18)(1, "h2");
     \u0275\u0275text(2, "Product-wise Production");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 26)(4, "table", 27)(5, "thead")(6, "tr")(7, "th");
+    \u0275\u0275elementStart(3, "div", 27)(4, "table", 28)(5, "thead")(6, "tr")(7, "th");
     \u0275\u0275text(8, "Product");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(9, "th");
     \u0275\u0275text(10, "Planned");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(11, "th");
-    \u0275\u0275text(12, "Cutting");
+    \u0275\u0275text(12, "Bags");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(13, "th");
-    \u0275\u0275text(14, "Emboss");
+    \u0275\u0275text(14, "Cutting");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(15, "th");
-    \u0275\u0275text(16, "Coating");
+    \u0275\u0275text(16, "Emboss");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(17, "th");
-    \u0275\u0275text(18, "Packing");
+    \u0275\u0275text(18, "Coating");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(19, "th");
-    \u0275\u0275text(20, "Dispatch");
+    \u0275\u0275text(20, "Packing");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(21, "th");
-    \u0275\u0275text(22, "Remaining");
+    \u0275\u0275text(22, "Dispatch");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(23, "th");
-    \u0275\u0275text(24, "Progress");
+    \u0275\u0275text(24, "Remaining");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(25, "th");
-    \u0275\u0275text(26, "Status");
+    \u0275\u0275text(26, "Progress");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(27, "th");
+    \u0275\u0275elementStart(27, "th");
+    \u0275\u0275text(28, "Status");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(29, "th");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(28, "tbody");
-    \u0275\u0275template(29, PlanningDetailComponent_div_5_ng_container_29_Template, 33, 23, "ng-container", 28);
+    \u0275\u0275elementStart(30, "tbody");
+    \u0275\u0275template(31, PlanningDetailComponent_div_5_ng_container_31_Template, 35, 24, "ng-container", 29);
     \u0275\u0275elementEnd()()()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(29);
+    \u0275\u0275advance(31);
     \u0275\u0275property("ngForOf", ctx_r1.planning.items);
   }
 }
@@ -81990,10 +84435,11 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
       this.snackbar.error("No data to export");
       return;
     }
-    const headers = ["Product", "Planned", "Cutting", "Emboss", "Coating", "Packing", "Dispatch", "Remaining", "Status"];
+    const headers = ["Product", "Planned", "Bags", "Cutting", "Emboss", "Coating", "Packing", "Dispatch", "Remaining", "Status"];
     const rows = this.planning.items.map((item) => [
       item.productName,
       item.plannedQuantity,
+      item.totalBags ?? "",
       item.cuttingQty,
       item.embossQty,
       item.coatingRequired ? item.coatingQty : "N/A",
@@ -82005,6 +84451,7 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
     rows.push([
       "TOTAL",
       this.planning.totalPlanned,
+      "",
       this.planning.cuttingQty,
       this.planning.embossQty,
       this.planning.coatingQty,
@@ -82022,11 +84469,11 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningDetailComponent, selectors: [["app-planning-detail"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 6, vars: 5, consts: [[1, "planning-detail-container"], [3, "show"], ["class", "action-bar", 4, "ngIf"], ["class", "card", 4, "ngIf"], ["class", "card summary-card", 4, "ngIf"], [1, "action-bar"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-arrow-left"], [1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-edit"], [1, "btn", "btn-primary", 3, "routerLink", "queryParams"], [1, "fas", "fa-plus"], [1, "btn", "btn-secondary", 3, "routerLink", "queryParams"], [1, "fas", "fa-chart-bar"], [1, "fas", "fa-truck"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-file-excel"], [1, "card"], [1, "info-grid"], [1, "full"], [1, "card", "summary-card"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-label"], [1, "stat-value"], [1, "hint"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "btn", "btn-sm", "btn-secondary", 3, "click"], ["title", "Direct production entry \u2014 planning and product pre-selected, changeable", 1, "btn", "btn-sm", "btn-primary", 3, "routerLink", "queryParams"], [4, "ngIf"], [1, "badge"], ["colspan", "11"], ["class", "table inner", 4, "ngIf"], [1, "table", "inner"], [1, "actions"], ["title", "Edit entry (quantity/date/remarks)", 1, "btn-icon", "edit", 3, "routerLink"], ["title", "Delete entry and reverse stock", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "5", 1, "text-center"]], template: function PlanningDetailComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningDetailComponent, selectors: [["app-planning-detail"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 6, vars: 5, consts: [[1, "planning-detail-container"], [3, "show"], ["class", "action-bar", 4, "ngIf"], ["class", "card", 4, "ngIf"], ["class", "card summary-card", 4, "ngIf"], [1, "action-bar"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-arrow-left"], [1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-edit"], [1, "btn", "btn-primary", 3, "routerLink", "queryParams"], [1, "fas", "fa-plus"], [1, "btn", "btn-secondary", 3, "routerLink", "queryParams"], [1, "fas", "fa-chart-bar"], [1, "fas", "fa-truck"], [1, "fas", "fa-spray-can"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-file-excel"], [1, "card"], [1, "info-grid"], [1, "full"], [1, "card", "summary-card"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-label"], [1, "stat-value"], [1, "hint"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "btn", "btn-sm", "btn-secondary", 3, "click"], ["title", "Direct production entry \u2014 planning and product pre-selected, changeable", 1, "btn", "btn-sm", "btn-primary", 3, "routerLink", "queryParams"], [4, "ngIf"], [1, "badge"], ["colspan", "12"], ["class", "table inner", 4, "ngIf"], [1, "table", "inner"], [1, "actions"], ["title", "Edit entry (quantity/date/remarks)", 1, "btn-icon", "edit", 3, "routerLink"], ["title", "Delete entry and reverse stock", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"]], template: function PlanningDetailComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
-        \u0275\u0275template(2, PlanningDetailComponent_div_2_Template, 19, 18, "div", 2)(3, PlanningDetailComponent_div_3_Template, 29, 9, "div", 3)(4, PlanningDetailComponent_div_4_Template, 41, 9, "div", 4)(5, PlanningDetailComponent_div_5_Template, 30, 1, "div", 3);
+        \u0275\u0275template(2, PlanningDetailComponent_div_2_Template, 22, 23, "div", 2)(3, PlanningDetailComponent_div_3_Template, 29, 9, "div", 3)(4, PlanningDetailComponent_div_4_Template, 41, 9, "div", 4)(5, PlanningDetailComponent_div_5_Template, 32, 1, "div", 3);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
@@ -82062,10 +84509,10 @@ var OPERATION_OPTIONS = [
 function ProductionEntryComponent_div_8_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 9)(1, "h3");
-    \u0275\u0275element(2, "i", 23);
+    \u0275\u0275element(2, "i", 25);
     \u0275\u0275text(3, " Locked (delete + recreate to change these)");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "div", 24)(5, "div")(6, "span");
+    \u0275\u0275elementStart(4, "div", 26)(5, "div")(6, "span");
     \u0275\u0275text(7, "Planning:");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(8, "strong");
@@ -82116,7 +84563,7 @@ function ProductionEntryComponent_div_9_small_17_Template(rf, ctx) {
 }
 function ProductionEntryComponent_div_9_option_24_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 32);
+    \u0275\u0275elementStart(0, "option", 34);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -82142,36 +84589,36 @@ function ProductionEntryComponent_div_9_small_27_Template(rf, ctx) {
 function ProductionEntryComponent_div_9_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 9)(1, "h3");
-    \u0275\u0275element(2, "i", 25);
+    \u0275\u0275element(2, "i", 27);
     \u0275\u0275text(3, " Planning \u2192 Product \u2192 Operation");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(4, "div", 11)(5, "div", 13)(6, "label");
     \u0275\u0275text(7, "Planning ");
-    \u0275\u0275elementStart(8, "span", 26);
+    \u0275\u0275elementStart(8, "span", 28);
     \u0275\u0275text(9, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(10, "app-searchable-select", 27);
+    \u0275\u0275element(10, "app-searchable-select", 29);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(11, "div", 13)(12, "label");
     \u0275\u0275text(13, "Planning Product ");
-    \u0275\u0275elementStart(14, "span", 26);
+    \u0275\u0275elementStart(14, "span", 28);
     \u0275\u0275text(15, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(16, "app-searchable-select", 28);
-    \u0275\u0275template(17, ProductionEntryComponent_div_9_small_17_Template, 2, 7, "small", 29);
+    \u0275\u0275element(16, "app-searchable-select", 30);
+    \u0275\u0275template(17, ProductionEntryComponent_div_9_small_17_Template, 2, 7, "small", 31);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(18, "div", 13)(19, "label");
     \u0275\u0275text(20, "Operation ");
-    \u0275\u0275elementStart(21, "span", 26);
+    \u0275\u0275elementStart(21, "span", 28);
     \u0275\u0275text(22, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(23, "select", 30);
-    \u0275\u0275template(24, ProductionEntryComponent_div_9_option_24_Template, 2, 2, "option", 31);
+    \u0275\u0275elementStart(23, "select", 32);
+    \u0275\u0275template(24, ProductionEntryComponent_div_9_option_24_Template, 2, 2, "option", 33);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(25, "small");
     \u0275\u0275text(26);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(27, ProductionEntryComponent_div_9_small_27_Template, 3, 2, "small", 29);
+    \u0275\u0275template(27, ProductionEntryComponent_div_9_small_27_Template, 3, 2, "small", 31);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -82206,30 +84653,35 @@ function ProductionEntryComponent_div_10_small_16_Template(rf, ctx) {
 }
 function ProductionEntryComponent_div_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 33)(1, "h3");
-    \u0275\u0275element(2, "i", 34);
+    \u0275\u0275elementStart(0, "div", 35)(1, "h3");
+    \u0275\u0275element(2, "i", 36);
     \u0275\u0275text(3, " Input \u2192 Process \u2192 Output");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(4, "div", 11)(5, "div", 13)(6, "label");
     \u0275\u0275text(7);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(8, "app-searchable-select", 35);
-    \u0275\u0275template(9, ProductionEntryComponent_div_10_small_9_Template, 2, 0, "small", 29);
+    \u0275\u0275element(8, "app-searchable-select", 37);
+    \u0275\u0275template(9, ProductionEntryComponent_div_10_small_9_Template, 2, 0, "small", 31);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(10, "div", 13)(11, "label");
     \u0275\u0275text(12, "Output Product ");
-    \u0275\u0275elementStart(13, "span", 26);
+    \u0275\u0275elementStart(13, "span", 28);
     \u0275\u0275text(14, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(15, "app-searchable-select", 36);
-    \u0275\u0275template(16, ProductionEntryComponent_div_10_small_16_Template, 2, 0, "small", 29);
+    \u0275\u0275element(15, "app-searchable-select", 38);
+    \u0275\u0275template(16, ProductionEntryComponent_div_10_small_16_Template, 2, 0, "small", 31);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(17, "div", 13)(18, "label");
     \u0275\u0275text(19, "Quantity ");
-    \u0275\u0275elementStart(20, "span", 26);
+    \u0275\u0275elementStart(20, "span", 28);
     \u0275\u0275text(21, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(22, "input", 37);
+    \u0275\u0275element(22, "input", 39);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(23, "div", 13)(24, "label");
+    \u0275\u0275text(25, "Bags (optional)");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(26, "input", 40);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -82250,15 +84702,24 @@ function ProductionEntryComponent_div_16_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 13)(1, "label");
     \u0275\u0275text(2, "Quantity ");
-    \u0275\u0275elementStart(3, "span", 26);
+    \u0275\u0275elementStart(3, "span", 28);
     \u0275\u0275text(4, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(5, "input", 37);
+    \u0275\u0275element(5, "input", 39);
+    \u0275\u0275elementEnd();
+  }
+}
+function ProductionEntryComponent_div_17_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 13)(1, "label");
+    \u0275\u0275text(2, "Bags (optional)");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(3, "input", 40);
     \u0275\u0275elementEnd();
   }
 }
 var ProductionEntryComponent = class _ProductionEntryComponent {
-  constructor(fb, route, router, planningService, productionService, productService, employeeService, encryptionService, snackbar) {
+  constructor(fb, route, router, planningService, productionService, productService, employeeService, machineryService, encryptionService, snackbar) {
     this.fb = fb;
     this.route = route;
     this.router = router;
@@ -82266,6 +84727,7 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
     this.productionService = productionService;
     this.productService = productService;
     this.employeeService = employeeService;
+    this.machineryService = machineryService;
     this.encryptionService = encryptionService;
     this.snackbar = snackbar;
     this.isLoading = false;
@@ -82274,6 +84736,8 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
     this.planningItems = [];
     this.products = [];
     this.employees = [];
+    this.machineries = [];
+    this.isLoadingMachineries = false;
     this.operationOptions = OPERATION_OPTIONS;
     this.selectedItem = null;
     this.isEditMode = false;
@@ -82287,9 +84751,11 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
       inputProductId: [null],
       outputProductId: [null, Validators.required],
       quantity: [null, [Validators.required, Validators.min(1)]],
+      totalBags: [null, [Validators.min(0)]],
       operationDate: [(/* @__PURE__ */ new Date()).toISOString().substring(0, 10)],
       employeeIds: [[]],
-      machineRemarks: [""],
+      // MACHINERY_MASTER: dropdown-selected machine (optional; replaces machineRemarks).
+      machineryId: [null],
       remarks: [""]
     });
   }
@@ -82309,12 +84775,14 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
         this.entryForm.get(k)?.updateValueAndValidity({ emitEvent: false });
       });
       this.loadEmployees();
+      this.loadMachineries();
       this.loadOperation(editId);
       return;
     }
     this.loadPlannings();
     this.loadProducts();
     this.loadEmployees();
+    this.loadMachineries();
     this.entryForm.get("planningId")?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((id) => {
       this.entryForm.patchValue({ planningItemId: null }, { emitEvent: false });
       this.selectedItem = null;
@@ -82462,6 +84930,37 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
       }
     });
   }
+  loadMachineries() {
+    this.isLoadingMachineries = true;
+    this.machineryService.getMachineries().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.machineries = response.data;
+        }
+        this.isLoadingMachineries = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to load machineries");
+        this.isLoadingMachineries = false;
+      }
+    });
+  }
+  refreshMachineries() {
+    this.isLoadingMachineries = true;
+    this.machineryService.refreshMachineries().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.machineries = response.data;
+          this.snackbar.success("Machineries refreshed successfully");
+        }
+        this.isLoadingMachineries = false;
+      },
+      error: () => {
+        this.snackbar.error("Failed to refresh machineries");
+        this.isLoadingMachineries = false;
+      }
+    });
+  }
   loadOperation(id) {
     this.isLoading = true;
     this.productionService.getOperationDetail(id).subscribe({
@@ -82470,9 +84969,10 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
           this.existingOp = response.data;
           this.entryForm.patchValue({
             quantity: this.existingOp.quantity,
+            totalBags: this.existingOp.totalBags ?? null,
             operationDate: this.existingOp.operationDate ? formatDate(this.existingOp.operationDate, "yyyy-MM-dd", "en") : (/* @__PURE__ */ new Date()).toISOString().substring(0, 10),
             employeeIds: this.existingOp.employeeIds || [],
-            machineRemarks: this.existingOp.machineRemarks || "",
+            machineryId: this.existingOp.machineryId || null,
             remarks: this.existingOp.remarks || ""
           }, { emitEvent: false });
         }
@@ -82497,9 +84997,10 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
       this.productionService.updateOperation({
         id: this.operationId,
         quantity: Number(v.quantity),
+        totalBags: v.totalBags === null || v.totalBags === "" || v.totalBags === void 0 ? null : Number(v.totalBags),
         operationDate: this.toApiDateTime(v.operationDate),
         employeeIds: v.employeeIds || [],
-        machineRemarks: v.machineRemarks || "",
+        machineryId: v.machineryId ? Number(v.machineryId) : null,
         remarks: v.remarks || ""
       }).subscribe({
         next: (response) => {
@@ -82536,9 +85037,10 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
       inputProductId: v.inputProductId ? Number(v.inputProductId) : null,
       outputProductId: Number(v.outputProductId),
       quantity: Number(v.quantity),
+      totalBags: v.totalBags === null || v.totalBags === "" || v.totalBags === void 0 ? null : Number(v.totalBags),
       operationDate: this.toApiDateTime(v.operationDate),
       employeeIds: v.employeeIds || [],
-      machineRemarks: v.machineRemarks || "",
+      machineryId: v.machineryId ? Number(v.machineryId) : null,
       remarks: v.remarks || ""
     };
     this.productionService.createOperation(payload).subscribe({
@@ -82584,11 +85086,11 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
   }
   static {
     this.\u0275fac = function ProductionEntryComponent_Factory(t) {
-      return new (t || _ProductionEntryComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(ProductionService), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(EmployeeService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(SnackbarService));
+      return new (t || _ProductionEntryComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(ProductionService), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(EmployeeService), \u0275\u0275directiveInject(MachineryService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(SnackbarService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionEntryComponent, selectors: [["app-production-entry"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 40, vars: 15, consts: [[1, "entry-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-industry"], ["novalidate", "", 1, "entry-form", 3, "ngSubmit", "formGroup"], ["class", "section-card", 4, "ngIf"], ["class", "section-card transform-banner", 4, "ngIf"], [1, "section-card"], [1, "fas", "fa-info-circle"], [1, "form-row"], ["class", "form-group", 4, "ngIf"], [1, "form-group"], ["type", "date", "formControlName", "operationDate", 1, "form-control"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "multiple"], ["type", "text", "formControlName", "machineRemarks", "placeholder", "e.g. Cutting+Emboss M/C-2", 1, "form-control"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", 3, "ngClass"], [1, "fas", "fa-lock"], [1, "readonly-grid"], [1, "fas", "fa-clipboard-list"], [1, "required"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["formControlName", "planningItemId", "labelKey", "productName", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "operationType", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], [1, "section-card", "transform-banner"], [1, "fas", "fa-arrow-down"], ["formControlName", "inputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["formControlName", "outputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", 1, "form-control"]], template: function ProductionEntryComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionEntryComponent, selectors: [["app-production-entry"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 44, vars: 21, consts: [[1, "entry-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-industry"], ["novalidate", "", 1, "entry-form", 3, "ngSubmit", "formGroup"], ["class", "section-card", 4, "ngIf"], ["class", "section-card transform-banner", 4, "ngIf"], [1, "section-card"], [1, "fas", "fa-info-circle"], [1, "form-row"], ["class", "form-group", 4, "ngIf"], [1, "form-group"], ["type", "date", "formControlName", "operationDate", 1, "form-control"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "multiple"], [1, "product-select-group"], ["formControlName", "machineryId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Machineries", "aria-label", "Refresh Machineries", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", "fa-lock"], [1, "readonly-grid"], [1, "fas", "fa-clipboard-list"], [1, "required"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["formControlName", "planningItemId", "labelKey", "productName", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "operationType", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], [1, "section-card", "transform-banner"], [1, "fas", "fa-arrow-down"], ["formControlName", "inputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["formControlName", "outputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"]], template: function ProductionEntryComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -82600,40 +85102,48 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
         \u0275\u0275listener("ngSubmit", function ProductionEntryComponent_Template_form_ngSubmit_7_listener() {
           return ctx.onSubmit();
         });
-        \u0275\u0275template(8, ProductionEntryComponent_div_8_Template, 25, 4, "div", 7)(9, ProductionEntryComponent_div_9_Template, 28, 10, "div", 7)(10, ProductionEntryComponent_div_10_Template, 23, 9, "div", 8);
+        \u0275\u0275template(8, ProductionEntryComponent_div_8_Template, 25, 4, "div", 7)(9, ProductionEntryComponent_div_9_Template, 28, 10, "div", 7)(10, ProductionEntryComponent_div_10_Template, 27, 9, "div", 8);
         \u0275\u0275elementStart(11, "div", 9)(12, "h3");
         \u0275\u0275element(13, "i", 10);
         \u0275\u0275text(14);
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(15, "div", 11);
-        \u0275\u0275template(16, ProductionEntryComponent_div_16_Template, 6, 0, "div", 12);
-        \u0275\u0275elementStart(17, "div", 13)(18, "label");
-        \u0275\u0275text(19, "Operation Date");
+        \u0275\u0275template(16, ProductionEntryComponent_div_16_Template, 6, 0, "div", 12)(17, ProductionEntryComponent_div_17_Template, 4, 0, "div", 12);
+        \u0275\u0275elementStart(18, "div", 13)(19, "label");
+        \u0275\u0275text(20, "Operation Date");
         \u0275\u0275elementEnd();
-        \u0275\u0275element(20, "input", 14);
+        \u0275\u0275element(21, "input", 14);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(21, "div", 13)(22, "label");
-        \u0275\u0275text(23, "Employees");
+        \u0275\u0275elementStart(22, "div", 13)(23, "label");
+        \u0275\u0275text(24, "Employees");
         \u0275\u0275elementEnd();
-        \u0275\u0275element(24, "app-searchable-select", 15);
+        \u0275\u0275element(25, "app-searchable-select", 15);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(25, "div", 13)(26, "label");
-        \u0275\u0275text(27, "Machine / Workstation");
+        \u0275\u0275elementStart(26, "div", 13)(27, "label");
+        \u0275\u0275text(28, "Machinery");
         \u0275\u0275elementEnd();
-        \u0275\u0275element(28, "input", 16);
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(29, "div", 13)(30, "label");
-        \u0275\u0275text(31, "Remarks");
-        \u0275\u0275elementEnd();
-        \u0275\u0275element(32, "input", 17);
+        \u0275\u0275elementStart(29, "div", 16);
+        \u0275\u0275element(30, "app-searchable-select", 17);
+        \u0275\u0275elementStart(31, "button", 18);
+        \u0275\u0275listener("click", function ProductionEntryComponent_Template_button_click_31_listener($event) {
+          ctx.refreshMachineries();
+          $event.preventDefault();
+          return $event.stopPropagation();
+        });
+        \u0275\u0275element(32, "i", 19);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(33, "div", 18)(34, "button", 19);
-        \u0275\u0275element(35, "i", 20);
-        \u0275\u0275text(36, " Cancel");
+        \u0275\u0275elementStart(33, "div", 13)(34, "label");
+        \u0275\u0275text(35, "Remarks");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(37, "button", 21);
-        \u0275\u0275element(38, "i", 22);
-        \u0275\u0275text(39);
+        \u0275\u0275element(36, "input", 20);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(37, "div", 21)(38, "button", 22);
+        \u0275\u0275element(39, "i", 23);
+        \u0275\u0275text(40, " Cancel");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(41, "button", 24);
+        \u0275\u0275element(42, "i", 19);
+        \u0275\u0275text(43);
         \u0275\u0275elementEnd()()()()();
       }
       if (rf & 2) {
@@ -82653,9 +85163,17 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
         \u0275\u0275textInterpolate1(" ", ctx.isEditMode ? "Editable Details" : "Additional Details", "");
         \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", ctx.isEditMode);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isEditMode);
         \u0275\u0275advance(8);
         \u0275\u0275property("options", ctx.employees)("placeholder", "Select Employees")("multiple", true);
-        \u0275\u0275advance(10);
+        \u0275\u0275advance(5);
+        \u0275\u0275property("options", ctx.machineries)("placeholder", "Select Machinery")("searchPlaceholder", "Search machinery...");
+        \u0275\u0275advance();
+        \u0275\u0275property("disabled", ctx.isLoadingMachineries);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngClass", ctx.isLoadingMachineries ? "fa-spinner fa-spin" : "fa-sync-alt");
+        \u0275\u0275advance(6);
         \u0275\u0275property("routerLink", ctx.cancelLink);
         \u0275\u0275advance(3);
         \u0275\u0275property("disabled", ctx.entryForm.invalid || ctx.isSaving);
@@ -82668,11 +85186,11 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionEntryComponent, { className: "ProductionEntryComponent", filePath: "src\\app\\components\\production\\production-entry\\production-entry.component.ts", lineNumber: 23 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionEntryComponent, { className: "ProductionEntryComponent", filePath: "src\\app\\components\\production\\production-entry\\production-entry.component.ts", lineNumber: 24 });
 })();
 
 // src/app/components/production/production-dashboard/production-dashboard.component.ts
-var _c020 = (a0) => ["/planning", a0];
+var _c023 = (a0) => ["/planning", a0];
 function ProductionDashboardComponent_section_29_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "section", 22)(1, "div", 23)(2, "div", 24);
@@ -82809,7 +85327,7 @@ function ProductionDashboardComponent_section_30_tr_28_Template(rf, ctx) {
     const row_r2 = ctx.$implicit;
     const ctx_r0 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c020, ctx_r0.encId(row_r2.planningId)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c023, ctx_r0.encId(row_r2.planningId)));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate(row_r2.planningNumber);
     \u0275\u0275advance(2);
@@ -83149,7 +85667,7 @@ function ProcessDateReportComponent_span_37_Template(rf, ctx) {
     \u0275\u0275textInterpolate1("(", ctx_r0.totalElements, ")");
   }
 }
-function ProcessDateReportComponent_tr_59_Template(rf, ctx) {
+function ProcessDateReportComponent_tr_61_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
@@ -83175,12 +85693,16 @@ function ProcessDateReportComponent_tr_59_Template(rf, ctx) {
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(16, "td");
     \u0275\u0275text(17);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(18, "td");
+    \u0275\u0275text(19);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
+    let tmp_8_0;
     const r_r2 = ctx.$implicit;
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(r_r2.operationDate ? \u0275\u0275pipeBind2(3, 8, r_r2.operationDate, "dd-MM-yyyy HH:mm") : "-");
+    \u0275\u0275textInterpolate(r_r2.operationDate ? \u0275\u0275pipeBind2(3, 9, r_r2.operationDate, "dd-MM-yyyy HH:mm") : "-");
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(r_r2.planningNumber || "-");
     \u0275\u0275advance(2);
@@ -83192,27 +85714,29 @@ function ProcessDateReportComponent_tr_59_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(r_r2.quantity);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(r_r2.machineRemarks || "-");
+    \u0275\u0275textInterpolate((tmp_8_0 = r_r2.totalBags) !== null && tmp_8_0 !== void 0 ? tmp_8_0 : "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(r_r2.machineryName || "-");
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(r_r2.remarks || "-");
   }
 }
-function ProcessDateReportComponent_tr_60_Template(rf, ctx) {
+function ProcessDateReportComponent_tr_62_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td", 25);
     \u0275\u0275text(2, "No production found for the selected filters");
     \u0275\u0275elementEnd()();
   }
 }
-function ProcessDateReportComponent_app_pagination_63_Template(rf, ctx) {
+function ProcessDateReportComponent_app_pagination_65_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "app-pagination", 26);
-    \u0275\u0275listener("pageChange", function ProcessDateReportComponent_app_pagination_63_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275listener("pageChange", function ProcessDateReportComponent_app_pagination_65_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.onPageChange($event));
-    })("pageSizeChange", function ProcessDateReportComponent_app_pagination_63_Template_app_pagination_pageSizeChange_0_listener($event) {
+    })("pageSizeChange", function ProcessDateReportComponent_app_pagination_65_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.onPageSizeChange($event));
@@ -83331,7 +85855,7 @@ var ProcessDateReportComponent = class _ProcessDateReportComponent {
       this.snackbar.error("No data to export for the selected filters");
       return;
     }
-    const headers = ["Date", "Planning No", "Product", "Process", "Input Product", "Quantity", "Machine", "Remarks"];
+    const headers = ["Date", "Planning No", "Product", "Process", "Input Product", "Quantity", "Bags", "Machine", "Remarks"];
     const data = rows.map((r) => [
       r.operationDate ? new Date(r.operationDate).toLocaleString("en-GB") : "",
       r.planningNumber || "-",
@@ -83339,7 +85863,8 @@ var ProcessDateReportComponent = class _ProcessDateReportComponent {
       r.operationType || "",
       r.inputProductName || "-",
       r.quantity ?? "",
-      r.machineRemarks || "",
+      r.totalBags ?? "",
+      r.machineryName || "",
       r.remarks || ""
     ]);
     const v = this.filterForm.value;
@@ -83353,7 +85878,7 @@ var ProcessDateReportComponent = class _ProcessDateReportComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProcessDateReportComponent, selectors: [["app-process-date-report"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 64, vars: 15, consts: [[1, "report-container"], [3, "show"], [1, "search-section", "card"], [1, "fas", "fa-calendar-alt"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "date", "formControlName", "startDate", 1, "form-control", 3, "touchstart"], ["type", "date", "formControlName", "endDate", 1, "form-control", 3, "touchstart"], [1, "form-group", "process-group"], ["formControlName", "operationTypes", "labelKey", "label", "valueKey", "value", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "text", "formControlName", "search", "placeholder", "Product or planning no...", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary", 3, "touchstart", "disabled"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "touchstart", "disabled"], [1, "fas", "fa-undo"], [1, "fas", 3, "ngClass"], [1, "report-list", "card"], [4, "ngIf"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["colspan", "8", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProcessDateReportComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProcessDateReportComponent, selectors: [["app-process-date-report"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 66, vars: 15, consts: [[1, "report-container"], [3, "show"], [1, "search-section", "card"], [1, "fas", "fa-calendar-alt"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "date", "formControlName", "startDate", 1, "form-control", 3, "touchstart"], ["type", "date", "formControlName", "endDate", 1, "form-control", 3, "touchstart"], [1, "form-group", "process-group"], ["formControlName", "operationTypes", "labelKey", "label", "valueKey", "value", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "text", "formControlName", "search", "placeholder", "Product or planning no...", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary", 3, "touchstart", "disabled"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "touchstart", "disabled"], [1, "fas", "fa-undo"], [1, "fas", 3, "ngClass"], [1, "report-list", "card"], [4, "ngIf"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["colspan", "9", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProcessDateReportComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -83439,18 +85964,21 @@ var ProcessDateReportComponent = class _ProcessDateReportComponent {
         \u0275\u0275text(53, "Quantity");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(54, "th");
-        \u0275\u0275text(55, "Machine");
+        \u0275\u0275text(55, "Bags");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(56, "th");
-        \u0275\u0275text(57, "Remarks");
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(58, "tbody");
-        \u0275\u0275template(59, ProcessDateReportComponent_tr_59_Template, 18, 11, "tr", 22)(60, ProcessDateReportComponent_tr_60_Template, 3, 0, "tr", 19);
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(61, "p", 23);
-        \u0275\u0275text(62, "Excel contains exactly the filtered days and processes shown above.");
+        \u0275\u0275text(57, "Machine");
         \u0275\u0275elementEnd();
-        \u0275\u0275template(63, ProcessDateReportComponent_app_pagination_63_Template, 1, 4, "app-pagination", 24);
+        \u0275\u0275elementStart(58, "th");
+        \u0275\u0275text(59, "Remarks");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(60, "tbody");
+        \u0275\u0275template(61, ProcessDateReportComponent_tr_61_Template, 20, 12, "tr", 22)(62, ProcessDateReportComponent_tr_62_Template, 3, 0, "tr", 19);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(63, "p", 23);
+        \u0275\u0275text(64, "Excel contains exactly the filtered days and processes shown above.");
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(65, ProcessDateReportComponent_app_pagination_65_Template, 1, 4, "app-pagination", 24);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
@@ -83472,7 +86000,7 @@ var ProcessDateReportComponent = class _ProcessDateReportComponent {
         \u0275\u0275textInterpolate1(" ", ctx.isExporting ? "Exporting\u2026" : "Excel", " ");
         \u0275\u0275advance(4);
         \u0275\u0275property("ngIf", ctx.hasSearched);
-        \u0275\u0275advance(22);
+        \u0275\u0275advance(24);
         \u0275\u0275property("ngForOf", ctx.rows);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !(ctx.rows == null ? null : ctx.rows.length));
@@ -83743,7 +86271,7 @@ var StockMovementListComponent = class _StockMovementListComponent {
 })();
 
 // src/app/components/all-profits/daily-profit/daily-profit.component.ts
-var _c021 = (a0, a1) => ({ "text-success": a0, "text-danger": a1 });
+var _c024 = (a0, a1) => ({ "text-success": a0, "text-danger": a1 });
 function DailyProfitComponent_tr_34_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
@@ -83777,11 +86305,11 @@ function DailyProfitComponent_tr_34_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(8, 10, profit_r1.totalExpenses, "1.2-2"));
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(19, _c021, profit_r1.grossProfit > 0, profit_r1.grossProfit < 0));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(19, _c024, profit_r1.grossProfit > 0, profit_r1.grossProfit < 0));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", \u0275\u0275pipeBind2(11, 13, profit_r1.grossProfit, "1.2-2"), " ");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(22, _c021, profit_r1.netProfit > 0, profit_r1.netProfit < 0));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(22, _c024, profit_r1.netProfit > 0, profit_r1.netProfit < 0));
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", \u0275\u0275pipeBind2(14, 16, profit_r1.netProfit, "1.2-2"), " ");
   }
@@ -84042,11 +86570,11 @@ var DailyProfitComponent = class _DailyProfitComponent {
         \u0275\u0275advance(29);
         \u0275\u0275property("ngForOf", ctx.profits == null ? null : ctx.profits.content);
         \u0275\u0275advance(6);
-        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(20, _c021, ctx.getTotalGrossProfit() > 0, ctx.getTotalGrossProfit() < 0));
+        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(20, _c024, ctx.getTotalGrossProfit() > 0, ctx.getTotalGrossProfit() < 0));
         \u0275\u0275advance(2);
         \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(43, 14, ctx.getTotalGrossProfit(), "1.2-2"));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(23, _c021, ctx.getTotalNetProfit() > 0, ctx.getTotalNetProfit() < 0));
+        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(23, _c024, ctx.getTotalNetProfit() > 0, ctx.getTotalNetProfit() < 0));
         \u0275\u0275advance(2);
         \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(47, 17, ctx.getTotalNetProfit(), "1.2-2"));
         \u0275\u0275advance(3);
@@ -85197,8 +87725,8 @@ var QuotationStatus;
 })(QuotationStatus || (QuotationStatus = {}));
 
 // src/app/components/all-quotation/quotation/quotation.component.ts
-var _c022 = () => ({ label: "All Customers", value: "" });
-var _c19 = () => ({ label: "All Status", value: "" });
+var _c025 = () => ({ label: "All Customers", value: "" });
+var _c110 = () => ({ label: "All Status", value: "" });
 function QuotationComponent_tr_54_button_21_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
@@ -85772,13 +88300,13 @@ var QuotationComponent = class _QuotationComponent {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(6);
-        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(12, _c022))("searchPlaceholder", "Search customers...");
+        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(12, _c025))("searchPlaceholder", "Search customers...");
         \u0275\u0275advance();
         \u0275\u0275property("disabled", ctx.isLoadingCustomers);
         \u0275\u0275advance();
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance(3);
-        \u0275\u0275property("options", ctx.statusOptions)("defaultOption", \u0275\u0275pureFunction0(13, _c19))("searchPlaceholder", "Search status...");
+        \u0275\u0275property("options", ctx.statusOptions)("defaultOption", \u0275\u0275pureFunction0(13, _c110))("searchPlaceholder", "Search status...");
         \u0275\u0275advance(38);
         \u0275\u0275property("ngForOf", ctx.quotations);
         \u0275\u0275advance();
@@ -85911,6 +88439,21 @@ var routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: "plan-coating",
+    component: PlanCoatingListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: "plan-coating/create",
+    component: PlanCoatingFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: "plan-coating/edit/:id",
+    component: PlanCoatingFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
     path: "employee",
     component: EmployeeListComponent,
     canActivate: [AuthGuard]
@@ -85923,6 +88466,21 @@ var routes = [
   {
     path: "employee/edit/:id",
     component: EmployeeFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: "machinery",
+    component: MachineryListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: "machinery/create",
+    component: MachineryFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: "machinery/edit/:id",
+    component: MachineryFormComponent,
     canActivate: [AuthGuard]
   },
   {

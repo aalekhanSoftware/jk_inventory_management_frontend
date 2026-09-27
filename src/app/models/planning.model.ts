@@ -4,6 +4,8 @@ export interface PlanningItem {
   productId: number;
   productName?: string;
   plannedQuantity: number;
+  // PROCESS_BAGS: optional planned bags.
+  totalBags?: number | null;
   coatingRequired?: boolean;
   remarks?: string;
   cuttingQty?: number;

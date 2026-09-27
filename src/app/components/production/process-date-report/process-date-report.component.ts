@@ -157,7 +157,7 @@ export class ProcessDateReportComponent implements OnInit, OnDestroy {
       this.snackbar.error('No data to export for the selected filters');
       return;
     }
-    const headers = ['Date', 'Planning No', 'Product', 'Process', 'Input Product', 'Quantity', 'Machine', 'Remarks'];
+    const headers = ['Date', 'Planning No', 'Product', 'Process', 'Input Product', 'Quantity', 'Bags', 'Machine', 'Remarks'];
     const data = rows.map(r => [
       r.operationDate ? new Date(r.operationDate).toLocaleString('en-GB') : '',
       r.planningNumber || '-',
@@ -165,7 +165,8 @@ export class ProcessDateReportComponent implements OnInit, OnDestroy {
       r.operationType || '',
       r.inputProductName || '-',
       r.quantity ?? '',
-      r.machineRemarks || '',
+      r.totalBags ?? '',
+      r.machineryName || '',
       r.remarks || ''
     ]);
     const v = this.filterForm.value;

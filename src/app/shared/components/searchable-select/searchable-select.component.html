@@ -15,6 +15,13 @@
       aria-autocomplete="list"
       [attr.title]="multiple && !isOpen && searchText ? searchText : null"
     >
+    <i *ngIf="allowClear && (selectedValue || (selectedValues && selectedValues.length > 0))"
+       class="fas fa-times clear-icon"
+       (click)="clearSelection($event)"
+       (touchstart)="$event.stopPropagation()"
+       role="button"
+       tabindex="-1"
+       aria-label="Clear selection"></i>
     <i class="fas toggle-icon"
        [class.fa-chevron-down]="!isOpen"
        [class.fa-chevron-up]="isOpen"
@@ -25,15 +32,17 @@
        aria-label="Toggle options"></i>
   </div>
 
-  <div class="select-dropdown" *ngIf="isOpen">
-    <button type="button" class="scroll-btn scroll-up"
+  <div class="select-dropdown" *ngIf="isOpen" [class.drop-up]="dropUp" [style.max-height]="maxHeight">
+      <button type="button" class="scroll-btn scroll-up"
             (mousedown)="$event.preventDefault()"
             (click)="scrollOptions('up', $event)"
-            (touchstart)="$event.stopPropagation()"
             tabindex="-1" aria-label="Scroll options up">
       <i class="fas fa-chevron-up"></i>
     </button>
-    <div class="options-container" role="listbox">
+    <div class="options-container" role="listbox"
+      (mousedown)="onContainerPointerDown()"
+      (touchstart)="onContainerTouchStart()"
+      (touchend)="onContainerTouchEnd()">
       <div
         class="option"
         *ngFor="let option of filteredOptions; let i = index"
@@ -47,7 +56,7 @@
           <div class="checkbox" *ngIf="multiple">
             <i class="fas fa-check" *ngIf="isSelected(option)"></i>
           </div>
-          <span>{{ option[labelKey] }}</span>
+          <span [attr.title]="option[labelKey]">{{ option[labelKey] }}</span>
         </div>
       </div>
       <div class="no-results" *ngIf="filteredOptions.length === 0">
@@ -57,7 +66,6 @@
     <button type="button" class="scroll-btn scroll-down"
             (mousedown)="$event.preventDefault()"
             (click)="scrollOptions('down', $event)"
-            (touchstart)="$event.stopPropagation()"
             tabindex="-1" aria-label="Scroll options down">
       <i class="fas fa-chevron-down"></i>
     </button>

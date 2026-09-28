@@ -33,6 +33,19 @@
       color: var(--text-secondary);
       font-size: 0.8rem;
 
+      &.clear-icon {
+        right: 34px;
+        cursor: pointer;
+        padding: 6px;
+        margin: -6px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+
+        &:hover {
+          color: var(--primary);
+        }
+      }
+
       &.toggle-icon {
         pointer-events: auto;
         cursor: pointer;
@@ -48,12 +61,30 @@
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
-    right: 0;
+    // Auto-expand with long option labels (medonix pattern): the panel grows
+    // past the trigger width up to a viewport cap instead of clipping text.
+    right: auto;
+    min-width: max(100%, var(--dropdown-min-width, 100%));
+    width: max-content;
+    max-width: min(92vw, 620px);
     background: white;
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     border: 1px solid var(--supporting);
+    // Flex column + clipped panel: the options list fills exactly the capped
+    // height and scrolls internally instead of painting past the border.
+    // (A plain percentage max-height on the list does NOT work — the panel
+    // height is indefinite, so % resolves to none and the list overflows.)
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    // Opens upward when there is no room below (set from the component).
+    &.drop-up {
+      top: auto;
+      bottom: calc(100% + 4px);
+    }
     
     .scroll-btn {
       position: absolute;
@@ -89,8 +120,14 @@
     }
 
     .options-container {
-      max-height: 200px;
+      // Flex child of the capped panel: min-height 0 lets it shrink below
+      // content height so overflow-y actually scrolls (without this the flex
+      // item refuses to shrink and the list is clipped with no scrollbar).
+      flex: 1 1 auto;
+      min-height: 0;
+      box-sizing: border-box;
       overflow-y: auto;
+      overflow-x: hidden;
       padding: 28px 0;
       scroll-behavior: smooth;
       -webkit-overflow-scrolling: touch;
@@ -118,6 +155,15 @@
           display: flex;
           align-items: center;
           gap: 8px;
+          min-width: 0;
+
+          span {
+            display: block;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
 
           .checkbox {
             width: 16px;
@@ -192,6 +238,8 @@
       position: fixed;
       left: 16px;
       right: 16px;
+      width: auto;
+      max-width: none;
       // Anchor above the on-screen keyboard / browser chrome instead of the
       // input so long option lists stay fully reachable on small screens.
       top: auto;

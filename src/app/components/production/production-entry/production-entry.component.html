@@ -42,12 +42,12 @@
         <div class="form-row">
           <div class="form-group">
             <label>Input Product {{ isSameProductStage ? '(locked = output)' : '*' }}</label>
-            <app-searchable-select formControlName="inputProductId" [options]="products" labelKey="name" valueKey="id" [placeholder]="'Select Input (e.g. Galvanized Patti)'" [searchPlaceholder]="'Search products...'"></app-searchable-select>
+            <app-searchable-select formControlName="inputProductId" [options]="products" labelKey="name" valueKey="id" [placeholder]="'Select Input (e.g. Galvanized Patti)'" [searchPlaceholder]="'Search products...'" [focusWidthPx]="600" [maxHeight]="'320px'"></app-searchable-select>
             <small *ngIf="!isSameProductStage">Cutting consumes input stock; output stock is added.</small>
           </div>
           <div class="form-group">
             <label>Output Product <span class="required">*</span></label>
-            <app-searchable-select formControlName="outputProductId" [options]="products" labelKey="name" valueKey="id" [placeholder]="'Select Output (e.g. Silver Clamp)'" [searchPlaceholder]="'Search products...'"></app-searchable-select>
+            <app-searchable-select formControlName="outputProductId" [options]="products" labelKey="name" valueKey="id" [placeholder]="'Select Output (e.g. Silver Clamp)'" [searchPlaceholder]="'Search products...'" [focusWidthPx]="600" [maxHeight]="'320px'"></app-searchable-select>
             <small *ngIf="isSameProductStage">Emboss/Coating/Packing: input and output stay the same (progress only, no net stock change).</small>
           </div>
           <div class="form-group">

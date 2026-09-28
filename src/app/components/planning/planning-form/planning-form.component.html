@@ -42,6 +42,8 @@
               valueKey="id"
               [placeholder]="'Select Customer'"
               [searchPlaceholder]="'Search customers...'"
+              [allowClear]="true"
+              [focusWidthPx]="600" [maxHeight]="'320px'"
             ></app-searchable-select>
           </div>
 
@@ -95,6 +97,7 @@
                       [valueKey]="'id'"
                       [placeholder]="'Select Product'"
                       [searchPlaceholder]="'Search products...'"
+                      [focusWidthPx]="600" [maxHeight]="'320px'"
                       [attr.id]="'productId_' + i"
                     ></app-searchable-select>
                     <button type="button" class="btn-icon refresh" (click)="refreshProducts(); $event.preventDefault(); $event.stopPropagation()" [disabled]="isLoadingProducts" title="Refresh Products">

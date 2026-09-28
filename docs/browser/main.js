@@ -70123,95 +70123,121 @@ var SaleModalComponent = class _SaleModalComponent {
 })();
 
 // src/app/shared/components/searchable-select/searchable-select.component.ts
-function SearchableSelectComponent_div_4_div_4_div_2_i_1_Template(rf, ctx) {
+function SearchableSelectComponent_i_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "i", 18);
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "i", 6);
+    \u0275\u0275listener("click", function SearchableSelectComponent_i_3_Template_i_click_0_listener($event) {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.clearSelection($event));
+    })("touchstart", function SearchableSelectComponent_i_3_Template_i_touchstart_0_listener($event) {
+      \u0275\u0275restoreView(_r1);
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275elementEnd();
   }
 }
-function SearchableSelectComponent_div_4_div_4_div_2_Template(rf, ctx) {
+function SearchableSelectComponent_div_5_div_4_div_2_i_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 16);
-    \u0275\u0275template(1, SearchableSelectComponent_div_4_div_4_div_2_i_1_Template, 1, 0, "i", 17);
+    \u0275\u0275element(0, "i", 20);
+  }
+}
+function SearchableSelectComponent_div_5_div_4_div_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 18);
+    \u0275\u0275template(1, SearchableSelectComponent_div_5_div_4_div_2_i_1_Template, 1, 0, "i", 19);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const option_r4 = \u0275\u0275nextContext().$implicit;
+    const option_r5 = \u0275\u0275nextContext().$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isSelected(option_r4));
+    \u0275\u0275property("ngIf", ctx_r1.isSelected(option_r5));
   }
 }
-function SearchableSelectComponent_div_4_div_4_Template(rf, ctx) {
+function SearchableSelectComponent_div_5_div_4_Template(rf, ctx) {
   if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 13);
-    \u0275\u0275listener("mousedown", function SearchableSelectComponent_div_4_div_4_Template_div_mousedown_0_listener($event) {
-      const option_r4 = \u0275\u0275restoreView(_r3).$implicit;
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 15);
+    \u0275\u0275listener("mousedown", function SearchableSelectComponent_div_5_div_4_Template_div_mousedown_0_listener($event) {
+      const option_r5 = \u0275\u0275restoreView(_r4).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.onOptionPointerDown($event, option_r4));
+      return \u0275\u0275resetView(ctx_r1.onOptionPointerDown($event, option_r5));
     });
-    \u0275\u0275elementStart(1, "div", 14);
-    \u0275\u0275template(2, SearchableSelectComponent_div_4_div_4_div_2_Template, 2, 1, "div", 15);
+    \u0275\u0275elementStart(1, "div", 16);
+    \u0275\u0275template(2, SearchableSelectComponent_div_5_div_4_div_2_Template, 2, 1, "div", 17);
     \u0275\u0275elementStart(3, "span");
     \u0275\u0275text(4);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const option_r4 = ctx.$implicit;
-    const i_r5 = ctx.index;
+    const option_r5 = ctx.$implicit;
+    const i_r6 = ctx.index;
     const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275classProp("selected", ctx_r1.isSelected(option_r4))("highlighted", i_r5 === ctx_r1.highlightedIndex);
-    \u0275\u0275attribute("aria-selected", ctx_r1.isSelected(option_r4));
+    \u0275\u0275classProp("selected", ctx_r1.isSelected(option_r5))("highlighted", i_r6 === ctx_r1.highlightedIndex);
+    \u0275\u0275attribute("aria-selected", ctx_r1.isSelected(option_r5));
     \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r1.multiple);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(option_r4[ctx_r1.labelKey]);
+    \u0275\u0275advance();
+    \u0275\u0275attribute("title", option_r5[ctx_r1.labelKey]);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(option_r5[ctx_r1.labelKey]);
   }
 }
-function SearchableSelectComponent_div_4_div_5_Template(rf, ctx) {
+function SearchableSelectComponent_div_5_div_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 19);
+    \u0275\u0275elementStart(0, "div", 21);
     \u0275\u0275text(1, " No results found ");
     \u0275\u0275elementEnd();
   }
 }
-function SearchableSelectComponent_div_4_Template(rf, ctx) {
+function SearchableSelectComponent_div_5_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 5)(1, "button", 6);
-    \u0275\u0275listener("mousedown", function SearchableSelectComponent_div_4_Template_button_mousedown_1_listener($event) {
-      \u0275\u0275restoreView(_r1);
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 7)(1, "button", 8);
+    \u0275\u0275listener("mousedown", function SearchableSelectComponent_div_5_Template_button_mousedown_1_listener($event) {
+      \u0275\u0275restoreView(_r3);
       return \u0275\u0275resetView($event.preventDefault());
-    })("click", function SearchableSelectComponent_div_4_Template_button_click_1_listener($event) {
-      \u0275\u0275restoreView(_r1);
+    })("click", function SearchableSelectComponent_div_5_Template_button_click_1_listener($event) {
+      \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.scrollOptions("up", $event));
-    })("touchstart", function SearchableSelectComponent_div_4_Template_button_touchstart_1_listener($event) {
-      \u0275\u0275restoreView(_r1);
-      return \u0275\u0275resetView($event.stopPropagation());
     });
-    \u0275\u0275element(2, "i", 7);
+    \u0275\u0275element(2, "i", 9);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 8);
-    \u0275\u0275template(4, SearchableSelectComponent_div_4_div_4_Template, 5, 7, "div", 9)(5, SearchableSelectComponent_div_4_div_5_Template, 2, 0, "div", 10);
+    \u0275\u0275elementStart(3, "div", 10);
+    \u0275\u0275listener("mousedown", function SearchableSelectComponent_div_5_Template_div_mousedown_3_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onContainerPointerDown());
+    })("touchstart", function SearchableSelectComponent_div_5_Template_div_touchstart_3_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onContainerTouchStart());
+    })("touchend", function SearchableSelectComponent_div_5_Template_div_touchend_3_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onContainerTouchEnd());
+    });
+    \u0275\u0275template(4, SearchableSelectComponent_div_5_div_4_Template, 5, 8, "div", 11)(5, SearchableSelectComponent_div_5_div_5_Template, 2, 0, "div", 12);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "button", 11);
-    \u0275\u0275listener("mousedown", function SearchableSelectComponent_div_4_Template_button_mousedown_6_listener($event) {
-      \u0275\u0275restoreView(_r1);
+    \u0275\u0275elementStart(6, "button", 13);
+    \u0275\u0275listener("mousedown", function SearchableSelectComponent_div_5_Template_button_mousedown_6_listener($event) {
+      \u0275\u0275restoreView(_r3);
       return \u0275\u0275resetView($event.preventDefault());
-    })("click", function SearchableSelectComponent_div_4_Template_button_click_6_listener($event) {
-      \u0275\u0275restoreView(_r1);
+    })("click", function SearchableSelectComponent_div_5_Template_button_click_6_listener($event) {
+      \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.scrollOptions("down", $event));
-    })("touchstart", function SearchableSelectComponent_div_4_Template_button_touchstart_6_listener($event) {
-      \u0275\u0275restoreView(_r1);
-      return \u0275\u0275resetView($event.stopPropagation());
     });
-    \u0275\u0275element(7, "i", 12);
+    \u0275\u0275element(7, "i", 14);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("max-height", ctx_r1.maxHeight);
+    \u0275\u0275classProp("drop-up", ctx_r1.dropUp);
     \u0275\u0275advance(4);
     \u0275\u0275property("ngForOf", ctx_r1.filteredOptions);
     \u0275\u0275advance();
@@ -70219,6 +70245,10 @@ function SearchableSelectComponent_div_4_Template(rf, ctx) {
   }
 }
 var SearchableSelectComponent = class _SearchableSelectComponent {
+  /** Wide panel override while open (medonix pattern); trigger keeps its width. */
+  get dropdownMinWidth() {
+    return this.isOpen && this.focusWidthPx ? `${this.focusWidthPx}px` : null;
+  }
   constructor(el) {
     this.el = el;
     this.options = [];
@@ -70228,6 +70258,9 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     this.defaultOption = null;
     this.searchPlaceholder = "Search...";
     this.multiple = false;
+    this.searchKeys = [];
+    this.allowClear = true;
+    this.maxHeight = "320px";
     this.searchText = "";
     this.isOpen = false;
     this.selectedValue = "";
@@ -70241,6 +70274,9 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     this.isMobile = window.innerWidth <= 768;
     this.currentScrollPosition = 0;
     this.isKeyboardScrolling = false;
+    this.dropUp = false;
+    this.containerPointerActive = false;
+    this.containerTouchActive = false;
   }
   ngOnInit() {
     this.filteredOptions = this.options ? [...this.options] : [];
@@ -70291,9 +70327,33 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     if (this.isOpen) {
       this.searchText = "";
       this.filterOptions();
+      this.adjustDropDirection();
     } else {
       this.syncSearchTextWithSelection();
     }
+  }
+  /**
+   * Opens upward when there is no room below (desktop tables). Mobile keeps
+   * the bottom-sheet positioning from CSS.
+   */
+  adjustDropDirection() {
+    this.dropUp = false;
+    setTimeout(() => {
+      if (!this.isOpen || window.innerWidth <= 768) {
+        return;
+      }
+      const host = this.el.nativeElement;
+      const dd = host.querySelector(".select-dropdown");
+      if (!dd) {
+        return;
+      }
+      const rect = host.getBoundingClientRect();
+      const need = Math.min(dd.offsetHeight || 220, parseInt(this.maxHeight, 10) || 220);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < need && rect.top > need) {
+        this.dropUp = true;
+      }
+    }, 0);
   }
   onFocus() {
     if (this.multiple) {
@@ -70302,6 +70362,7 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     this.isOpen = true;
     this.filterOptions();
     this.highlightedIndex = -1;
+    this.adjustDropDirection();
   }
   onBlur(event2) {
     const target = event2?.relatedTarget;
@@ -70312,8 +70373,30 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
       return;
     }
     setTimeout(() => {
+      if (this.containerPointerActive || this.containerTouchActive) {
+        return;
+      }
       this.closeDropdown();
     }, 100);
+  }
+  /** Scrollbar drag / touch scroll starting inside the list: keep it open. */
+  onContainerPointerDown() {
+    this.containerPointerActive = true;
+  }
+  onContainerTouchStart() {
+    this.containerTouchActive = true;
+  }
+  onContainerTouchEnd() {
+    setTimeout(() => {
+      this.containerTouchActive = false;
+    }, 150);
+  }
+  onDocumentMouseUp() {
+    if (this.containerPointerActive) {
+      setTimeout(() => {
+        this.containerPointerActive = false;
+      }, 150);
+    }
   }
   closeDropdown() {
     if (!this.isOpen && this.highlightedIndex === -1) {
@@ -70329,8 +70412,27 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
       this.searchText = labels.length > 0 ? labels.join(", ") : this.selectedValues.length ? `${this.selectedValues.length} selected` : "";
       return;
     }
-    const selected = (this.options || []).find((opt) => opt[this.valueKey] === this.selectedValue);
+    const selected = this.findOption(this.selectedValue);
     this.searchText = selected ? selected[this.labelKey] : "";
+  }
+  /**
+   * Type-tolerant option lookup (medonix pattern): matches 5, '5' and ' 5 '
+   * so values arriving as strings/numbers from different sources still
+   * resolve to a label instead of a stuck placeholder.
+   */
+  findOption(value) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    const opts = this.options || [];
+    let found = opts.find((opt) => opt[this.valueKey] === value);
+    if (!found && typeof value === "number") {
+      found = opts.find((opt) => opt[this.valueKey] === String(value));
+    }
+    if (!found && typeof value === "string" && /^\d+$/.test(value.trim())) {
+      found = opts.find((opt) => opt[this.valueKey] === Number(value));
+    }
+    return found;
   }
   getSelectedLabels() {
     if (!this.multiple) {
@@ -70338,7 +70440,7 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     }
     const labels = [];
     for (const value of this.selectedValues) {
-      const option = (this.options || []).find((opt) => opt[this.valueKey] === value);
+      const option = this.findOption(value);
       const label = option ? option[this.labelKey] : null;
       if (label !== null && label !== void 0 && String(label).trim() !== "") {
         labels.push(String(label));
@@ -70352,8 +70454,31 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     this.isOpen = true;
   }
   filterOptions() {
-    const query2 = (this.searchText || "").toLowerCase();
-    this.filteredOptions = (this.options || []).filter((option) => String(option[this.labelKey] ?? "").toLowerCase().includes(query2));
+    const query2 = (this.searchText || "").toLowerCase().trim();
+    const matchText = (option) => {
+      const parts = [option[this.labelKey]];
+      for (const key of this.searchKeys) {
+        if (option[key] !== null && option[key] !== void 0) {
+          parts.push(option[key]);
+        }
+      }
+      return parts.filter((v) => v !== null && v !== void 0).map((v) => String(v).toLowerCase()).join(" ");
+    };
+    if (!query2) {
+      this.filteredOptions = [...this.options || []];
+    } else {
+      const startsWith = [];
+      const contains = [];
+      for (const option of this.options || []) {
+        const text = matchText(option);
+        if (text.startsWith(query2)) {
+          startsWith.push(option);
+        } else if (text.includes(query2)) {
+          contains.push(option);
+        }
+      }
+      this.filteredOptions = [...startsWith, ...contains];
+    }
     this.highlightedIndex = this.filteredOptions.length > 0 ? 0 : -1;
   }
   onOptionPointerDown(event2, option) {
@@ -70381,7 +70506,26 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
   }
   isSelected(option) {
     const value = option[this.valueKey];
-    return this.multiple ? this.selectedValues.includes(value) : this.selectedValue === value;
+    if (this.multiple) {
+      return this.selectedValues.some((v) => v === value || String(v) === String(value));
+    }
+    return value === this.selectedValue || value !== void 0 && value !== null && this.selectedValue !== void 0 && this.selectedValue !== null && String(value) === String(this.selectedValue);
+  }
+  /** Clears the selection (× icon); emits '' / [] like a pristine control. */
+  clearSelection(event2) {
+    if (event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
+    }
+    if (this.multiple) {
+      this.selectedValues = [];
+      this.onChange([]);
+    } else {
+      this.selectedValue = "";
+      this.searchText = "";
+      this.onChange("");
+    }
+    this.onTouch();
   }
   getSelectedLabel() {
     if (this.multiple) {
@@ -70394,7 +70538,7 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     if (!this.selectedValue && this.defaultOption) {
       return this.defaultOption.label;
     }
-    const selected = this.options.find((opt) => opt[this.valueKey] === this.selectedValue);
+    const selected = this.findOption(this.selectedValue);
     return selected ? selected[this.labelKey] : this.placeholder;
   }
   handleKeydown(event2) {
@@ -70477,7 +70621,7 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SearchableSelectComponent, selectors: [["app-searchable-select"]], hostBindings: function SearchableSelectComponent_HostBindings(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SearchableSelectComponent, selectors: [["app-searchable-select"]], hostVars: 2, hostBindings: function SearchableSelectComponent_HostBindings(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275listener("click", function SearchableSelectComponent_click_HostBindingHandler($event) {
           return ctx.onDocumentClick($event);
@@ -70487,15 +70631,20 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
           return ctx.onWindowResize();
         }, false, \u0275\u0275resolveWindow)("keydown", function SearchableSelectComponent_keydown_HostBindingHandler($event) {
           return ctx.onDocumentKeydown($event);
+        }, false, \u0275\u0275resolveDocument)("mouseup", function SearchableSelectComponent_mouseup_HostBindingHandler() {
+          return ctx.onDocumentMouseUp();
         }, false, \u0275\u0275resolveDocument);
       }
-    }, inputs: { options: "options", labelKey: "labelKey", valueKey: "valueKey", placeholder: "placeholder", defaultOption: "defaultOption", searchPlaceholder: "searchPlaceholder", multiple: "multiple" }, standalone: true, features: [\u0275\u0275ProvidersFeature([
+      if (rf & 2) {
+        \u0275\u0275styleProp("--dropdown-min-width", ctx.dropdownMinWidth);
+      }
+    }, inputs: { options: "options", labelKey: "labelKey", valueKey: "valueKey", placeholder: "placeholder", defaultOption: "defaultOption", searchPlaceholder: "searchPlaceholder", multiple: "multiple", searchKeys: "searchKeys", allowClear: "allowClear", maxHeight: "maxHeight", focusWidthPx: "focusWidthPx" }, standalone: true, features: [\u0275\u0275ProvidersFeature([
       {
         provide: NG_VALUE_ACCESSOR,
         useExisting: forwardRef(() => _SearchableSelectComponent),
         multi: true
       }
-    ]), \u0275\u0275NgOnChangesFeature, \u0275\u0275StandaloneFeature], decls: 5, vars: 11, consts: [[1, "searchable-select"], [1, "select-input"], ["type", "text", "autocomplete", "off", "role", "combobox", "aria-autocomplete", "list", 1, "search-input", 3, "ngModelChange", "input", "focus", "blur", "keydown", "placeholder", "ngModel"], ["role", "button", "tabindex", "-1", "aria-label", "Toggle options", 1, "fas", "toggle-icon", 3, "click", "mousedown"], ["class", "select-dropdown", 4, "ngIf"], [1, "select-dropdown"], ["type", "button", "tabindex", "-1", "aria-label", "Scroll options up", 1, "scroll-btn", "scroll-up", 3, "mousedown", "click", "touchstart"], [1, "fas", "fa-chevron-up"], ["role", "listbox", 1, "options-container"], ["class", "option", "role", "option", 3, "selected", "highlighted", "mousedown", 4, "ngFor", "ngForOf"], ["class", "no-results", 4, "ngIf"], ["type", "button", "tabindex", "-1", "aria-label", "Scroll options down", 1, "scroll-btn", "scroll-down", 3, "mousedown", "click", "touchstart"], [1, "fas", "fa-chevron-down"], ["role", "option", 1, "option", 3, "mousedown"], [1, "option-content"], ["class", "checkbox", 4, "ngIf"], [1, "checkbox"], ["class", "fas fa-check", 4, "ngIf"], [1, "fas", "fa-check"], [1, "no-results"]], template: function SearchableSelectComponent_Template(rf, ctx) {
+    ]), \u0275\u0275NgOnChangesFeature, \u0275\u0275StandaloneFeature], decls: 6, vars: 12, consts: [[1, "searchable-select"], [1, "select-input"], ["type", "text", "autocomplete", "off", "role", "combobox", "aria-autocomplete", "list", 1, "search-input", 3, "ngModelChange", "input", "focus", "blur", "keydown", "placeholder", "ngModel"], ["class", "fas fa-times clear-icon", "role", "button", "tabindex", "-1", "aria-label", "Clear selection", 3, "click", "touchstart", 4, "ngIf"], ["role", "button", "tabindex", "-1", "aria-label", "Toggle options", 1, "fas", "toggle-icon", 3, "click", "mousedown"], ["class", "select-dropdown", 3, "drop-up", "max-height", 4, "ngIf"], ["role", "button", "tabindex", "-1", "aria-label", "Clear selection", 1, "fas", "fa-times", "clear-icon", 3, "click", "touchstart"], [1, "select-dropdown"], ["type", "button", "tabindex", "-1", "aria-label", "Scroll options up", 1, "scroll-btn", "scroll-up", 3, "mousedown", "click"], [1, "fas", "fa-chevron-up"], ["role", "listbox", 1, "options-container", 3, "mousedown", "touchstart", "touchend"], ["class", "option", "role", "option", 3, "selected", "highlighted", "mousedown", 4, "ngFor", "ngForOf"], ["class", "no-results", 4, "ngIf"], ["type", "button", "tabindex", "-1", "aria-label", "Scroll options down", 1, "scroll-btn", "scroll-down", 3, "mousedown", "click"], [1, "fas", "fa-chevron-down"], ["role", "option", 1, "option", 3, "mousedown"], [1, "option-content"], ["class", "checkbox", 4, "ngIf"], [1, "checkbox"], ["class", "fas fa-check", 4, "ngIf"], [1, "fas", "fa-check"], [1, "no-results"]], template: function SearchableSelectComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "input", 2);
         \u0275\u0275twoWayListener("ngModelChange", function SearchableSelectComponent_Template_input_ngModelChange_2_listener($event) {
@@ -70512,14 +70661,15 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
           return ctx.handleKeydown($event);
         });
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(3, "i", 3);
-        \u0275\u0275listener("click", function SearchableSelectComponent_Template_i_click_3_listener($event) {
+        \u0275\u0275template(3, SearchableSelectComponent_i_3_Template, 1, 0, "i", 3);
+        \u0275\u0275elementStart(4, "i", 4);
+        \u0275\u0275listener("click", function SearchableSelectComponent_Template_i_click_4_listener($event) {
           return ctx.toggleDropdown($event);
-        })("mousedown", function SearchableSelectComponent_Template_i_mousedown_3_listener($event) {
+        })("mousedown", function SearchableSelectComponent_Template_i_mousedown_4_listener($event) {
           return $event.preventDefault();
         });
         \u0275\u0275elementEnd()();
-        \u0275\u0275template(4, SearchableSelectComponent_div_4_Template, 8, 2, "div", 4);
+        \u0275\u0275template(5, SearchableSelectComponent_div_5_Template, 8, 6, "div", 5);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
@@ -70529,11 +70679,13 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
         \u0275\u0275twoWayProperty("ngModel", ctx.searchText);
         \u0275\u0275attribute("aria-expanded", ctx.isOpen)("title", ctx.multiple && !ctx.isOpen && ctx.searchText ? ctx.searchText : null);
         \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.allowClear && (ctx.selectedValue || ctx.selectedValues && ctx.selectedValues.length > 0));
+        \u0275\u0275advance();
         \u0275\u0275classProp("fa-chevron-down", !ctx.isOpen)("fa-chevron-up", ctx.isOpen);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.isOpen);
       }
-    }, dependencies: [CommonModule, NgForOf, NgIf, FormsModule, DefaultValueAccessor, NgControlStatus, NgModel], styles: ["\n\n.searchable-select[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%] {\n  position: relative;\n  display: flex;\n  align-items: center;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 8px 32px 8px 12px;\n  border: 1px solid var(--supporting);\n  border-radius: 4px;\n  font-size: 0.9rem;\n  transition: all 0.3s ease;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  position: absolute;\n  right: 12px;\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.toggle-icon[_ngcontent-%COMP%] {\n  pointer-events: auto;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n  position: absolute;\n  top: calc(100% + 4px);\n  left: 0;\n  right: 0;\n  background: white;\n  border-radius: 4px;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n  z-index: 1000;\n  border: 1px solid var(--supporting);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%] {\n  position: absolute;\n  left: 0;\n  right: 0;\n  height: 24px;\n  background: white;\n  border: none;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  z-index: 2;\n  border-radius: 4px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn.scroll-up[_ngcontent-%COMP%] {\n  top: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn.scroll-down[_ngcontent-%COMP%] {\n  bottom: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n  max-height: 200px;\n  overflow-y: auto;\n  padding: 28px 0;\n  scroll-behavior: smooth;\n  -webkit-overflow-scrolling: touch;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar {\n  width: 6px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 3px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  font-size: 0.9rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%] {\n  width: 16px;\n  height: 16px;\n  border: 1px solid var(--supporting);\n  border-radius: 3px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 0.7rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%] {\n  background-color: rgba(var(--primary-rgb), 0.1);\n  color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  border-color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: white;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.highlighted[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .no-results[_ngcontent-%COMP%] {\n  padding: 12px;\n  text-align: center;\n  color: var(--text-secondary);\n  font-style: italic;\n  font-size: 0.9rem;\n}\n@media (max-width: 768px) {\n  .searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n    font-size: 1rem;\n    min-height: 44px;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%] {\n    min-width: 44px;\n    min-height: 44px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    right: 4px;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n    position: fixed;\n    left: 16px;\n    right: 16px;\n    top: auto;\n    bottom: 16px;\n    max-height: 50vh;\n    margin: 0;\n    border-radius: 12px;\n    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.25);\n    z-index: 2000;\n    touch-action: pan-y;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n    max-height: calc(50vh - 60px);\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n    padding: 12px;\n    min-height: 44px;\n    display: flex;\n    align-items: center;\n  }\n}\n/*# sourceMappingURL=searchable-select.component.css.map */"] });
+    }, dependencies: [CommonModule, NgForOf, NgIf, FormsModule, DefaultValueAccessor, NgControlStatus, NgModel], styles: ["\n\n.searchable-select[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%] {\n  position: relative;\n  display: flex;\n  align-items: center;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 8px 32px 8px 12px;\n  border: 1px solid var(--supporting);\n  border-radius: 4px;\n  font-size: 0.9rem;\n  transition: all 0.3s ease;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  position: absolute;\n  right: 12px;\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%] {\n  right: 34px;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%]:hover {\n  color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.toggle-icon[_ngcontent-%COMP%] {\n  pointer-events: auto;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n  position: absolute;\n  top: calc(100% + 4px);\n  left: 0;\n  right: auto;\n  min-width: max(100%, var(--dropdown-min-width, 100%));\n  width: max-content;\n  max-width: min(92vw, 620px);\n  background: white;\n  border-radius: 4px;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n  z-index: 1000;\n  border: 1px solid var(--supporting);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown.drop-up[_ngcontent-%COMP%] {\n  top: auto;\n  bottom: calc(100% + 4px);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%] {\n  position: absolute;\n  left: 0;\n  right: 0;\n  height: 24px;\n  background: white;\n  border: none;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  z-index: 2;\n  border-radius: 4px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn.scroll-up[_ngcontent-%COMP%] {\n  top: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn.scroll-down[_ngcontent-%COMP%] {\n  bottom: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-height: 0;\n  box-sizing: border-box;\n  overflow-y: auto;\n  overflow-x: hidden;\n  padding: 28px 0;\n  scroll-behavior: smooth;\n  -webkit-overflow-scrolling: touch;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar {\n  width: 6px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 3px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  font-size: 0.9rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  display: block;\n  min-width: 0;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%] {\n  width: 16px;\n  height: 16px;\n  border: 1px solid var(--supporting);\n  border-radius: 3px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 0.7rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%] {\n  background-color: rgba(var(--primary-rgb), 0.1);\n  color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  border-color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: white;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.highlighted[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .no-results[_ngcontent-%COMP%] {\n  padding: 12px;\n  text-align: center;\n  color: var(--text-secondary);\n  font-style: italic;\n  font-size: 0.9rem;\n}\n@media (max-width: 768px) {\n  .searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n    font-size: 1rem;\n    min-height: 44px;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%] {\n    min-width: 44px;\n    min-height: 44px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    right: 4px;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n    position: fixed;\n    left: 16px;\n    right: 16px;\n    width: auto;\n    max-width: none;\n    top: auto;\n    bottom: 16px;\n    max-height: 50vh;\n    margin: 0;\n    border-radius: 12px;\n    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.25);\n    z-index: 2000;\n    touch-action: pan-y;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n    max-height: calc(50vh - 60px);\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n    padding: 12px;\n    min-height: 44px;\n    display: flex;\n    align-items: center;\n  }\n}\n/*# sourceMappingURL=searchable-select.component.css.map */"] });
   }
 };
 (() => {
@@ -77455,19 +77607,19 @@ function PlanDispatchFormComponent_div_33_div_1_div_30_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    let tmp_18_0;
+    let tmp_20_0;
     const item_r6 = ctx.$implicit;
     const itemIndex_r7 = ctx.index;
     const bagIndex_r4 = \u0275\u0275nextContext().index;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275property("formGroupName", itemIndex_r7);
     \u0275\u0275advance(6);
-    \u0275\u0275property("options", ctx_r1.plannings)("placeholder", "No plan")("defaultOption", \u0275\u0275pureFunction0(28, _c15))("searchPlaceholder", "Search plannings...");
+    \u0275\u0275property("options", ctx_r1.plannings)("placeholder", "No plan")("defaultOption", \u0275\u0275pureFunction0(30, _c15))("searchPlaceholder", "Search plannings...");
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.rowPlanningId(item_r6));
     \u0275\u0275advance(7);
     \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("productId")));
-    \u0275\u0275property("options", ctx_r1.rowProductOptions(item_r6));
+    \u0275\u0275property("options", ctx_r1.rowProductOptions(item_r6))("focusWidthPx", 600)("maxHeight", "320px");
     \u0275\u0275advance(3);
     \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("productId")));
     \u0275\u0275advance();
@@ -77475,7 +77627,7 @@ function PlanDispatchFormComponent_div_33_div_1_div_30_Template(rf, ctx) {
     \u0275\u0275advance(7);
     \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("quantity")));
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((tmp_18_0 = item_r6.get("totalQuantity")) == null ? null : tmp_18_0.value) !== ((tmp_18_0 = item_r6.get("quantity")) == null ? null : tmp_18_0.value));
+    \u0275\u0275property("ngIf", ((tmp_20_0 = item_r6.get("totalQuantity")) == null ? null : tmp_20_0.value) !== ((tmp_20_0 = item_r6.get("quantity")) == null ? null : tmp_20_0.value));
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("quantity")));
     \u0275\u0275advance(15);
@@ -77543,7 +77695,7 @@ function PlanDispatchFormComponent_div_33_div_1_Template(rf, ctx) {
     \u0275\u0275text(28, " Add Item ");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(29, "div", 65);
-    \u0275\u0275template(30, PlanDispatchFormComponent_div_33_div_1_div_30_Template, 84, 29, "div", 66);
+    \u0275\u0275template(30, PlanDispatchFormComponent_div_33_div_1_div_30_Template, 84, 31, "div", 66);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -78443,7 +78595,7 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchFormComponent, selectors: [["app-plan-dispatch-form"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 28, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "productId", 3, "options"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], [1, "form-group"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"]], template: function PlanDispatchFormComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchFormComponent, selectors: [["app-plan-dispatch-form"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 28, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "productId", 3, "options", "focusWidthPx", "maxHeight"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], [1, "form-group"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"]], template: function PlanDispatchFormComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "div", 3)(4, "h2", 4);
         \u0275\u0275element(5, "i", 5);
@@ -83184,7 +83336,7 @@ function PlanningFormComponent_tr_83_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(i_r3 + 1);
     \u0275\u0275advance(3);
-    \u0275\u0275property("formControlName", "productId")("options", ctx_r0.products)("labelKey", "name")("valueKey", "id")("placeholder", "Select Product")("searchPlaceholder", "Search products...");
+    \u0275\u0275property("formControlName", "productId")("options", ctx_r0.products)("labelKey", "name")("valueKey", "id")("placeholder", "Select Product")("searchPlaceholder", "Search products...")("focusWidthPx", 600)("maxHeight", "320px");
     \u0275\u0275attribute("id", "productId_" + i_r3);
     \u0275\u0275advance();
     \u0275\u0275property("disabled", ctx_r0.isLoadingProducts);
@@ -83587,7 +83739,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
           return ctx.onGlobalKeydown($event);
         }, false, \u0275\u0275resolveDocument);
       }
-    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 99, vars: 25, consts: [[1, "planning-form-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-clipboard-list"], [4, "ngIf"], ["novalidate", "", 1, "planning-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], [1, "fas", "fa-users"], [1, "required"], [1, "employee-select-group"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "button", "title", "Refresh Employees", "aria-label", "Refresh Employees", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "fas", "fa-user"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [1, "fas", "fa-info-circle"], ["formControlName", "status", 1, "form-control"], ["value", "O"], ["value", "P"], ["value", "C"], ["value", "I"], [1, "fas", "fa-calendar-alt"], ["type", "date", "formControlName", "planningDate", 1, "form-control"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], [1, "fas", "fa-boxes"], ["type", "button", "title", "Add Product (Alt+P)", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "kbd-hint"], [1, "table-responsive"], [1, "table", "items-table"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "form-group", "remarks-group"], [1, "fas", "fa-comment"], ["formControlName", "remarks", "rows", "3", "placeholder", "Optional note for this planning", 1, "form-control"], [1, "form-actions"], ["type", "button", "routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "row-index"], [1, "product-select-group"], [3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "plannedQuantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"], [1, "text-center"], ["type", "checkbox", "formControlName", "coatingRequired", "title", "Coating required?"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"], ["colspan", "2", 1, "text-end"], ["colspan", "4"]], template: function PlanningFormComponent_Template(rf, ctx) {
+    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 99, vars: 28, consts: [[1, "planning-form-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-clipboard-list"], [4, "ngIf"], ["novalidate", "", 1, "planning-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], [1, "fas", "fa-users"], [1, "required"], [1, "employee-select-group"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "button", "title", "Refresh Employees", "aria-label", "Refresh Employees", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "fas", "fa-user"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "allowClear", "focusWidthPx", "maxHeight"], [1, "fas", "fa-info-circle"], ["formControlName", "status", 1, "form-control"], ["value", "O"], ["value", "P"], ["value", "C"], ["value", "I"], [1, "fas", "fa-calendar-alt"], ["type", "date", "formControlName", "planningDate", 1, "form-control"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], [1, "fas", "fa-boxes"], ["type", "button", "title", "Add Product (Alt+P)", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "kbd-hint"], [1, "table-responsive"], [1, "table", "items-table"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "form-group", "remarks-group"], [1, "fas", "fa-comment"], ["formControlName", "remarks", "rows", "3", "placeholder", "Optional note for this planning", 1, "form-control"], [1, "form-actions"], ["type", "button", "routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "row-index"], [1, "product-select-group"], [3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "plannedQuantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"], [1, "text-center"], ["type", "checkbox", "formControlName", "coatingRequired", "title", "Coating required?"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"], ["colspan", "2", 1, "text-end"], ["colspan", "4"]], template: function PlanningFormComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -83693,7 +83845,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
         \u0275\u0275text(81, "Actions");
         \u0275\u0275elementEnd()()();
         \u0275\u0275elementStart(82, "tbody");
-        \u0275\u0275template(83, PlanningFormComponent_tr_83_Template, 23, 20, "tr", 36)(84, PlanningFormComponent_tr_84_Template, 3, 0, "tr", 6);
+        \u0275\u0275template(83, PlanningFormComponent_tr_83_Template, 23, 22, "tr", 36)(84, PlanningFormComponent_tr_84_Template, 3, 0, "tr", 6);
         \u0275\u0275elementEnd();
         \u0275\u0275template(85, PlanningFormComponent_tfoot_85_Template, 9, 1, "tfoot", 6);
         \u0275\u0275elementEnd()()();
@@ -83730,7 +83882,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.isFieldInvalid("employeeIds"));
         \u0275\u0275advance(5);
-        \u0275\u0275property("options", ctx.customers)("placeholder", "Select Customer")("searchPlaceholder", "Search customers...");
+        \u0275\u0275property("options", ctx.customers)("placeholder", "Select Customer")("searchPlaceholder", "Search customers...")("allowClear", true)("focusWidthPx", 600)("maxHeight", "320px");
         \u0275\u0275advance(5);
         \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid("status"));
         \u0275\u0275advance(15);
@@ -84689,11 +84841,11 @@ function ProductionEntryComponent_div_10_Template(rf, ctx) {
     \u0275\u0275advance(7);
     \u0275\u0275textInterpolate1("Input Product ", ctx_r0.isSameProductStage ? "(locked = output)" : "*", "");
     \u0275\u0275advance();
-    \u0275\u0275property("options", ctx_r0.products)("placeholder", "Select Input (e.g. Galvanized Patti)")("searchPlaceholder", "Search products...");
+    \u0275\u0275property("options", ctx_r0.products)("placeholder", "Select Input (e.g. Galvanized Patti)")("searchPlaceholder", "Search products...")("focusWidthPx", 600)("maxHeight", "320px");
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", !ctx_r0.isSameProductStage);
     \u0275\u0275advance(6);
-    \u0275\u0275property("options", ctx_r0.products)("placeholder", "Select Output (e.g. Silver Clamp)")("searchPlaceholder", "Search products...");
+    \u0275\u0275property("options", ctx_r0.products)("placeholder", "Select Output (e.g. Silver Clamp)")("searchPlaceholder", "Search products...")("focusWidthPx", 600)("maxHeight", "320px");
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r0.isSameProductStage);
   }
@@ -85090,7 +85242,7 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionEntryComponent, selectors: [["app-production-entry"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 44, vars: 21, consts: [[1, "entry-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-industry"], ["novalidate", "", 1, "entry-form", 3, "ngSubmit", "formGroup"], ["class", "section-card", 4, "ngIf"], ["class", "section-card transform-banner", 4, "ngIf"], [1, "section-card"], [1, "fas", "fa-info-circle"], [1, "form-row"], ["class", "form-group", 4, "ngIf"], [1, "form-group"], ["type", "date", "formControlName", "operationDate", 1, "form-control"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "multiple"], [1, "product-select-group"], ["formControlName", "machineryId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Machineries", "aria-label", "Refresh Machineries", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", "fa-lock"], [1, "readonly-grid"], [1, "fas", "fa-clipboard-list"], [1, "required"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["formControlName", "planningItemId", "labelKey", "productName", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "operationType", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], [1, "section-card", "transform-banner"], [1, "fas", "fa-arrow-down"], ["formControlName", "inputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["formControlName", "outputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"]], template: function ProductionEntryComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionEntryComponent, selectors: [["app-production-entry"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 44, vars: 21, consts: [[1, "entry-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-industry"], ["novalidate", "", 1, "entry-form", 3, "ngSubmit", "formGroup"], ["class", "section-card", 4, "ngIf"], ["class", "section-card transform-banner", 4, "ngIf"], [1, "section-card"], [1, "fas", "fa-info-circle"], [1, "form-row"], ["class", "form-group", 4, "ngIf"], [1, "form-group"], ["type", "date", "formControlName", "operationDate", 1, "form-control"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "multiple"], [1, "product-select-group"], ["formControlName", "machineryId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Machineries", "aria-label", "Refresh Machineries", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", "fa-lock"], [1, "readonly-grid"], [1, "fas", "fa-clipboard-list"], [1, "required"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["formControlName", "planningItemId", "labelKey", "productName", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "operationType", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], [1, "section-card", "transform-banner"], [1, "fas", "fa-arrow-down"], ["formControlName", "inputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["formControlName", "outputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"]], template: function ProductionEntryComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -85102,7 +85254,7 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
         \u0275\u0275listener("ngSubmit", function ProductionEntryComponent_Template_form_ngSubmit_7_listener() {
           return ctx.onSubmit();
         });
-        \u0275\u0275template(8, ProductionEntryComponent_div_8_Template, 25, 4, "div", 7)(9, ProductionEntryComponent_div_9_Template, 28, 10, "div", 7)(10, ProductionEntryComponent_div_10_Template, 27, 9, "div", 8);
+        \u0275\u0275template(8, ProductionEntryComponent_div_8_Template, 25, 4, "div", 7)(9, ProductionEntryComponent_div_9_Template, 28, 10, "div", 7)(10, ProductionEntryComponent_div_10_Template, 27, 13, "div", 8);
         \u0275\u0275elementStart(11, "div", 9)(12, "h3");
         \u0275\u0275element(13, "i", 10);
         \u0275\u0275text(14);
@@ -85582,7 +85734,7 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionDashboardComponent, selectors: [["app-production-dashboard"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 31, vars: 9, consts: [[1, "dashboard-container"], [3, "show"], [1, "page-header", "card"], [1, "header-content"], [1, "header-icon"], [1, "fas", "fa-chart-bar"], [1, "header-text"], [1, "header-actions"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-clipboard-list"], ["routerLink", "/production/entry", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "filter-row", 3, "ngSubmit", "formGroup"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], ["class", "stat-grid", 4, "ngIf"], ["class", "card", 4, "ngIf"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-icon"], [1, "stat-content"], [1, "stat-label"], [1, "stat-value"], [1, "fas", "fa-cut"], [1, "fas", "fa-stamp"], [1, "fas", "fa-spray-can-sparkles"], [1, "fas", "fa-box"], [1, "fas", "fa-truck"], [1, "fas", "fa-scale-balanced"], [1, "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "routerLink"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "badge"], ["colspan", "10", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProductionDashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionDashboardComponent, selectors: [["app-production-dashboard"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 31, vars: 10, consts: [[1, "dashboard-container"], [3, "show"], [1, "page-header", "card"], [1, "header-content"], [1, "header-icon"], [1, "fas", "fa-chart-bar"], [1, "header-text"], [1, "header-actions"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-clipboard-list"], ["routerLink", "/production/entry", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "filter-row", 3, "ngSubmit", "formGroup"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "allowClear"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], ["class", "stat-grid", 4, "ngIf"], ["class", "card", 4, "ngIf"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-icon"], [1, "stat-content"], [1, "stat-label"], [1, "stat-value"], [1, "fas", "fa-cut"], [1, "fas", "fa-stamp"], [1, "fas", "fa-spray-can-sparkles"], [1, "fas", "fa-box"], [1, "fas", "fa-truck"], [1, "fas", "fa-scale-balanced"], [1, "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "routerLink"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "badge"], ["colspan", "10", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProductionDashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -85641,7 +85793,7 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
         \u0275\u0275advance();
         \u0275\u0275property("formGroup", ctx.filterForm);
         \u0275\u0275advance();
-        \u0275\u0275property("options", ctx.plannings)("placeholder", "All Plannings");
+        \u0275\u0275property("options", ctx.plannings)("placeholder", "All Plannings")("allowClear", true);
         \u0275\u0275advance(7);
         \u0275\u0275property("ngIf", ctx.summary);
         \u0275\u0275advance();

@@ -16,6 +16,11 @@ export class PlanningService {
     return this.http.post<PlanningResponse>(`${this.apiUrl}/search`, params);
   }
 
+  /** Latest-first cursor page for the plan dropdown (never loads all). */
+  searchPlanningDropdown(params: { search?: string; cursor?: number | null; limit?: number }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/dropdown`, params);
+  }
+
   createPlanning(planning: Planning): Observable<any> {
     return this.http.post(`${this.apiUrl}/create`, planning);
   }

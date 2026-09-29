@@ -11,13 +11,14 @@ import { MachineryService } from '../../../services/machinery.service';
 import { OPERATION_OPTIONS } from '../../../models/production.model';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
+import { PlanSelectComponent } from '../../../shared/components/plan-select/plan-select.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
 
 @Component({
   selector: 'app-production-entry',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, RouterLink, LoaderComponent, SearchableSelectComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, RouterLink, LoaderComponent, SearchableSelectComponent, PlanSelectComponent],
   templateUrl: './production-entry.component.html',
   styleUrls: ['./production-entry.component.scss']
 })
@@ -25,7 +26,6 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
   entryForm!: FormGroup;
   isLoading = false;
   isSaving = false;
-  plannings: any[] = [];
   planningItems: any[] = [];
   products: any[] = [];
   employees: any[] = [];
@@ -92,7 +92,6 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
       this.loadOperation(editId);
       return;
     }
-    this.loadPlannings();
     this.loadProducts();
     this.loadEmployees();
     this.loadMachineries();
@@ -120,22 +119,6 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  loadPlannings(): void {
-    this.isLoading = true;
-    this.planningService.searchPlannings({ currentPage: 0, perPageRecord: 100, sortBy: 'id', sortDir: 'desc' }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.plannings = response.data.content;
-        }
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.snackbar.error(error?.error?.message || 'Failed to load plannings');
-        this.isLoading = false;
-      }
-    });
   }
 
   onPlanningChange(planningId: number, preselectItem: number | null = null): void {

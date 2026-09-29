@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink, RouterModule } from '@angular/router';
 import { ProductionService } from '../../../services/production.service';
-import { PlanningService } from '../../../services/planning.service';
 import { DashboardSummary } from '../../../models/production.model';
 import { downloadCsv } from '../../../shared/utils/csv-export.util';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
-import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
+import { PlanSelectComponent } from '../../../shared/components/plan-select/plan-select.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
@@ -15,7 +14,7 @@ import { EncryptionService } from '../../../shared/services/encryption.service';
 @Component({
   selector: 'app-production-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, RouterLink, LoaderComponent, SearchableSelectComponent, PaginationComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, RouterLink, LoaderComponent, PlanSelectComponent, PaginationComponent],
   templateUrl: './production-dashboard.component.html',
   styleUrls: ['./production-dashboard.component.scss']
 })
@@ -24,7 +23,6 @@ export class ProductionDashboardComponent implements OnInit {
   isLoading = false;
   isExporting = false;
   filterForm!: FormGroup;
-  plannings: any[] = [];
 
   // Breakdown pagination (page size 10 like all other lists)
   currentPage = 0;
@@ -35,7 +33,6 @@ export class ProductionDashboardComponent implements OnInit {
 
   constructor(
     private productionService: ProductionService,
-    private planningService: PlanningService,
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private encryptionService: EncryptionService,
@@ -51,24 +48,12 @@ export class ProductionDashboardComponent implements OnInit {
     if (qPlanningId) {
       this.filterForm.patchValue({ planningId: qPlanningId });
     }
-    this.loadPlannings();
     this.loadSummary();
   }
 
   /** Encrypted id for URLs (medonix pattern); numeric ids stay in POST bodies. */
   encId(id: number | null | undefined): string {
     return this.encryptionService.encrypt(String(id ?? ''));
-  }
-
-  loadPlannings(): void {
-    this.planningService.searchPlannings({ currentPage: 0, perPageRecord: 100, sortBy: 'id', sortDir: 'desc' }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.plannings = response.data.content;
-        }
-      },
-      error: () => {}
-    });
   }
 
   loadSummary(): void {

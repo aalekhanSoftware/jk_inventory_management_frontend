@@ -147,10 +147,7 @@
                       <div class="form-group product-select">
                         <label>Plan (optional)</label>
                         <div class="product-select-group">
-                          <app-searchable-select formControlName="planningId" [options]="plannings"
-                            labelKey="planningNumber" valueKey="id" [placeholder]="'No plan'"
-                            [defaultOption]="{ label: 'No plan', value: '' }"
-                            [searchPlaceholder]="'Search plannings...'"></app-searchable-select>
+                          <app-plan-select formControlName="planningId" [placeholder]="'No plan'"></app-plan-select>
                         </div>
                         <small *ngIf="rowPlanningId(item)">Linked: progress + stock auto-updated.</small>
                       </div>

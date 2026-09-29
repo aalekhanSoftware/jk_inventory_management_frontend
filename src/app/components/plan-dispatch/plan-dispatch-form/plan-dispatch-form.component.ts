@@ -5,9 +5,9 @@ import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ProductService } from '../../../services/product.service';
 import { CustomerService } from '../../../services/customer.service';
-import { PlanningService } from '../../../services/planning.service';
 import { PlanDispatchService } from '../../../services/plan-dispatch.service';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
+import { PlanSelectComponent } from '../../../shared/components/plan-select/plan-select.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
@@ -39,6 +39,7 @@ interface BagFormGroup extends FormGroup {
     CommonModule,
     ReactiveFormsModule,
     SearchableSelectComponent,
+    PlanSelectComponent,
     LoaderComponent,
     RouterLink,
     ConfirmModalComponent
@@ -50,7 +51,6 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
   transportForm!: FormGroup;
   products: any[] = [];
   customers: any[] = [];
-  plannings: any[] = [];
   /** Balances per plan id (cached; one item-balances call per plan). */
   planItemsCache = new Map<number, any[]>();
   /** Memoized row product options: the dropdown re-syncs on every new array
@@ -61,7 +61,6 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
   loading = false;
   isLoadingProducts = false;
   isLoadingCustomers = false;
-  isLoadingPlannings = false;
   showDeleteBagModal = false;
   showDeleteItemModal = false;
   deleteBagIndex: number | null = null;
@@ -81,7 +80,6 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
     private router: Router,
     private productService: ProductService,
     private customerService: CustomerService,
-    private planningService: PlanningService,
     private planDispatchService: PlanDispatchService,
     private snackbar: SnackbarService,
     private encryptionService: EncryptionService,
@@ -93,7 +91,6 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadProducts();
     this.loadCustomers();
-    this.loadPlannings();
 
     // Encrypted id in URL (medonix pattern): decrypt before use.
     const rawId = this.route.snapshot.paramMap.get('id');
@@ -190,21 +187,6 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
       return '';
     }
     return `Pack: ${pi.packing ?? 0} · Disp: ${pi.dispatch ?? 0} · Can dispatch: ${pi.dispatchable ?? 0}`;
-  }
-
-  loadPlannings(): void {
-    this.isLoadingPlannings = true;
-    this.planningService.searchPlannings({ currentPage: 0, perPageRecord: 100, sortBy: 'id', sortDir: 'desc' }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.plannings = response.data.content;
-        }
-        this.isLoadingPlannings = false;
-      },
-      error: () => {
-        this.isLoadingPlannings = false;
-      }
-    });
   }
 
   /** Cached balances for plans (one backend call per plan). */

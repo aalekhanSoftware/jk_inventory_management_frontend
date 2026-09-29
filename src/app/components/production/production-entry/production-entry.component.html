@@ -19,7 +19,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Planning <span class="required">*</span></label>
-            <app-searchable-select formControlName="planningId" [options]="plannings" labelKey="planningNumber" valueKey="id" [placeholder]="'Select Planning'" [searchPlaceholder]="'Search plannings...'"></app-searchable-select>
+            <app-plan-select formControlName="planningId" [placeholder]="'Select Planning'"></app-plan-select>
           </div>
           <div class="form-group">
             <label>Planning Product <span class="required">*</span></label>

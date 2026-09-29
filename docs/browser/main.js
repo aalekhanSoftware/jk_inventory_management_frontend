@@ -77275,6 +77275,10 @@ var PlanningService = class _PlanningService {
   searchPlannings(params) {
     return this.http.post(`${this.apiUrl}/search`, params);
   }
+  /** Latest-first cursor page for the plan dropdown (never loads all). */
+  searchPlanningDropdown(params) {
+    return this.http.post(`${this.apiUrl}/dropdown`, params);
+  }
   createPlanning(planning) {
     return this.http.post(`${this.apiUrl}/create`, planning);
   }
@@ -77304,9 +77308,426 @@ var PlanningService = class _PlanningService {
   }
 };
 
+// src/app/shared/components/plan-select/plan-select.component.ts
+function PlanSelectComponent_i_3_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "i", 6);
+    \u0275\u0275listener("click", function PlanSelectComponent_i_3_Template_i_click_0_listener($event) {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.clearSelection($event));
+    })("touchstart", function PlanSelectComponent_i_3_Template_i_touchstart_0_listener($event) {
+      \u0275\u0275restoreView(_r1);
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanSelectComponent_div_5_div_2_small_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "small", 16);
+    \u0275\u0275text(1);
+    \u0275\u0275pipe(2, "date");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const option_r5 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(2, 1, option_r5.planningDate, "dd-MM-yyyy"));
+  }
+}
+function PlanSelectComponent_div_5_div_2_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 12);
+    \u0275\u0275listener("mousedown", function PlanSelectComponent_div_5_div_2_Template_div_mousedown_0_listener($event) {
+      const option_r5 = \u0275\u0275restoreView(_r4).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      $event.preventDefault();
+      return \u0275\u0275resetView(ctx_r1.selectOption(option_r5, $event));
+    });
+    \u0275\u0275elementStart(1, "div", 13)(2, "span", 14);
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(4, PlanSelectComponent_div_5_div_2_small_4_Template, 3, 4, "small", 15);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const option_r5 = ctx.$implicit;
+    const i_r6 = ctx.index;
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275classProp("selected", ctx_r1.isSelected(option_r5))("highlighted", i_r6 === ctx_r1.highlightedIndex);
+    \u0275\u0275attribute("aria-selected", ctx_r1.isSelected(option_r5));
+    \u0275\u0275advance(2);
+    \u0275\u0275attribute("title", option_r5.planningNumber);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(option_r5.planningNumber);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", option_r5.planningDate);
+  }
+}
+function PlanSelectComponent_div_5_div_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 17);
+    \u0275\u0275element(1, "i", 18);
+    \u0275\u0275text(2, " Loading... ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanSelectComponent_div_5_div_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 19);
+    \u0275\u0275text(1, " No plannings found ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanSelectComponent_div_5_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 7)(1, "div", 8);
+    \u0275\u0275listener("scroll", function PlanSelectComponent_div_5_Template_div_scroll_1_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onListScroll($event));
+    });
+    \u0275\u0275template(2, PlanSelectComponent_div_5_div_2_Template, 5, 8, "div", 9)(3, PlanSelectComponent_div_5_div_3_Template, 3, 0, "div", 10)(4, PlanSelectComponent_div_5_div_4_Template, 2, 0, "div", 11);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275classProp("drop-up", ctx_r1.dropUp);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngForOf", ctx_r1.items);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.loading || ctx_r1.loadingMore);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.loading && !ctx_r1.items.length);
+  }
+}
+var PlanSelectComponent = class _PlanSelectComponent {
+  constructor(el, planningService, snackbar) {
+    this.el = el;
+    this.planningService = planningService;
+    this.snackbar = snackbar;
+    this.placeholder = "Select Planning";
+    this.searchPlaceholder = "Search planning no...";
+    this.pageSize = 100;
+    this.searchDebounceMs = 400;
+    this.selectionChange = new EventEmitter();
+    this.items = [];
+    this.isOpen = false;
+    this.dropUp = false;
+    this.loading = false;
+    this.loadingMore = false;
+    this.hasMore = false;
+    this.searchText = "";
+    this.highlightedIndex = -1;
+    this.selectedPlanId = null;
+    this.nextCursor = null;
+    this.loadedOnce = false;
+    this.searchTimer = null;
+    this.destroy$ = new Subject();
+    this.onChange = () => {
+    };
+    this.onTouch = () => {
+    };
+  }
+  ngOnInit() {
+  }
+  ngOnDestroy() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  // ---- ControlValueAccessor ----
+  writeValue(value) {
+    this.selectedPlanId = value === void 0 || value === null || value === "" ? null : Number(value);
+    const found = this.selectedPlanId ? this.items.find((i) => i.id === this.selectedPlanId) : void 0;
+    this.searchText = found ? found.planningNumber : "";
+    if (this.selectedPlanId && !found) {
+      this.resolveLabel(this.selectedPlanId);
+    }
+  }
+  registerOnChange(fn) {
+    this.onChange = fn;
+  }
+  registerOnTouched(fn) {
+    this.onTouch = fn;
+  }
+  setDisabledState(isDisabled) {
+  }
+  // ---- Data ----
+  labelFor(id) {
+    const found = id ? this.items.find((i) => i.id === id) : void 0;
+    return found ? found.planningNumber : "";
+  }
+  load(reset) {
+    if (reset) {
+      if (this.loading) {
+        return;
+      }
+      this.loading = true;
+    } else {
+      if (this.loadingMore || !this.hasMore) {
+        return;
+      }
+      this.loadingMore = true;
+    }
+    const params = {
+      search: (this.searchText || "").trim(),
+      cursor: reset ? null : this.nextCursor,
+      limit: this.pageSize
+    };
+    this.planningService.searchPlanningDropdown(params).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response) => {
+        if (response.success) {
+          const content = response.data.content || [];
+          this.items = reset ? content : [...this.items, ...content];
+          this.nextCursor = response.data.nextCursor ?? null;
+          this.hasMore = !!response.data.hasMore;
+          this.loadedOnce = true;
+          if (reset) {
+            this.highlightedIndex = this.items.length ? 0 : -1;
+          }
+        }
+        this.loading = false;
+        this.loadingMore = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || "Failed to load plannings");
+        this.loading = false;
+        this.loadingMore = false;
+      }
+    });
+  }
+  /** Prefetch label for a preset id outside the loaded window (edit flows). */
+  resolveLabel(id) {
+    this.planningService.getPlanningDetail(id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const d = response.data;
+          if (!this.items.some((i) => i.id === d.id)) {
+            this.items = [{ id: d.id, planningNumber: d.planningNumber, planningDate: d.planningDate, status: d.status }, ...this.items];
+          }
+          if (this.selectedPlanId === d.id && !this.isOpen) {
+            this.searchText = d.planningNumber || "";
+          }
+        }
+      },
+      error: () => {
+      }
+    });
+  }
+  // ---- UI ----
+  toggleDropdown(event2) {
+    if (event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
+    }
+    this.isOpen = !this.isOpen;
+    if (this.isOpen) {
+      if (this.selectedPlanId && this.searchText === this.labelFor(this.selectedPlanId)) {
+        this.searchText = "";
+      }
+      if (!this.loadedOnce) {
+        this.load(true);
+      }
+      this.adjustDropDirection();
+    }
+  }
+  onFocus() {
+    if (this.selectedPlanId && this.searchText === this.labelFor(this.selectedPlanId)) {
+      this.searchText = "";
+    }
+    if (!this.isOpen) {
+      this.isOpen = true;
+      if (!this.loadedOnce) {
+        this.load(true);
+      }
+      this.adjustDropDirection();
+    }
+  }
+  onBlur() {
+    setTimeout(() => {
+      this.closeDropdown();
+    }, 120);
+  }
+  closeDropdown() {
+    if (!this.isOpen) {
+      return;
+    }
+    this.isOpen = false;
+    this.highlightedIndex = -1;
+    this.searchText = this.labelFor(this.selectedPlanId);
+  }
+  onDocumentClick(event2) {
+    if (this.isOpen && !this.el.nativeElement.contains(event2.target)) {
+      this.closeDropdown();
+    }
+  }
+  onDocumentTouchStart(event2) {
+    if (this.isOpen && !this.el.nativeElement.contains(event2.target)) {
+      this.closeDropdown();
+    }
+  }
+  onSearchInput() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(() => {
+      this.nextCursor = null;
+      this.load(true);
+    }, this.searchDebounceMs);
+  }
+  onListScroll(event2) {
+    const target = event2.target;
+    const distanceToBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+    if (distanceToBottom < 320 && this.hasMore && !this.loadingMore && !this.loading) {
+      this.load(false);
+    }
+  }
+  selectOption(option, event2) {
+    if (event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
+    }
+    this.selectedPlanId = option.id;
+    this.searchText = option.planningNumber;
+    this.onChange(option.id);
+    this.onTouch();
+    this.selectionChange.emit(option.id);
+    this.isOpen = false;
+  }
+  clearSelection(event2) {
+    if (event2) {
+      event2.preventDefault();
+      event2.stopPropagation();
+    }
+    this.selectedPlanId = null;
+    this.searchText = "";
+    this.onChange(null);
+    this.onTouch();
+    this.selectionChange.emit(null);
+  }
+  isSelected(option) {
+    return this.selectedPlanId !== null && option.id === this.selectedPlanId;
+  }
+  handleKeydown(event2) {
+    if (!this.isOpen) {
+      if (event2.key === "ArrowDown" || event2.key === "ArrowUp") {
+        this.toggleDropdown(event2);
+      }
+      return;
+    }
+    if (event2.key === "ArrowDown") {
+      this.highlightedIndex = Math.min(this.highlightedIndex + 1, this.items.length - 1);
+      event2.preventDefault();
+    } else if (event2.key === "ArrowUp") {
+      this.highlightedIndex = Math.max(this.highlightedIndex - 1, 0);
+      event2.preventDefault();
+    } else if (event2.key === "Enter") {
+      event2.preventDefault();
+      event2.stopPropagation();
+      if (this.highlightedIndex >= 0 && this.items[this.highlightedIndex]) {
+        this.selectOption(this.items[this.highlightedIndex]);
+      }
+    } else if (event2.key === "Escape") {
+      this.closeDropdown();
+      event2.preventDefault();
+    }
+  }
+  adjustDropDirection() {
+    this.dropUp = false;
+    setTimeout(() => {
+      if (!this.isOpen || window.innerWidth <= 768) {
+        return;
+      }
+      const host = this.el.nativeElement;
+      const dd = host.querySelector(".plan-select-dropdown");
+      if (!dd) {
+        return;
+      }
+      const rect = host.getBoundingClientRect();
+      const need = Math.min(dd.offsetHeight || 260, 320);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < need && rect.top > need) {
+        this.dropUp = true;
+      }
+    }, 0);
+  }
+  static {
+    this.\u0275fac = function PlanSelectComponent_Factory(t) {
+      return new (t || _PlanSelectComponent)(\u0275\u0275directiveInject(ElementRef), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(SnackbarService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanSelectComponent, selectors: [["app-plan-select"]], hostBindings: function PlanSelectComponent_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("click", function PlanSelectComponent_click_HostBindingHandler($event) {
+          return ctx.onDocumentClick($event);
+        }, false, \u0275\u0275resolveDocument)("touchstart", function PlanSelectComponent_touchstart_HostBindingHandler($event) {
+          return ctx.onDocumentTouchStart($event);
+        }, false, \u0275\u0275resolveDocument);
+      }
+    }, inputs: { placeholder: "placeholder", searchPlaceholder: "searchPlaceholder", pageSize: "pageSize", searchDebounceMs: "searchDebounceMs" }, outputs: { selectionChange: "selectionChange" }, standalone: true, features: [\u0275\u0275ProvidersFeature([
+      {
+        provide: NG_VALUE_ACCESSOR,
+        useExisting: forwardRef(() => _PlanSelectComponent),
+        multi: true
+      }
+    ]), \u0275\u0275StandaloneFeature], decls: 6, vars: 11, consts: [[1, "plan-select"], [1, "select-input"], ["type", "text", "autocomplete", "off", "role", "combobox", "aria-autocomplete", "list", 1, "search-input", 3, "ngModelChange", "input", "focus", "blur", "keydown", "placeholder", "ngModel"], ["class", "fas fa-times clear-icon", "role", "button", "tabindex", "-1", "aria-label", "Clear selection", 3, "click", "touchstart", 4, "ngIf"], ["role", "button", "tabindex", "-1", "aria-label", "Toggle options", 1, "fas", "toggle-icon", 3, "click", "mousedown"], ["class", "select-dropdown", 3, "drop-up", 4, "ngIf"], ["role", "button", "tabindex", "-1", "aria-label", "Clear selection", 1, "fas", "fa-times", "clear-icon", 3, "click", "touchstart"], [1, "select-dropdown"], ["role", "listbox", 1, "options-container", 3, "scroll"], ["class", "option", "role", "option", 3, "selected", "highlighted", "mousedown", 4, "ngFor", "ngForOf"], ["class", "loading-more", 4, "ngIf"], ["class", "no-results", 4, "ngIf"], ["role", "option", 1, "option", 3, "mousedown"], [1, "option-content"], [1, "option-label"], ["class", "option-sub", 4, "ngIf"], [1, "option-sub"], [1, "loading-more"], [1, "fas", "fa-spinner", "fa-spin"], [1, "no-results"]], template: function PlanSelectComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "input", 2);
+        \u0275\u0275twoWayListener("ngModelChange", function PlanSelectComponent_Template_input_ngModelChange_2_listener($event) {
+          \u0275\u0275twoWayBindingSet(ctx.searchText, $event) || (ctx.searchText = $event);
+          return $event;
+        });
+        \u0275\u0275listener("input", function PlanSelectComponent_Template_input_input_2_listener() {
+          return ctx.onSearchInput();
+        })("focus", function PlanSelectComponent_Template_input_focus_2_listener() {
+          return ctx.onFocus();
+        })("blur", function PlanSelectComponent_Template_input_blur_2_listener() {
+          return ctx.onBlur();
+        })("keydown", function PlanSelectComponent_Template_input_keydown_2_listener($event) {
+          return ctx.handleKeydown($event);
+        });
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(3, PlanSelectComponent_i_3_Template, 1, 0, "i", 3);
+        \u0275\u0275elementStart(4, "i", 4);
+        \u0275\u0275listener("click", function PlanSelectComponent_Template_i_click_4_listener($event) {
+          return ctx.toggleDropdown($event);
+        })("mousedown", function PlanSelectComponent_Template_i_mousedown_4_listener($event) {
+          return $event.preventDefault();
+        });
+        \u0275\u0275elementEnd()();
+        \u0275\u0275template(5, PlanSelectComponent_div_5_Template, 5, 5, "div", 5);
+        \u0275\u0275elementEnd();
+      }
+      if (rf & 2) {
+        \u0275\u0275classProp("active", ctx.isOpen);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("placeholder", ctx.placeholder);
+        \u0275\u0275twoWayProperty("ngModel", ctx.searchText);
+        \u0275\u0275attribute("aria-expanded", ctx.isOpen);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.selectedPlanId !== null);
+        \u0275\u0275advance();
+        \u0275\u0275classProp("fa-chevron-down", !ctx.isOpen)("fa-chevron-up", ctx.isOpen);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isOpen);
+      }
+    }, dependencies: [CommonModule, NgForOf, NgIf, DatePipe, FormsModule, DefaultValueAccessor, NgControlStatus, NgModel], styles: ["\n\n.plan-select[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%] {\n  position: relative;\n  display: flex;\n  align-items: center;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 8px 56px 8px 12px;\n  border: 1px solid var(--supporting);\n  border-radius: 4px;\n  font-size: 0.9rem;\n  transition: all 0.3s ease;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  position: absolute;\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.toggle-icon[_ngcontent-%COMP%] {\n  right: 12px;\n  pointer-events: auto;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%] {\n  right: 36px;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%]:hover {\n  color: var(--primary);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n  position: absolute;\n  top: calc(100% + 4px);\n  left: 0;\n  right: auto;\n  min-width: 100%;\n  width: max-content;\n  max-width: min(92vw, 620px);\n  max-height: 320px;\n  background: white;\n  border-radius: 4px;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n  z-index: 1000;\n  border: 1px solid var(--supporting);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown.drop-up[_ngcontent-%COMP%] {\n  top: auto;\n  bottom: calc(100% + 4px);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-height: 0;\n  box-sizing: border-box;\n  overflow-y: auto;\n  overflow-x: hidden;\n  -webkit-overflow-scrolling: touch;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar {\n  width: 6px;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 3px;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  font-size: 0.9rem;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: baseline;\n  gap: 8px;\n  min-width: 0;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .option-label[_ngcontent-%COMP%] {\n  display: block;\n  min-width: 0;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  font-weight: 600;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .option-sub[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.78rem;\n  white-space: nowrap;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%] {\n  background-color: rgba(var(--primary-rgb), 0.1);\n  color: var(--primary);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.highlighted[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .loading-more[_ngcontent-%COMP%], .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .no-results[_ngcontent-%COMP%] {\n  padding: 12px;\n  text-align: center;\n  color: var(--text-secondary);\n  font-style: italic;\n  font-size: 0.9rem;\n}\n@media (max-width: 768px) {\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n    font-size: 1rem;\n    min-height: 44px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%], .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .clear-icon[_ngcontent-%COMP%] {\n    min-width: 44px;\n    min-height: 44px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%] {\n    right: 4px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .clear-icon[_ngcontent-%COMP%] {\n    right: 48px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n    position: fixed;\n    left: 16px;\n    right: 16px;\n    width: auto;\n    max-width: none;\n    top: auto;\n    bottom: 16px;\n    max-height: 50vh;\n    margin: 0;\n    border-radius: 12px;\n    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.25);\n    z-index: 2000;\n    touch-action: pan-y;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n    max-height: calc(50vh - 20px);\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n    padding: 12px;\n    min-height: 44px;\n    display: flex;\n    align-items: center;\n  }\n}\n/*# sourceMappingURL=plan-select.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanSelectComponent, { className: "PlanSelectComponent", filePath: "src\\app\\shared\\components\\plan-select\\plan-select.component.ts", lineNumber: 35 });
+})();
+
 // src/app/components/plan-dispatch/plan-dispatch-form/plan-dispatch-form.component.ts
 var _c015 = () => ({ label: "Select Customer", value: "" });
-var _c15 = () => ({ label: "No plan", value: "" });
 function PlanDispatchFormComponent_button_7_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -77503,7 +77924,7 @@ function PlanDispatchFormComponent_div_33_div_1_div_30_Template(rf, ctx) {
     \u0275\u0275text(4, "Plan (optional)");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "div", 70);
-    \u0275\u0275element(6, "app-searchable-select", 71);
+    \u0275\u0275element(6, "app-plan-select", 71);
     \u0275\u0275elementEnd();
     \u0275\u0275template(7, PlanDispatchFormComponent_div_33_div_1_div_30_small_7_Template, 2, 0, "small", 72);
     \u0275\u0275elementEnd();
@@ -77607,14 +78028,14 @@ function PlanDispatchFormComponent_div_33_div_1_div_30_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    let tmp_20_0;
+    let tmp_17_0;
     const item_r6 = ctx.$implicit;
     const itemIndex_r7 = ctx.index;
     const bagIndex_r4 = \u0275\u0275nextContext().index;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275property("formGroupName", itemIndex_r7);
     \u0275\u0275advance(6);
-    \u0275\u0275property("options", ctx_r1.plannings)("placeholder", "No plan")("defaultOption", \u0275\u0275pureFunction0(30, _c15))("searchPlaceholder", "Search plannings...");
+    \u0275\u0275property("placeholder", "No plan");
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.rowPlanningId(item_r6));
     \u0275\u0275advance(7);
@@ -77627,7 +78048,7 @@ function PlanDispatchFormComponent_div_33_div_1_div_30_Template(rf, ctx) {
     \u0275\u0275advance(7);
     \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("quantity")));
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((tmp_20_0 = item_r6.get("totalQuantity")) == null ? null : tmp_20_0.value) !== ((tmp_20_0 = item_r6.get("quantity")) == null ? null : tmp_20_0.value));
+    \u0275\u0275property("ngIf", ((tmp_17_0 = item_r6.get("totalQuantity")) == null ? null : tmp_17_0.value) !== ((tmp_17_0 = item_r6.get("quantity")) == null ? null : tmp_17_0.value));
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("quantity")));
     \u0275\u0275advance(15);
@@ -77695,7 +78116,7 @@ function PlanDispatchFormComponent_div_33_div_1_Template(rf, ctx) {
     \u0275\u0275text(28, " Add Item ");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(29, "div", 65);
-    \u0275\u0275template(30, PlanDispatchFormComponent_div_33_div_1_div_30_Template, 84, 31, "div", 66);
+    \u0275\u0275template(30, PlanDispatchFormComponent_div_33_div_1_div_30_Template, 84, 27, "div", 66);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -77730,27 +78151,24 @@ function PlanDispatchFormComponent_div_33_Template(rf, ctx) {
   }
 }
 var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
-  constructor(fb, route, router, productService, customerService, planningService, planDispatchService, snackbar, encryptionService, priceService) {
+  constructor(fb, route, router, productService, customerService, planDispatchService, snackbar, encryptionService, priceService) {
     this.fb = fb;
     this.route = route;
     this.router = router;
     this.productService = productService;
     this.customerService = customerService;
-    this.planningService = planningService;
     this.planDispatchService = planDispatchService;
     this.snackbar = snackbar;
     this.encryptionService = encryptionService;
     this.priceService = priceService;
     this.products = [];
     this.customers = [];
-    this.plannings = [];
     this.planItemsCache = /* @__PURE__ */ new Map();
     this.prodOptionsMemo = /* @__PURE__ */ new WeakMap();
     this.defaultPlanningId = null;
     this.loading = false;
     this.isLoadingProducts = false;
     this.isLoadingCustomers = false;
-    this.isLoadingPlannings = false;
     this.showDeleteBagModal = false;
     this.showDeleteItemModal = false;
     this.deleteBagIndex = null;
@@ -77768,7 +78186,6 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
   ngOnInit() {
     this.loadProducts();
     this.loadCustomers();
-    this.loadPlannings();
     const rawId = this.route.snapshot.paramMap.get("id");
     if (rawId) {
       const id = Number(this.encryptionService.decrypt(rawId));
@@ -77859,20 +78276,6 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
       return "";
     }
     return `Pack: ${pi.packing ?? 0} \xB7 Disp: ${pi.dispatch ?? 0} \xB7 Can dispatch: ${pi.dispatchable ?? 0}`;
-  }
-  loadPlannings() {
-    this.isLoadingPlannings = true;
-    this.planningService.searchPlannings({ currentPage: 0, perPageRecord: 100, sortBy: "id", sortDir: "desc" }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.plannings = response.data.content;
-        }
-        this.isLoadingPlannings = false;
-      },
-      error: () => {
-        this.isLoadingPlannings = false;
-      }
-    });
   }
   /** Cached balances for plans (one backend call per plan). */
   ensurePlanItems(ids, done) {
@@ -78591,11 +78994,11 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
   }
   static {
     this.\u0275fac = function PlanDispatchFormComponent_Factory(t) {
-      return new (t || _PlanDispatchFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(PlanDispatchService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(PriceService));
+      return new (t || _PlanDispatchFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(PlanDispatchService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(PriceService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchFormComponent, selectors: [["app-plan-dispatch-form"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 28, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "productId", 3, "options", "focusWidthPx", "maxHeight"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], [1, "form-group"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"]], template: function PlanDispatchFormComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchFormComponent, selectors: [["app-plan-dispatch-form"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 28, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "planningId", 3, "placeholder"], [4, "ngIf"], ["formControlName", "productId", 3, "options", "focusWidthPx", "maxHeight"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], [1, "form-group"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"]], template: function PlanDispatchFormComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "div", 3)(4, "h2", 4);
         \u0275\u0275element(5, "i", 5);
@@ -78730,13 +79133,14 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
       FormGroupName,
       FormArrayName,
       SearchableSelectComponent,
+      PlanSelectComponent,
       LoaderComponent,
       ConfirmModalComponent
     ], styles: ["\n\n.transport-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  margin: 0 auto;\n}\n.form-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 12px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  overflow: hidden;\n  margin-bottom: 2rem;\n}\n.card-header[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  padding: 1.5rem;\n}\n.card-header[_ngcontent-%COMP%]   .form-title[_ngcontent-%COMP%] {\n  color: white;\n  margin: 0;\n  font-size: 1.5rem;\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.card-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n.card-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .print-btn[_ngcontent-%COMP%] {\n  padding: 6px 12px;\n  font-size: 0.9rem;\n}\n.card-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .print-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  margin-right: 6px;\n}\n.form-content[_ngcontent-%COMP%] {\n  padding: 1.25rem;\n  position: relative;\n}\n.transport-form.loading[_ngcontent-%COMP%] {\n  opacity: 0.7;\n  pointer-events: none;\n}\n.customer-section[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.customer-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.bags-section[_ngcontent-%COMP%] {\n  margin-top: 1rem;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%] {\n  display: flex;\n  flex-wrap: wrap;\n  justify-content: space-between;\n  align-items: center;\n  gap: 1rem;\n  margin-bottom: 1.5rem;\n  padding: 1rem;\n  background: var(--background-light);\n  border-radius: var(--border-radius);\n  border: 1px solid var(--border-color);\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n  color: var(--text-primary);\n  flex: 0 0 auto;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1;\n  gap: 1rem;\n  align-items: flex-start;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  margin: 0;\n  min-width: 150px;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n  margin-bottom: 0.25rem;\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%]   .total-bag-weight[_ngcontent-%COMP%]   input[_ngcontent-%COMP%] {\n  background-color: var(--background-light);\n}\n.bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .add-bag-btn[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n@media (max-width: 992px) {\n  .bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%] {\n    flex-wrap: wrap;\n  }\n}\n@media (max-width: 768px) {\n  .bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n  }\n  .bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .bags-header-controls[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .bags-section[_ngcontent-%COMP%]   .bags-header[_ngcontent-%COMP%]   .add-bag-btn[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n.bag-card[_ngcontent-%COMP%] {\n  background: #f8f9fa;\n  border-radius: 8px;\n  padding: 1rem;\n  margin-bottom: 1rem;\n  border: 1px solid #dee2e6;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   h4[_ngcontent-%COMP%] {\n  margin: 0;\n  color: var(--text-primary);\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  flex-wrap: wrap;\n  align-items: flex-end;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 200px;\n  margin: 0;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n  margin-bottom: 0.25rem;\n  display: block;\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .form-group.total-bag-weight[_ngcontent-%COMP%]   input[_ngcontent-%COMP%] {\n  background-color: var(--background-light);\n}\n.bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .remove-bag-btn[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n  height: 38px;\n  padding: 0 0.75rem;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n@media (max-width: 768px) {\n  .bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n  }\n  .bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .bag-card[_ngcontent-%COMP%]   .bag-header[_ngcontent-%COMP%]   .bag-controls[_ngcontent-%COMP%]   .remove-bag-btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n.items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   h5[_ngcontent-%COMP%] {\n  margin: 0;\n  color: var(--text-primary);\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 0;\n  padding: 0.75rem;\n  background: white;\n  border-radius: 8px;\n  margin-bottom: 1rem;\n  border: 1px solid var(--secondary);\n  position: relative;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .basic-info-section[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: 2fr 1fr;\n  gap: 1rem;\n}\n@media (max-width: 768px) {\n  .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .basic-info-section[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%] {\n  background: var(--background-light);\n  border-radius: var(--border-radius);\n  border: 1px solid var(--border-color);\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 1rem;\n  margin: 0;\n  padding: 0.5rem 0 0.25rem 0;\n  border-bottom: 1px solid var(--border-color);\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 0.9em;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(4, 1fr);\n  gap: 0.75rem;\n}\n@media (max-width: 576px) {\n  .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .purchase-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%], .items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .sale-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .remarks-section[_ngcontent-%COMP%] {\n  margin-top: 1rem;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .remove-item-btn[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 1rem;\n  right: 1rem;\n  padding: 0.5rem;\n  border-radius: 50%;\n  width: 32px;\n  height: 32px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.items-section[_ngcontent-%COMP%]   .item-row[_ngcontent-%COMP%]   .remove-item-btn[_ngcontent-%COMP%]:disabled {\n  opacity: 0.5;\n  cursor: not-allowed;\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 0.25rem;\n  color: var(--text-primary);\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #dc3545;\n}\n.form-group[_ngcontent-%COMP%]   input[_ngcontent-%COMP%], .form-group[_ngcontent-%COMP%]   select[_ngcontent-%COMP%] {\n  padding: 0.4rem 0.75rem;\n  height: auto;\n  font-size: 0.9rem;\n}\n.form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  margin-top: 2rem;\n  padding-top: 1rem;\n  border-top: 1px solid #dee2e6;\n}\n.btn-icon[_ngcontent-%COMP%] {\n  padding: 0.5rem;\n  border: none;\n  background: none;\n  cursor: pointer;\n  color: var(--primary);\n  border-radius: 4px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  transition: background-color 0.2s;\n}\n.btn-icon[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.05);\n}\n.btn-icon[_ngcontent-%COMP%]:disabled {\n  opacity: 0.6;\n  cursor: not-allowed;\n}\n.invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.product-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  margin-top: 0;\n}\n.form-control[_ngcontent-%COMP%]:read-only {\n  background-color: var(--background-light);\n  cursor: not-allowed;\n}\n.customer-weight-row[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  align-items: flex-start;\n  margin-bottom: 1rem;\n}\n.customer-weight-row[_ngcontent-%COMP%]   .customer-select[_ngcontent-%COMP%] {\n  flex: 2;\n}\n.customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%] {\n  flex: 1;\n  background: var(--background-light);\n  padding: 0.75rem 1rem;\n  border-radius: var(--border-radius);\n  border: 1px solid var(--border-color);\n}\n.customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.9rem;\n  margin-bottom: 0.25rem;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%]   .weight-value[_ngcontent-%COMP%] {\n  font-size: 1.25rem;\n  font-weight: 500;\n  color: var(--text-primary);\n}\n.basic-info-row[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: 2fr 1fr 1fr;\n  gap: 0.75rem;\n  margin-bottom: 0;\n}\n@media (max-width: 992px) {\n  .basic-info-row[_ngcontent-%COMP%] {\n    grid-template-columns: 2fr 1fr;\n  }\n}\n@media (max-width: 768px) {\n  .basic-info-row[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.purchase-section[_ngcontent-%COMP%], .sale-section[_ngcontent-%COMP%] {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.purchase-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%], .sale-section[_ngcontent-%COMP%]   .section-title[_ngcontent-%COMP%] {\n  margin: 0;\n  padding: 0.5rem 0 0.25rem 0;\n}\n.purchase-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%], .sale-section[_ngcontent-%COMP%]   .price-details[_ngcontent-%COMP%] {\n  gap: 0.75rem;\n}\n.transport-summary[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: var(--border-radius);\n  border: 1px solid var(--border-color);\n  overflow: hidden;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-header[_ngcontent-%COMP%] {\n  background: var(--primary);\n  color: white;\n  padding: 0.75rem;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-header[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1.1rem;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-header[_ngcontent-%COMP%]   .created-at[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n  opacity: 0.9;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 0.75rem;\n  padding: 1rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%]   .summary-item[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 0.25rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%]   .summary-item[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.9rem;\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%]   .summary-item[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  font-size: 1.2rem;\n  font-weight: 500;\n  color: var(--text-primary);\n}\n.transport-summary[_ngcontent-%COMP%]   .summary-card[_ngcontent-%COMP%]   .summary-content[_ngcontent-%COMP%]   .summary-item.profit[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: var(--success);\n}\n@media (max-width: 992px) {\n  .price-details[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n@media (max-width: 768px) {\n  .form-content[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .customer-weight-row[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 0.75rem;\n  }\n  .customer-weight-row[_ngcontent-%COMP%]   .customer-select[_ngcontent-%COMP%], .customer-weight-row[_ngcontent-%COMP%]   .total-weight[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .basic-info-row[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n  .price-details[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n  }\n  .bag-card[_ngcontent-%COMP%] {\n    padding: 0.75rem;\n  }\n}\n@media (max-width: 576px) {\n  .price-details[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.quantity-group[_ngcontent-%COMP%] {\n  position: relative;\n}\n.quantity-group[_ngcontent-%COMP%]   .total-quantity[_ngcontent-%COMP%] {\n  position: absolute;\n  right: 0;\n  top: 100%;\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n  margin-top: 0.25rem;\n}\n/*# sourceMappingURL=plan-dispatch-form.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchFormComponent, { className: "PlanDispatchFormComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-form\\plan-dispatch-form.component.ts", lineNumber: 49 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchFormComponent, { className: "PlanDispatchFormComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-form\\plan-dispatch-form.component.ts", lineNumber: 50 });
 })();
 
 // src/app/services/plan-coating.service.ts
@@ -78775,7 +79179,7 @@ var PlanCoatingService = class _PlanCoatingService {
 
 // src/app/components/plan-coating/plan-coating-list/plan-coating-list.component.ts
 var _c016 = () => ({ label: "All Customers", value: "" });
-var _c16 = (a0) => ["/plan-coating/edit", a0];
+var _c15 = (a0) => ["/plan-coating/edit", a0];
 function PlanCoatingListComponent_div_26_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -78936,7 +79340,7 @@ function PlanCoatingListComponent_tr_64_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(34, 21, process_r4.createdAt, "medium"));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(24, _c16, ctx_r1.encId(process_r4.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(24, _c15, ctx_r1.encId(process_r4.id)));
     \u0275\u0275advance(2);
     \u0275\u0275conditional(38, ctx_r1.isProcessCompleted(process_r4) ? 38 : -1);
   }
@@ -80577,7 +80981,7 @@ var EmployeeService = class _EmployeeService {
 
 // src/app/components/employee/employee-list/employee-list.component.ts
 var _c018 = (a0, a1) => ({ "active": a0, "inactive": a1 });
-var _c17 = (a0) => ["/employee/edit", a0];
+var _c16 = (a0) => ["/employee/edit", a0];
 function EmployeeListComponent_tr_44_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -80628,7 +81032,7 @@ function EmployeeListComponent_tr_44_Template(rf, ctx) {
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", employee_r2.status === "A" ? "Active" : "Inactive", " ");
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c17, employee_r2.id));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c16, employee_r2.id));
   }
 }
 function EmployeeListComponent_tr_45_Template(rf, ctx) {
@@ -82820,7 +83224,7 @@ function planningStatusLabel(status) {
 
 // src/app/components/planning/planning-list/planning-list.component.ts
 var _c021 = (a0) => ["/planning", a0];
-var _c18 = (a0) => ["/planning/edit", a0];
+var _c17 = (a0) => ["/planning/edit", a0];
 function PlanningListComponent_option_10_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "option", 31);
@@ -82935,7 +83339,7 @@ function PlanningListComponent_tr_67_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(23, _c021, ctx_r3.encId(p_r3.id)));
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(25, _c18, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(25, _c17, ctx_r3.encId(p_r3.id)));
   }
 }
 function PlanningListComponent_tr_68_Template(rf, ctx) {
@@ -84013,7 +84417,7 @@ var ProductionService = class _ProductionService {
 
 // src/app/components/planning/planning-detail/planning-detail.component.ts
 var _c022 = (a0) => ["/planning/edit", a0];
-var _c19 = () => ["/production/entry"];
+var _c18 = () => ["/production/entry"];
 var _c24 = (a0) => ({ planningId: a0 });
 var _c33 = () => ["/dashboard"];
 var _c43 = () => ["/plan-dispatch/create"];
@@ -84062,7 +84466,7 @@ function PlanningDetailComponent_div_2_Template(rf, ctx) {
     \u0275\u0275advance(4);
     \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(9, _c022, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(11, _c19))("queryParams", \u0275\u0275pureFunction1(12, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(11, _c18))("queryParams", \u0275\u0275pureFunction1(12, _c24, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
     \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(14, _c33))("queryParams", \u0275\u0275pureFunction1(15, _c24, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
@@ -84415,7 +84819,7 @@ function PlanningDetailComponent_div_5_ng_container_31_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate1(" ", ctx_r1.expandedItemId === item_r4.id ? "Hide" : "Transactions", " ");
     \u0275\u0275advance();
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(20, _c19))("queryParams", \u0275\u0275pureFunction2(21, _c63, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r4.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(20, _c18))("queryParams", \u0275\u0275pureFunction2(21, _c63, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r4.id)));
     \u0275\u0275advance(3);
     \u0275\u0275property("ngIf", ctx_r1.expandedItemId === item_r4.id);
   }
@@ -84749,7 +85153,7 @@ function ProductionEntryComponent_div_9_Template(rf, ctx) {
     \u0275\u0275elementStart(8, "span", 28);
     \u0275\u0275text(9, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(10, "app-searchable-select", 29);
+    \u0275\u0275element(10, "app-plan-select", 29);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(11, "div", 13)(12, "label");
     \u0275\u0275text(13, "Planning Product ");
@@ -84776,7 +85180,7 @@ function ProductionEntryComponent_div_9_Template(rf, ctx) {
   if (rf & 2) {
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance(10);
-    \u0275\u0275property("options", ctx_r0.plannings)("placeholder", "Select Planning")("searchPlaceholder", "Search plannings...");
+    \u0275\u0275property("placeholder", "Select Planning");
     \u0275\u0275advance(6);
     \u0275\u0275property("options", ctx_r0.planningItems)("placeholder", "Select Product")("searchPlaceholder", "Search products...");
     \u0275\u0275advance();
@@ -84884,7 +85288,6 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
     this.snackbar = snackbar;
     this.isLoading = false;
     this.isSaving = false;
-    this.plannings = [];
     this.planningItems = [];
     this.products = [];
     this.employees = [];
@@ -84931,7 +85334,6 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
       this.loadOperation(editId);
       return;
     }
-    this.loadPlannings();
     this.loadProducts();
     this.loadEmployees();
     this.loadMachineries();
@@ -84956,21 +85358,6 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-  loadPlannings() {
-    this.isLoading = true;
-    this.planningService.searchPlannings({ currentPage: 0, perPageRecord: 100, sortBy: "id", sortDir: "desc" }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.plannings = response.data.content;
-        }
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.snackbar.error(error?.error?.message || "Failed to load plannings");
-        this.isLoading = false;
-      }
-    });
   }
   onPlanningChange(planningId, preselectItem = null) {
     if (!planningId) {
@@ -85242,7 +85629,7 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionEntryComponent, selectors: [["app-production-entry"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 44, vars: 21, consts: [[1, "entry-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-industry"], ["novalidate", "", 1, "entry-form", 3, "ngSubmit", "formGroup"], ["class", "section-card", 4, "ngIf"], ["class", "section-card transform-banner", 4, "ngIf"], [1, "section-card"], [1, "fas", "fa-info-circle"], [1, "form-row"], ["class", "form-group", 4, "ngIf"], [1, "form-group"], ["type", "date", "formControlName", "operationDate", 1, "form-control"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "multiple"], [1, "product-select-group"], ["formControlName", "machineryId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Machineries", "aria-label", "Refresh Machineries", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", "fa-lock"], [1, "readonly-grid"], [1, "fas", "fa-clipboard-list"], [1, "required"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["formControlName", "planningItemId", "labelKey", "productName", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "operationType", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], [1, "section-card", "transform-banner"], [1, "fas", "fa-arrow-down"], ["formControlName", "inputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["formControlName", "outputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"]], template: function ProductionEntryComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionEntryComponent, selectors: [["app-production-entry"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 44, vars: 21, consts: [[1, "entry-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-industry"], ["novalidate", "", 1, "entry-form", 3, "ngSubmit", "formGroup"], ["class", "section-card", 4, "ngIf"], ["class", "section-card transform-banner", 4, "ngIf"], [1, "section-card"], [1, "fas", "fa-info-circle"], [1, "form-row"], ["class", "form-group", 4, "ngIf"], [1, "form-group"], ["type", "date", "formControlName", "operationDate", 1, "form-control"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "multiple"], [1, "product-select-group"], ["formControlName", "machineryId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Machineries", "aria-label", "Refresh Machineries", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", "fa-lock"], [1, "readonly-grid"], [1, "fas", "fa-clipboard-list"], [1, "required"], ["formControlName", "planningId", 3, "placeholder"], ["formControlName", "planningItemId", "labelKey", "productName", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder"], [4, "ngIf"], ["formControlName", "operationType", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], [1, "section-card", "transform-banner"], [1, "fas", "fa-arrow-down"], ["formControlName", "inputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["formControlName", "outputProductId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"]], template: function ProductionEntryComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -85254,7 +85641,7 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
         \u0275\u0275listener("ngSubmit", function ProductionEntryComponent_Template_form_ngSubmit_7_listener() {
           return ctx.onSubmit();
         });
-        \u0275\u0275template(8, ProductionEntryComponent_div_8_Template, 25, 4, "div", 7)(9, ProductionEntryComponent_div_9_Template, 28, 10, "div", 7)(10, ProductionEntryComponent_div_10_Template, 27, 13, "div", 8);
+        \u0275\u0275template(8, ProductionEntryComponent_div_8_Template, 25, 4, "div", 7)(9, ProductionEntryComponent_div_9_Template, 28, 8, "div", 7)(10, ProductionEntryComponent_div_10_Template, 27, 13, "div", 8);
         \u0275\u0275elementStart(11, "div", 9)(12, "h3");
         \u0275\u0275element(13, "i", 10);
         \u0275\u0275text(14);
@@ -85334,11 +85721,11 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
         \u0275\u0275advance();
         \u0275\u0275textInterpolate1(" ", ctx.isSaving ? ctx.isEditMode ? "Updating\u2026" : "Saving\u2026" : ctx.isEditMode ? "Update Entry" : "Save Entry", " ");
       }
-    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, ReactiveFormsModule, \u0275NgNoValidate, NgSelectOption, \u0275NgSelectMultipleOption, DefaultValueAccessor, NumberValueAccessor, SelectControlValueAccessor, NgControlStatus, NgControlStatusGroup, MinValidator, FormGroupDirective, FormControlName, FormsModule, RouterModule, RouterLink, LoaderComponent, SearchableSelectComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.entry-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  margin: 0 auto;\n}\n.entry-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 12px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  overflow: hidden;\n  margin-bottom: 2rem;\n}\n.entry-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%]   .card-header[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  padding: 1.5rem;\n}\n.entry-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%]   .card-header[_ngcontent-%COMP%]   .form-title[_ngcontent-%COMP%] {\n  color: white;\n  margin: 0;\n  font-size: 1.5rem;\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%] {\n  padding: 2rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%] {\n  background: var(--background);\n  border-radius: 8px;\n  padding: 1.5rem;\n  margin-bottom: 1.5rem;\n  border: 1px solid #e0e0e0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0 0 1.25rem 0;\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: var(--text-primary);\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-row[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));\n  gap: 1.5rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n  flex-wrap: nowrap;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-width: 0;\n  display: block;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n  width: 40px;\n  height: 40px;\n  margin: 0;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  border: 1px solid var(--supporting);\n  border-radius: 8px;\n  background: white;\n  color: var(--primary);\n  font-size: 1rem;\n  line-height: 1;\n  cursor: pointer;\n  transition: all 0.3s ease;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: inherit;\n  font-size: 1rem;\n  line-height: 1;\n  margin: 0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled), .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background: var(--primary);\n  border-color: var(--primary);\n  color: white;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled, .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.6;\n  cursor: not-allowed;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n  font-weight: 500;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #dc3545;\n  margin-left: 4px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: 100%;\n  font-size: 1rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .remarks-group[_ngcontent-%COMP%] {\n  margin-bottom: 0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .remarks-group[_ngcontent-%COMP%]   textarea[_ngcontent-%COMP%] {\n  resize: vertical;\n  min-height: 80px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1.25rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  min-height: 44px;\n  touch-action: manipulation;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%]   .kbd-hint[_ngcontent-%COMP%] {\n  font-size: 0.72rem;\n  font-weight: 600;\n  padding: 0.1rem 0.4rem;\n  border-radius: 4px;\n  background: rgba(255, 255, 255, 0.22);\n  border: 1px solid rgba(255, 255, 255, 0.35);\n  line-height: 1.4;\n  white-space: nowrap;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n  -webkit-overflow-scrolling: touch;\n  border: 1px solid #e0e0e0;\n  border-radius: 8px;\n  background: white;\n  min-height: 340px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 640px;\n  border-collapse: collapse;\n  background: white;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%] {\n  background-color: var(--secondary);\n  color: white;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  text-align: left;\n  font-weight: 600;\n  white-space: nowrap;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #ffd9d9;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-bottom: 1px solid #e0e0e0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:hover {\n  background-color: rgba(253, 120, 35, 0.05);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:last-child {\n  border-bottom: none;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  vertical-align: middle;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td.row-index[_ngcontent-%COMP%] {\n  font-weight: 600;\n  color: var(--text-secondary);\n  white-space: nowrap;\n  width: 48px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .form-field-container[_ngcontent-%COMP%] {\n  min-width: 240px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 100px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-top: 2px solid var(--primary);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  font-weight: 600;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  margin-top: 2rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n  min-height: 44px;\n  touch-action: manipulation;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .readonly-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n  gap: 12px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .readonly-grid[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin-right: 6px;\n}\n@media (max-width: 768px) {\n  .entry-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-row[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n    width: 44px;\n    height: 44px;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n    gap: 0.75rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%] {\n    min-width: 560px;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n    padding: 0.6rem;\n    font-size: 0.9rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n    font-size: 1rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    min-height: 260px;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n    flex-direction: column;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n}\n/*# sourceMappingURL=production-entry.component.css.map */"] });
+    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, ReactiveFormsModule, \u0275NgNoValidate, NgSelectOption, \u0275NgSelectMultipleOption, DefaultValueAccessor, NumberValueAccessor, SelectControlValueAccessor, NgControlStatus, NgControlStatusGroup, MinValidator, FormGroupDirective, FormControlName, FormsModule, RouterModule, RouterLink, LoaderComponent, SearchableSelectComponent, PlanSelectComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.entry-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  margin: 0 auto;\n}\n.entry-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 12px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  overflow: hidden;\n  margin-bottom: 2rem;\n}\n.entry-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%]   .card-header[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  padding: 1.5rem;\n}\n.entry-container[_ngcontent-%COMP%]   .form-card[_ngcontent-%COMP%]   .card-header[_ngcontent-%COMP%]   .form-title[_ngcontent-%COMP%] {\n  color: white;\n  margin: 0;\n  font-size: 1.5rem;\n  font-weight: 500;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%] {\n  padding: 2rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%] {\n  background: var(--background);\n  border-radius: 8px;\n  padding: 1.5rem;\n  margin-bottom: 1.5rem;\n  border: 1px solid #e0e0e0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0 0 1.25rem 0;\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: var(--text-primary);\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-row[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));\n  gap: 1.5rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n  flex-wrap: nowrap;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-width: 0;\n  display: block;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n  width: 40px;\n  height: 40px;\n  margin: 0;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  border: 1px solid var(--supporting);\n  border-radius: 8px;\n  background: white;\n  color: var(--primary);\n  font-size: 1rem;\n  line-height: 1;\n  cursor: pointer;\n  transition: all 0.3s ease;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: inherit;\n  font-size: 1rem;\n  line-height: 1;\n  margin: 0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled), .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background: var(--primary);\n  border-color: var(--primary);\n  color: white;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled, .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.6;\n  cursor: not-allowed;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n  font-weight: 500;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #dc3545;\n  margin-left: 4px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: 100%;\n  font-size: 1rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .remarks-group[_ngcontent-%COMP%] {\n  margin-bottom: 0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .remarks-group[_ngcontent-%COMP%]   textarea[_ngcontent-%COMP%] {\n  resize: vertical;\n  min-height: 80px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1.25rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  min-height: 44px;\n  touch-action: manipulation;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%]   .kbd-hint[_ngcontent-%COMP%] {\n  font-size: 0.72rem;\n  font-weight: 600;\n  padding: 0.1rem 0.4rem;\n  border-radius: 4px;\n  background: rgba(255, 255, 255, 0.22);\n  border: 1px solid rgba(255, 255, 255, 0.35);\n  line-height: 1.4;\n  white-space: nowrap;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n  -webkit-overflow-scrolling: touch;\n  border: 1px solid #e0e0e0;\n  border-radius: 8px;\n  background: white;\n  min-height: 340px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 640px;\n  border-collapse: collapse;\n  background: white;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%] {\n  background-color: var(--secondary);\n  color: white;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  text-align: left;\n  font-weight: 600;\n  white-space: nowrap;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%]   .required[_ngcontent-%COMP%] {\n  color: #ffd9d9;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-bottom: 1px solid #e0e0e0;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:hover {\n  background-color: rgba(253, 120, 35, 0.05);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:last-child {\n  border-bottom: none;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  vertical-align: middle;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td.row-index[_ngcontent-%COMP%] {\n  font-weight: 600;\n  color: var(--text-secondary);\n  white-space: nowrap;\n  width: 48px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .form-field-container[_ngcontent-%COMP%] {\n  min-width: 240px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: 100%;\n  min-width: 100px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%] {\n  border-top: 2px solid var(--primary);\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tfoot[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 0.9rem 1rem;\n  font-weight: 600;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  margin-top: 2rem;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n  min-height: 44px;\n  touch-action: manipulation;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .readonly-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n  gap: 12px;\n}\n.entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .readonly-grid[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin-right: 6px;\n}\n@media (max-width: 768px) {\n  .entry-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .section-card[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-row[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .employee-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n    width: 44px;\n    height: 44px;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n    gap: 0.75rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-header[_ngcontent-%COMP%]   .add-item-btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%] {\n    min-width: 560px;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   thead[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n    padding: 0.6rem;\n    font-size: 0.9rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .items-table[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n    font-size: 1rem;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .items-section[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    min-height: 260px;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n    flex-direction: column;\n  }\n  .entry-container[_ngcontent-%COMP%]   .entry-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n}\n/*# sourceMappingURL=production-entry.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionEntryComponent, { className: "ProductionEntryComponent", filePath: "src\\app\\components\\production\\production-entry\\production-entry.component.ts", lineNumber: 24 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionEntryComponent, { className: "ProductionEntryComponent", filePath: "src\\app\\components\\production\\production-entry\\production-entry.component.ts", lineNumber: 25 });
 })();
 
 // src/app/components/production/production-dashboard/production-dashboard.component.ts
@@ -85590,9 +85977,8 @@ function ProductionDashboardComponent_section_30_Template(rf, ctx) {
   }
 }
 var ProductionDashboardComponent = class _ProductionDashboardComponent {
-  constructor(productionService, planningService, fb, route, encryptionService, snackbar) {
+  constructor(productionService, fb, route, encryptionService, snackbar) {
     this.productionService = productionService;
-    this.planningService = planningService;
     this.fb = fb;
     this.route = route;
     this.encryptionService = encryptionService;
@@ -85600,7 +85986,6 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
     this.summary = null;
     this.isLoading = false;
     this.isExporting = false;
-    this.plannings = [];
     this.currentPage = 0;
     this.pageSize = 10;
     this.pageSizeOptions = [5, 10, 25, 50, 100];
@@ -85614,23 +85999,11 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
     if (qPlanningId) {
       this.filterForm.patchValue({ planningId: qPlanningId });
     }
-    this.loadPlannings();
     this.loadSummary();
   }
   /** Encrypted id for URLs (medonix pattern); numeric ids stay in POST bodies. */
   encId(id) {
     return this.encryptionService.encrypt(String(id ?? ""));
-  }
-  loadPlannings() {
-    this.planningService.searchPlannings({ currentPage: 0, perPageRecord: 100, sortBy: "id", sortDir: "desc" }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.plannings = response.data.content;
-        }
-      },
-      error: () => {
-      }
-    });
   }
   loadSummary() {
     this.isLoading = true;
@@ -85730,11 +86103,11 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
   }
   static {
     this.\u0275fac = function ProductionDashboardComponent_Factory(t) {
-      return new (t || _ProductionDashboardComponent)(\u0275\u0275directiveInject(ProductionService), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(SnackbarService));
+      return new (t || _ProductionDashboardComponent)(\u0275\u0275directiveInject(ProductionService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(SnackbarService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionDashboardComponent, selectors: [["app-production-dashboard"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 31, vars: 10, consts: [[1, "dashboard-container"], [3, "show"], [1, "page-header", "card"], [1, "header-content"], [1, "header-icon"], [1, "fas", "fa-chart-bar"], [1, "header-text"], [1, "header-actions"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-clipboard-list"], ["routerLink", "/production/entry", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "filter-row", 3, "ngSubmit", "formGroup"], ["formControlName", "planningId", "labelKey", "planningNumber", "valueKey", "id", 3, "options", "placeholder", "allowClear"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], ["class", "stat-grid", 4, "ngIf"], ["class", "card", 4, "ngIf"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-icon"], [1, "stat-content"], [1, "stat-label"], [1, "stat-value"], [1, "fas", "fa-cut"], [1, "fas", "fa-stamp"], [1, "fas", "fa-spray-can-sparkles"], [1, "fas", "fa-box"], [1, "fas", "fa-truck"], [1, "fas", "fa-scale-balanced"], [1, "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "routerLink"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "badge"], ["colspan", "10", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProductionDashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionDashboardComponent, selectors: [["app-production-dashboard"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 31, vars: 8, consts: [[1, "dashboard-container"], [3, "show"], [1, "page-header", "card"], [1, "header-content"], [1, "header-icon"], [1, "fas", "fa-chart-bar"], [1, "header-text"], [1, "header-actions"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-clipboard-list"], ["routerLink", "/production/entry", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "filter-row", 3, "ngSubmit", "formGroup"], ["formControlName", "planningId", 3, "placeholder"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], ["class", "stat-grid", 4, "ngIf"], ["class", "card", 4, "ngIf"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-icon"], [1, "stat-content"], [1, "stat-label"], [1, "stat-value"], [1, "fas", "fa-cut"], [1, "fas", "fa-stamp"], [1, "fas", "fa-spray-can-sparkles"], [1, "fas", "fa-box"], [1, "fas", "fa-truck"], [1, "fas", "fa-scale-balanced"], [1, "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "routerLink"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "badge"], ["colspan", "10", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProductionDashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -85766,7 +86139,7 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
         \u0275\u0275listener("ngSubmit", function ProductionDashboardComponent_Template_form_ngSubmit_21_listener() {
           return ctx.onFilter();
         });
-        \u0275\u0275element(22, "app-searchable-select", 15);
+        \u0275\u0275element(22, "app-plan-select", 15);
         \u0275\u0275elementStart(23, "button", 16);
         \u0275\u0275element(24, "i", 17);
         \u0275\u0275text(25, " Filter");
@@ -85793,17 +86166,17 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
         \u0275\u0275advance();
         \u0275\u0275property("formGroup", ctx.filterForm);
         \u0275\u0275advance();
-        \u0275\u0275property("options", ctx.plannings)("placeholder", "All Plannings")("allowClear", true);
+        \u0275\u0275property("placeholder", "All Plannings");
         \u0275\u0275advance(7);
         \u0275\u0275property("ngIf", ctx.summary);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.summary);
       }
-    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, ReactiveFormsModule, \u0275NgNoValidate, NgControlStatus, NgControlStatusGroup, FormGroupDirective, FormControlName, FormsModule, RouterModule, RouterLink, LoaderComponent, SearchableSelectComponent, PaginationComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.dashboard-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h1[_ngcontent-%COMP%] {\n  font-size: 1.5rem;\n  margin: 0;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  font-size: 1.3rem;\n  margin-bottom: 16px;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin: 4px 0 0;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n  margin-bottom: 14px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-icon[_ngcontent-%COMP%] {\n  width: 46px;\n  height: 46px;\n  border-radius: 10px;\n  background: var(--primary);\n  color: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 1.3rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-text[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .filter-row[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  align-items: center;\n  flex-wrap: wrap;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .filter-row[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  min-width: 240px;\n  flex: 1;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));\n  gap: 12px;\n  margin-bottom: 20px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  padding: 14px;\n  display: flex;\n  gap: 12px;\n  align-items: center;\n  border-left: 4px solid var(--primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-icon[_ngcontent-%COMP%] {\n  width: 40px;\n  height: 40px;\n  border-radius: 8px;\n  background: var(--background);\n  color: var(--primary);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 1.1rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%]   .stat-label[_ngcontent-%COMP%] {\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  font-size: 1.4rem;\n  font-weight: 700;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card.negative[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n}\n.dashboard-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.dashboard-container[_ngcontent-%COMP%]   .badge[_ngcontent-%COMP%] {\n  background: rgba(0, 153, 156, 0.12);\n  color: var(--secondary);\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 0.75rem;\n  margin-left: 6px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 10px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%] {\n  height: 8px;\n  background: #eee;\n  border-radius: 4px;\n  overflow: hidden;\n  min-width: 90px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%]   .progress-bar[_ngcontent-%COMP%] {\n  height: 100%;\n  background: var(--primary);\n}\n@media (max-width: 768px) {\n  .dashboard-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n}\n/*# sourceMappingURL=production-dashboard.component.css.map */"] });
+    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, ReactiveFormsModule, \u0275NgNoValidate, NgControlStatus, NgControlStatusGroup, FormGroupDirective, FormControlName, FormsModule, RouterModule, RouterLink, LoaderComponent, PlanSelectComponent, PaginationComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.dashboard-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h1[_ngcontent-%COMP%] {\n  font-size: 1.5rem;\n  margin: 0;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  font-size: 1.3rem;\n  margin-bottom: 16px;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin: 4px 0 0;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n  margin-bottom: 14px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-icon[_ngcontent-%COMP%] {\n  width: 46px;\n  height: 46px;\n  border-radius: 10px;\n  background: var(--primary);\n  color: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 1.3rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-text[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .filter-row[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  align-items: center;\n  flex-wrap: wrap;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .filter-row[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  min-width: 240px;\n  flex: 1;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));\n  gap: 12px;\n  margin-bottom: 20px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  padding: 14px;\n  display: flex;\n  gap: 12px;\n  align-items: center;\n  border-left: 4px solid var(--primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-icon[_ngcontent-%COMP%] {\n  width: 40px;\n  height: 40px;\n  border-radius: 8px;\n  background: var(--background);\n  color: var(--primary);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 1.1rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%]   .stat-label[_ngcontent-%COMP%] {\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  font-size: 1.4rem;\n  font-weight: 700;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card.negative[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n}\n.dashboard-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.dashboard-container[_ngcontent-%COMP%]   .badge[_ngcontent-%COMP%] {\n  background: rgba(0, 153, 156, 0.12);\n  color: var(--secondary);\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 0.75rem;\n  margin-left: 6px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 10px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%] {\n  height: 8px;\n  background: #eee;\n  border-radius: 4px;\n  overflow: hidden;\n  min-width: 90px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%]   .progress-bar[_ngcontent-%COMP%] {\n  height: 100%;\n  background: var(--primary);\n}\n@media (max-width: 768px) {\n  .dashboard-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n}\n/*# sourceMappingURL=production-dashboard.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionDashboardComponent, { className: "ProductionDashboardComponent", filePath: "src\\app\\components\\production\\production-dashboard\\production-dashboard.component.ts", lineNumber: 22 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionDashboardComponent, { className: "ProductionDashboardComponent", filePath: "src\\app\\components\\production\\production-dashboard\\production-dashboard.component.ts", lineNumber: 21 });
 })();
 
 // src/app/components/production/process-date-report/process-date-report.component.ts
@@ -87878,7 +88251,7 @@ var QuotationStatus;
 
 // src/app/components/all-quotation/quotation/quotation.component.ts
 var _c025 = () => ({ label: "All Customers", value: "" });
-var _c110 = () => ({ label: "All Status", value: "" });
+var _c19 = () => ({ label: "All Status", value: "" });
 function QuotationComponent_tr_54_button_21_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
@@ -88458,7 +88831,7 @@ var QuotationComponent = class _QuotationComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance(3);
-        \u0275\u0275property("options", ctx.statusOptions)("defaultOption", \u0275\u0275pureFunction0(13, _c110))("searchPlaceholder", "Search status...");
+        \u0275\u0275property("options", ctx.statusOptions)("defaultOption", \u0275\u0275pureFunction0(13, _c19))("searchPlaceholder", "Search status...");
         \u0275\u0275advance(38);
         \u0275\u0275property("ngForOf", ctx.quotations);
         \u0275\u0275advance();

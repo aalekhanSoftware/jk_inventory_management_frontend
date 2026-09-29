@@ -1,0 +1,56 @@
+<div class="plan-select" [class.active]="isOpen">
+  <div class="select-input">
+    <input
+      type="text"
+      class="search-input"
+      [placeholder]="placeholder"
+      [(ngModel)]="searchText"
+      (input)="onSearchInput()"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+      (keydown)="handleKeydown($event)"
+      autocomplete="off"
+      role="combobox"
+      [attr.aria-expanded]="isOpen"
+      aria-autocomplete="list"
+    >
+    <i *ngIf="selectedPlanId !== null"
+       class="fas fa-times clear-icon"
+       (click)="clearSelection($event)"
+       (touchstart)="$event.stopPropagation()"
+       role="button"
+       tabindex="-1"
+       aria-label="Clear selection"></i>
+    <i class="fas toggle-icon"
+       [class.fa-chevron-down]="!isOpen"
+       [class.fa-chevron-up]="isOpen"
+       (click)="toggleDropdown($event)"
+       (mousedown)="$event.preventDefault()"
+       role="button"
+       tabindex="-1"
+       aria-label="Toggle options"></i>
+  </div>
+
+  <div class="select-dropdown" *ngIf="isOpen" [class.drop-up]="dropUp">
+    <div class="options-container" role="listbox" (scroll)="onListScroll($event)">
+      <div class="option"
+           *ngFor="let option of items; let i = index"
+           (mousedown)="$event.preventDefault(); selectOption(option, $event)"
+           [class.selected]="isSelected(option)"
+           [class.highlighted]="i === highlightedIndex"
+           role="option"
+           [attr.aria-selected]="isSelected(option)">
+        <div class="option-content">
+          <span class="option-label" [attr.title]="option.planningNumber">{{ option.planningNumber }}</span>
+          <small class="option-sub" *ngIf="option.planningDate">{{ option.planningDate | date:'dd-MM-yyyy' }}</small>
+        </div>
+      </div>
+      <div class="loading-more" *ngIf="loading || loadingMore">
+        <i class="fas fa-spinner fa-spin"></i> Loading...
+      </div>
+      <div class="no-results" *ngIf="!loading && !items.length">
+        No plannings found
+      </div>
+    </div>
+  </div>
+</div>

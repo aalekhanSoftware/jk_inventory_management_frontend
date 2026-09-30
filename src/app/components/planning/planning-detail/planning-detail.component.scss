@@ -58,6 +58,28 @@
   .hint { margin-top: 10px; color: var(--text-secondary); font-size: 0.85rem; }
   .negative { color: var(--error, #d32f2f); font-weight: 700; }
 
+  // QUICK_DISPATCH: touch-sized row/header checkboxes.
+  .check-col {
+    width: 44px;
+    text-align: center;
+
+    input[type='checkbox'] {
+      width: 20px;
+      height: 20px;
+      min-width: 44px;
+      min-height: 44px;
+      accent-color: var(--primary);
+      cursor: pointer;
+      vertical-align: middle;
+      touch-action: manipulation;
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.4;
+      }
+    }
+  }
+
   .badge {
     background: rgba(0, 153, 156, 0.12);
     color: var(--secondary);

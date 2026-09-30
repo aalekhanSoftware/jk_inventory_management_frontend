@@ -8,8 +8,13 @@
     <button [routerLink]="['/dashboard']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Dashboard</button>
     <button [routerLink]="['/plan-dispatch/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-truck"></i> Dispatch</button>
     <button [routerLink]="['/plan-coating/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-spray-can"></i> Coating</button>
+    <button type="button" class="btn btn-primary" (click)="openQuickDispatch()" [disabled]="!selectedDispatch.size || isDispatching || !hasCustomer" [title]="hasCustomer ? 'Dispatch full pack balance of checked products' : 'Attach a customer to the plan first (Planning Edit)'">
+      <i class="fas" [ngClass]="isDispatching ? 'fa-spinner fa-spin' : 'fa-truck-fast'"></i>
+      {{ isDispatching ? 'Dispatching…' : 'Dispatch Selected' + (selectedDispatch.size ? ' (' + selectedDispatch.size + ')' : '') }}
+    </button>
     <button type="button" class="btn btn-secondary" (click)="exportExcel()"><i class="fas fa-file-excel"></i> Excel</button>
   </div>
+  <p class="hint" *ngIf="planning && !hasCustomer">Attach a customer in Planning Edit to enable one-click dispatch.</p>
 
   <div class="card" *ngIf="planning">
     <h2>Planning Information — {{ planning.planningNumber }}</h2>
@@ -42,6 +47,11 @@
       <table class="table">
         <thead>
           <tr>
+            <th class="check-col">
+              <input type="checkbox" [checked]="allEligibleSelected()" (change)="toggleAllEligible()"
+                [disabled]="!eligibleItems().length" title="Select all dispatchable products"
+                (click)="$event.stopPropagation()">
+            </th>
             <th>Product</th>
             <th>Planned</th>
             <th>Bags</th>
@@ -59,6 +69,12 @@
         <tbody>
           <ng-container *ngFor="let item of planning.items">
             <tr>
+              <td class="check-col">
+                <input type="checkbox" [checked]="selectedDispatch.has(item.id)"
+                  [disabled]="!isDispatchable(item)" (change)="toggleItemSelection(item)"
+                  [title]="isDispatchable(item) ? 'Select for dispatch (' + dispatchableQty(item) + ' pcs)' : dispatchBlockReason(item)"
+                  (click)="$event.stopPropagation()">
+              </td>
               <td>{{ item.productName }} <span class="badge" *ngIf="item.coatingRequired">Coating</span></td>
               <td>{{ item.plannedQuantity }}</td>
               <td>{{ item.totalBags ?? '-' }}</td>
@@ -83,7 +99,7 @@
               </td>
             </tr>
             <tr *ngIf="expandedItemId === item.id">
-              <td colspan="12">
+              <td colspan="13">
                 <div *ngIf="loadingTx[item.id]">Loading transactions…</div>
                 <table class="table inner" *ngIf="transactionsByItem[item.id]">
                   <thead>
@@ -119,3 +135,11 @@
     </div>
   </div>
 </div>
+
+<app-confirm-modal
+  [show]="showQuickModal"
+  title="Confirm Dispatch"
+  [message]="'Dispatch full pack balance? ' + selectedLines().join(' | ')"
+  (confirm)="confirmQuickDispatch()"
+  (cancel)="cancelQuickDispatch()"
+></app-confirm-modal>

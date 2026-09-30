@@ -30,6 +30,11 @@ export class PlanDispatchService {
     return this.http.post(`${this.apiUrl}/delete`, { id });
   }
 
+  /** QUICK_DISPATCH: one-click full-balance dispatch for planning items. */
+  quickDispatch(planningId: number, planningItemIds: number[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/quick`, { planningId, planningItemIds });
+  }
+
   searchDispatches(params: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/search`, params);
   }

@@ -54176,7 +54176,10 @@ var ToastNoAnimationModule = class _ToastNoAnimationModule {
 // src/environments/environment.ts
 var environment = {
   production: false,
-  apiUrl: "http://localhost:8080",
+  // apiUrl: 'http://localhost:8080'  
+  // apiUrl: 'http://13.201.225.134:8080'
+  // apiUrl: 'https://dw30dcuzxff5s.cloudfront.net'
+  apiUrl: "http://192.168.1.22:8080",
   encryptionKey: "GTR12345678901234567890123456789012"
   // Must be 32 characters for AES-256
 };
@@ -76850,6 +76853,10 @@ var PlanDispatchService = class _PlanDispatchService {
   deleteDispatch(id) {
     return this.http.post(`${this.apiUrl}/delete`, { id });
   }
+  /** QUICK_DISPATCH: one-click full-balance dispatch for planning items. */
+  quickDispatch(planningId, planningItemIds) {
+    return this.http.post(`${this.apiUrl}/quick`, { planningId, planningItemIds });
+  }
   searchDispatches(params) {
     return this.http.post(`${this.apiUrl}/search`, params);
   }
@@ -84427,60 +84434,82 @@ var _c72 = (a0) => ["/production/edit", a0];
 function PlanningDetailComponent_div_2_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 5)(1, "button", 6);
-    \u0275\u0275element(2, "i", 7);
+    \u0275\u0275elementStart(0, "div", 7)(1, "button", 8);
+    \u0275\u0275element(2, "i", 9);
     \u0275\u0275text(3, " Back");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "button", 8);
-    \u0275\u0275element(5, "i", 9);
+    \u0275\u0275elementStart(4, "button", 10);
+    \u0275\u0275element(5, "i", 11);
     \u0275\u0275text(6, " Edit");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "button", 10);
-    \u0275\u0275element(8, "i", 11);
+    \u0275\u0275elementStart(7, "button", 12);
+    \u0275\u0275element(8, "i", 13);
     \u0275\u0275text(9, " Production Entry");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "button", 12);
-    \u0275\u0275element(11, "i", 13);
+    \u0275\u0275elementStart(10, "button", 14);
+    \u0275\u0275element(11, "i", 15);
     \u0275\u0275text(12, " Dashboard");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "button", 10);
-    \u0275\u0275element(14, "i", 14);
+    \u0275\u0275elementStart(13, "button", 12);
+    \u0275\u0275element(14, "i", 16);
     \u0275\u0275text(15, " Dispatch");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "button", 10);
-    \u0275\u0275element(17, "i", 15);
+    \u0275\u0275elementStart(16, "button", 12);
+    \u0275\u0275element(17, "i", 17);
     \u0275\u0275text(18, " Coating");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(19, "button", 16);
+    \u0275\u0275elementStart(19, "button", 18);
     \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_19_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.openQuickDispatch());
+    });
+    \u0275\u0275element(20, "i", 19);
+    \u0275\u0275text(21);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(22, "button", 20);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_22_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.exportExcel());
     });
-    \u0275\u0275element(20, "i", 17);
-    \u0275\u0275text(21, " Excel");
+    \u0275\u0275element(23, "i", 21);
+    \u0275\u0275text(24, " Excel");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(4);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(9, _c022, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(13, _c022, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(11, _c18))("queryParams", \u0275\u0275pureFunction1(12, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(15, _c18))("queryParams", \u0275\u0275pureFunction1(16, _c24, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(14, _c33))("queryParams", \u0275\u0275pureFunction1(15, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(18, _c33))("queryParams", \u0275\u0275pureFunction1(19, _c24, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(17, _c43))("queryParams", \u0275\u0275pureFunction1(18, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(21, _c43))("queryParams", \u0275\u0275pureFunction1(22, _c24, ctx_r1.encId(ctx_r1.planning.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(20, _c53))("queryParams", \u0275\u0275pureFunction1(21, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(24, _c53))("queryParams", \u0275\u0275pureFunction1(25, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("disabled", !ctx_r1.selectedDispatch.size || ctx_r1.isDispatching || !ctx_r1.hasCustomer)("title", ctx_r1.hasCustomer ? "Dispatch full pack balance of checked products" : "Attach a customer to the plan first (Planning Edit)");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", ctx_r1.isDispatching ? "fa-spinner fa-spin" : "fa-truck-fast");
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r1.isDispatching ? "Dispatching\u2026" : "Dispatch Selected" + (ctx_r1.selectedDispatch.size ? " (" + ctx_r1.selectedDispatch.size + ")" : ""), " ");
   }
 }
-function PlanningDetailComponent_div_3_Template(rf, ctx) {
+function PlanningDetailComponent_p_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 18)(1, "h2");
+    \u0275\u0275elementStart(0, "p", 22);
+    \u0275\u0275text(1, "Attach a customer in Planning Edit to enable one-click dispatch.");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanningDetailComponent_div_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 23)(1, "h2");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 19)(4, "div")(5, "span");
+    \u0275\u0275elementStart(3, "div", 24)(4, "div")(5, "span");
     \u0275\u0275text(6, "Planning No:");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(7, "strong");
@@ -84505,7 +84534,7 @@ function PlanningDetailComponent_div_3_Template(rf, ctx) {
     \u0275\u0275elementStart(23, "strong");
     \u0275\u0275text(24);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(25, "div", 20)(26, "span");
+    \u0275\u0275elementStart(25, "div", 25)(26, "span");
     \u0275\u0275text(27, "Remarks:");
     \u0275\u0275elementEnd();
     \u0275\u0275text(28);
@@ -84527,54 +84556,54 @@ function PlanningDetailComponent_div_3_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r1.planning.remarks || "-", "");
   }
 }
-function PlanningDetailComponent_div_4_Template(rf, ctx) {
+function PlanningDetailComponent_div_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 21)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 26)(1, "h2");
     \u0275\u0275text(2, "Production Summary");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 22)(4, "div", 23)(5, "span", 24);
+    \u0275\u0275elementStart(3, "div", 27)(4, "div", 28)(5, "span", 29);
     \u0275\u0275text(6, "Planned");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "span", 25);
+    \u0275\u0275elementStart(7, "span", 30);
     \u0275\u0275text(8);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "div", 23)(10, "span", 24);
+    \u0275\u0275elementStart(9, "div", 28)(10, "span", 29);
     \u0275\u0275text(11, "Cutting");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "span", 25);
+    \u0275\u0275elementStart(12, "span", 30);
     \u0275\u0275text(13);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "div", 23)(15, "span", 24);
+    \u0275\u0275elementStart(14, "div", 28)(15, "span", 29);
     \u0275\u0275text(16, "Emboss");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "span", 25);
+    \u0275\u0275elementStart(17, "span", 30);
     \u0275\u0275text(18);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(19, "div", 23)(20, "span", 24);
+    \u0275\u0275elementStart(19, "div", 28)(20, "span", 29);
     \u0275\u0275text(21, "Coating");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "span", 25);
+    \u0275\u0275elementStart(22, "span", 30);
     \u0275\u0275text(23);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(24, "div", 23)(25, "span", 24);
+    \u0275\u0275elementStart(24, "div", 28)(25, "span", 29);
     \u0275\u0275text(26, "Packing");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(27, "span", 25);
+    \u0275\u0275elementStart(27, "span", 30);
     \u0275\u0275text(28);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "div", 23)(30, "span", 24);
+    \u0275\u0275elementStart(29, "div", 28)(30, "span", 29);
     \u0275\u0275text(31, "Dispatch");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(32, "span", 25);
+    \u0275\u0275elementStart(32, "span", 30);
     \u0275\u0275text(33);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(34, "div", 23)(35, "span", 24);
+    \u0275\u0275elementStart(34, "div", 28)(35, "span", 29);
     \u0275\u0275text(36, "Remaining");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(37, "span", 25);
+    \u0275\u0275elementStart(37, "span", 30);
     \u0275\u0275text(38);
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(39, "p", 26);
+    \u0275\u0275elementStart(39, "p", 22);
     \u0275\u0275text(40, "Remaining = Planned \u2212 Cutting (combined Cutting+Emboss counts inside Cutting)");
     \u0275\u0275elementEnd()();
   }
@@ -84599,23 +84628,23 @@ function PlanningDetailComponent_div_4_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.planning.remainingQty);
   }
 }
-function PlanningDetailComponent_div_5_ng_container_31_span_4_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_span_6_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 36);
+    \u0275\u0275elementStart(0, "span", 43);
     \u0275\u0275text(1, "Coating");
     \u0275\u0275elementEnd();
   }
 }
-function PlanningDetailComponent_div_5_ng_container_31_tr_34_div_2_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_div_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div");
     \u0275\u0275text(1, "Loading transactions\u2026");
     \u0275\u0275elementEnd();
   }
 }
-function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_18_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_Template(rf, ctx) {
   if (rf & 1) {
-    const _r5 = \u0275\u0275getCurrentView();
+    const _r6 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -84636,49 +84665,49 @@ function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_18_Templ
     \u0275\u0275elementStart(13, "td");
     \u0275\u0275text(14);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(15, "td", 40)(16, "button", 41);
-    \u0275\u0275element(17, "i", 9);
+    \u0275\u0275elementStart(15, "td", 47)(16, "button", 48);
+    \u0275\u0275element(17, "i", 11);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "button", 42);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_18_Template_button_click_18_listener() {
-      const op_r6 = \u0275\u0275restoreView(_r5).$implicit;
-      const item_r4 = \u0275\u0275nextContext(3).$implicit;
+    \u0275\u0275elementStart(18, "button", 49);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_Template_button_click_18_listener() {
+      const op_r7 = \u0275\u0275restoreView(_r6).$implicit;
+      const item_r5 = \u0275\u0275nextContext(3).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.deleteEntry(op_r6.id, item_r4));
+      return \u0275\u0275resetView(ctx_r1.deleteEntry(op_r7.id, item_r5));
     });
-    \u0275\u0275element(19, "i", 43);
+    \u0275\u0275element(19, "i", 50);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
     let tmp_9_0;
-    const op_r6 = ctx.$implicit;
+    const op_r7 = ctx.$implicit;
     const ctx_r1 = \u0275\u0275nextContext(5);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(op_r6.operationType);
+    \u0275\u0275textInterpolate(op_r7.operationType);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(op_r6.quantity);
+    \u0275\u0275textInterpolate(op_r7.quantity);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_9_0 = op_r6.totalBags) !== null && tmp_9_0 !== void 0 ? tmp_9_0 : "-");
+    \u0275\u0275textInterpolate((tmp_9_0 = op_r7.totalBags) !== null && tmp_9_0 !== void 0 ? tmp_9_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(op_r6.operationDate ? \u0275\u0275pipeBind2(9, 7, op_r6.operationDate, "dd-MM-yyyy HH:mm") : \u0275\u0275pipeBind2(10, 10, op_r6.createdAt, "dd-MM-yyyy HH:mm"));
+    \u0275\u0275textInterpolate(op_r7.operationDate ? \u0275\u0275pipeBind2(9, 7, op_r7.operationDate, "dd-MM-yyyy HH:mm") : \u0275\u0275pipeBind2(10, 10, op_r7.createdAt, "dd-MM-yyyy HH:mm"));
     \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(op_r6.machineryName || "-");
+    \u0275\u0275textInterpolate(op_r7.machineryName || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(op_r6.remarks || "-");
+    \u0275\u0275textInterpolate(op_r7.remarks || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(13, _c72, ctx_r1.encId(op_r6.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(13, _c72, ctx_r1.encId(op_r7.id)));
   }
 }
-function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_19_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_19_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 44);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 51);
     \u0275\u0275text(2, "No transactions yet");
     \u0275\u0275elementEnd()();
   }
 }
-function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "table", 39)(1, "thead")(2, "tr")(3, "th");
+    \u0275\u0275elementStart(0, "table", 46)(1, "thead")(2, "tr")(3, "th");
     \u0275\u0275text(4, "Type");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "th");
@@ -84700,43 +84729,50 @@ function PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_Template(rf
     \u0275\u0275text(16, "Actions");
     \u0275\u0275elementEnd()()();
     \u0275\u0275elementStart(17, "tbody");
-    \u0275\u0275template(18, PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_18_Template, 20, 15, "tr", 29)(19, PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_tr_19_Template, 3, 0, "tr", 35);
+    \u0275\u0275template(18, PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_Template, 20, 15, "tr", 35)(19, PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_19_Template, 3, 0, "tr", 42);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const item_r4 = \u0275\u0275nextContext(2).$implicit;
+    const item_r5 = \u0275\u0275nextContext(2).$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(18);
-    \u0275\u0275property("ngForOf", ctx_r1.transactionsByItem[item_r4.id].operations);
+    \u0275\u0275property("ngForOf", ctx_r1.transactionsByItem[item_r5.id].operations);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", !(ctx_r1.transactionsByItem[item_r4.id].operations == null ? null : ctx_r1.transactionsByItem[item_r4.id].operations.length));
+    \u0275\u0275property("ngIf", !(ctx_r1.transactionsByItem[item_r5.id].operations == null ? null : ctx_r1.transactionsByItem[item_r5.id].operations.length));
   }
 }
-function PlanningDetailComponent_div_5_ng_container_31_tr_34_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 37);
-    \u0275\u0275template(2, PlanningDetailComponent_div_5_ng_container_31_tr_34_div_2_Template, 2, 0, "div", 35)(3, PlanningDetailComponent_div_5_ng_container_31_tr_34_table_3_Template, 20, 2, "table", 38);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 44);
+    \u0275\u0275template(2, PlanningDetailComponent_div_6_ng_container_33_tr_36_div_2_Template, 2, 0, "div", 42)(3, PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_Template, 20, 2, "table", 45);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const item_r4 = \u0275\u0275nextContext().$implicit;
+    const item_r5 = \u0275\u0275nextContext().$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ctx_r1.loadingTx[item_r4.id]);
+    \u0275\u0275property("ngIf", ctx_r1.loadingTx[item_r5.id]);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.transactionsByItem[item_r4.id]);
+    \u0275\u0275property("ngIf", ctx_r1.transactionsByItem[item_r5.id]);
   }
 }
-function PlanningDetailComponent_div_5_ng_container_31_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_Template(rf, ctx) {
   if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
+    const _r4 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "tr")(2, "td");
-    \u0275\u0275text(3);
-    \u0275\u0275template(4, PlanningDetailComponent_div_5_ng_container_31_span_4_Template, 2, 0, "span", 30);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "td");
-    \u0275\u0275text(6);
+    \u0275\u0275elementStart(1, "tr")(2, "td", 33)(3, "input", 36);
+    \u0275\u0275listener("change", function PlanningDetailComponent_div_6_ng_container_33_Template_input_change_3_listener() {
+      const item_r5 = \u0275\u0275restoreView(_r4).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.toggleItemSelection(item_r5));
+    })("click", function PlanningDetailComponent_div_6_ng_container_33_Template_input_click_3_listener($event) {
+      \u0275\u0275restoreView(_r4);
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(4, "td");
+    \u0275\u0275text(5);
+    \u0275\u0275template(6, PlanningDetailComponent_div_6_ng_container_33_span_6_Template, 2, 0, "span", 37);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(7, "td");
     \u0275\u0275text(8);
@@ -84759,127 +84795,233 @@ function PlanningDetailComponent_div_5_ng_container_31_Template(rf, ctx) {
     \u0275\u0275elementStart(19, "td");
     \u0275\u0275text(20);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(21, "td")(22, "div", 31);
-    \u0275\u0275element(23, "div", 32);
+    \u0275\u0275elementStart(21, "td");
+    \u0275\u0275text(22);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(24, "small");
-    \u0275\u0275text(25);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(26, "td");
+    \u0275\u0275elementStart(23, "td")(24, "div", 38);
+    \u0275\u0275element(25, "div", 39);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(26, "small");
     \u0275\u0275text(27);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(28, "td");
+    \u0275\u0275text(29);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(28, "td")(29, "button", 33);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_5_ng_container_31_Template_button_click_29_listener() {
-      const item_r4 = \u0275\u0275restoreView(_r3).$implicit;
+    \u0275\u0275elementStart(30, "td")(31, "button", 40);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_6_ng_container_33_Template_button_click_31_listener() {
+      const item_r5 = \u0275\u0275restoreView(_r4).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.toggleTransactions(item_r4));
+      return \u0275\u0275resetView(ctx_r1.toggleTransactions(item_r5));
     });
-    \u0275\u0275text(30);
+    \u0275\u0275text(32);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(31, "button", 34);
-    \u0275\u0275element(32, "i", 11);
-    \u0275\u0275text(33, " Entry ");
+    \u0275\u0275elementStart(33, "button", 41);
+    \u0275\u0275element(34, "i", 13);
+    \u0275\u0275text(35, " Entry ");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275template(34, PlanningDetailComponent_div_5_ng_container_31_tr_34_Template, 4, 2, "tr", 35);
+    \u0275\u0275template(36, PlanningDetailComponent_div_6_ng_container_33_tr_36_Template, 4, 2, "tr", 42);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
-    let tmp_6_0;
-    let tmp_12_0;
-    const item_r4 = ctx.$implicit;
+    let tmp_9_0;
+    let tmp_15_0;
+    const item_r5 = ctx.$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1("", item_r4.productName, " ");
+    \u0275\u0275property("checked", ctx_r1.selectedDispatch.has(item_r5.id))("disabled", !ctx_r1.isDispatchable(item_r5))("title", ctx_r1.isDispatchable(item_r5) ? "Select for dispatch (" + ctx_r1.dispatchableQty(item_r5) + " pcs)" : ctx_r1.dispatchBlockReason(item_r5));
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate1("", item_r5.productName, " ");
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", item_r4.coatingRequired);
+    \u0275\u0275property("ngIf", item_r5.coatingRequired);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r4.plannedQuantity);
+    \u0275\u0275textInterpolate(item_r5.plannedQuantity);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_6_0 = item_r4.totalBags) !== null && tmp_6_0 !== void 0 ? tmp_6_0 : "-");
+    \u0275\u0275textInterpolate((tmp_9_0 = item_r5.totalBags) !== null && tmp_9_0 !== void 0 ? tmp_9_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r4.cuttingQty);
+    \u0275\u0275textInterpolate(item_r5.cuttingQty);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r4.embossQty);
+    \u0275\u0275textInterpolate(item_r5.embossQty);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r4.coatingRequired ? item_r4.coatingQty : "N/A");
+    \u0275\u0275textInterpolate(item_r5.coatingRequired ? item_r5.coatingQty : "N/A");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r4.packingQty);
+    \u0275\u0275textInterpolate(item_r5.packingQty);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r4.dispatchQty);
+    \u0275\u0275textInterpolate(item_r5.dispatchQty);
     \u0275\u0275advance();
-    \u0275\u0275classProp("negative", ((tmp_12_0 = item_r4.remainingQty) !== null && tmp_12_0 !== void 0 ? tmp_12_0 : 0) < 0);
+    \u0275\u0275classProp("negative", ((tmp_15_0 = item_r5.remainingQty) !== null && tmp_15_0 !== void 0 ? tmp_15_0 : 0) < 0);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(item_r4.remainingQty);
+    \u0275\u0275textInterpolate(item_r5.remainingQty);
     \u0275\u0275advance(3);
-    \u0275\u0275styleProp("width", ctx_r1.progressPercent(item_r4), "%");
+    \u0275\u0275styleProp("width", ctx_r1.progressPercent(item_r5), "%");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("", ctx_r1.progressPercent(item_r4), "%");
+    \u0275\u0275textInterpolate1("", ctx_r1.progressPercent(item_r5), "%");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r1.itemStatusLabel(item_r4.itemStatus));
+    \u0275\u0275textInterpolate(ctx_r1.itemStatusLabel(item_r5.itemStatus));
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1(" ", ctx_r1.expandedItemId === item_r4.id ? "Hide" : "Transactions", " ");
+    \u0275\u0275textInterpolate1(" ", ctx_r1.expandedItemId === item_r5.id ? "Hide" : "Transactions", " ");
     \u0275\u0275advance();
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(20, _c18))("queryParams", \u0275\u0275pureFunction2(21, _c63, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r4.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(23, _c18))("queryParams", \u0275\u0275pureFunction2(24, _c63, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r5.id)));
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", ctx_r1.expandedItemId === item_r4.id);
+    \u0275\u0275property("ngIf", ctx_r1.expandedItemId === item_r5.id);
   }
 }
-function PlanningDetailComponent_div_5_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 18)(1, "h2");
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 23)(1, "h2");
     \u0275\u0275text(2, "Product-wise Production");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 27)(4, "table", 28)(5, "thead")(6, "tr")(7, "th");
-    \u0275\u0275text(8, "Product");
-    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "div", 31)(4, "table", 32)(5, "thead")(6, "tr")(7, "th", 33)(8, "input", 34);
+    \u0275\u0275listener("change", function PlanningDetailComponent_div_6_Template_input_change_8_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.toggleAllEligible());
+    })("click", function PlanningDetailComponent_div_6_Template_input_click_8_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(9, "th");
-    \u0275\u0275text(10, "Planned");
+    \u0275\u0275text(10, "Product");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(11, "th");
-    \u0275\u0275text(12, "Bags");
+    \u0275\u0275text(12, "Planned");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(13, "th");
-    \u0275\u0275text(14, "Cutting");
+    \u0275\u0275text(14, "Bags");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(15, "th");
-    \u0275\u0275text(16, "Emboss");
+    \u0275\u0275text(16, "Cutting");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(17, "th");
-    \u0275\u0275text(18, "Coating");
+    \u0275\u0275text(18, "Emboss");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(19, "th");
-    \u0275\u0275text(20, "Packing");
+    \u0275\u0275text(20, "Coating");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(21, "th");
-    \u0275\u0275text(22, "Dispatch");
+    \u0275\u0275text(22, "Packing");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(23, "th");
-    \u0275\u0275text(24, "Remaining");
+    \u0275\u0275text(24, "Dispatch");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(25, "th");
-    \u0275\u0275text(26, "Progress");
+    \u0275\u0275text(26, "Remaining");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(27, "th");
-    \u0275\u0275text(28, "Status");
+    \u0275\u0275text(28, "Progress");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(29, "th");
+    \u0275\u0275elementStart(29, "th");
+    \u0275\u0275text(30, "Status");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(31, "th");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(30, "tbody");
-    \u0275\u0275template(31, PlanningDetailComponent_div_5_ng_container_31_Template, 35, 24, "ng-container", 29);
+    \u0275\u0275elementStart(32, "tbody");
+    \u0275\u0275template(33, PlanningDetailComponent_div_6_ng_container_33_Template, 37, 27, "ng-container", 35);
     \u0275\u0275elementEnd()()()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(31);
+    \u0275\u0275advance(8);
+    \u0275\u0275property("checked", ctx_r1.allEligibleSelected())("disabled", !ctx_r1.eligibleItems().length);
+    \u0275\u0275advance(25);
     \u0275\u0275property("ngForOf", ctx_r1.planning.items);
   }
 }
 var PlanningDetailComponent = class _PlanningDetailComponent {
-  constructor(route, router, planningService, productionService, encryptionService, snackbar) {
+  /** Eligible only with packed balance left (Packing > 0 and Dispatch < Packing). */
+  isDispatchable(item) {
+    const packing = Number(item?.packingQty) || 0;
+    const dispatch = Number(item?.dispatchQty) || 0;
+    return packing > 0 && dispatch < packing;
+  }
+  dispatchableQty(item) {
+    return (Number(item?.packingQty) || 0) - (Number(item?.dispatchQty) || 0);
+  }
+  dispatchBlockReason(item) {
+    const packing = Number(item?.packingQty) || 0;
+    const dispatch = Number(item?.dispatchQty) || 0;
+    if (packing <= 0) {
+      return "No packed stock";
+    }
+    if (dispatch >= packing) {
+      return "Fully dispatched";
+    }
+    return "";
+  }
+  toggleItemSelection(item) {
+    if (!this.isDispatchable(item)) {
+      return;
+    }
+    if (this.selectedDispatch.has(item.id)) {
+      this.selectedDispatch.delete(item.id);
+    } else {
+      this.selectedDispatch.add(item.id);
+    }
+  }
+  eligibleItems() {
+    return (this.planning?.items || []).filter((i) => this.isDispatchable(i));
+  }
+  allEligibleSelected() {
+    const eligible = this.eligibleItems();
+    return eligible.length > 0 && eligible.every((i) => this.selectedDispatch.has(i.id));
+  }
+  toggleAllEligible() {
+    if (this.allEligibleSelected()) {
+      this.selectedDispatch.clear();
+    } else {
+      this.eligibleItems().forEach((i) => this.selectedDispatch.add(i.id));
+    }
+  }
+  selectedLines() {
+    return (this.planning?.items || []).filter((i) => this.selectedDispatch.has(i.id)).map((i) => `${i.productName}: ${this.dispatchableQty(i)} pcs`);
+  }
+  get hasCustomer() {
+    return !!this.planning?.customerId;
+  }
+  openQuickDispatch() {
+    if (!this.selectedDispatch.size) {
+      this.snackbar.error("Select at least one product to dispatch");
+      return;
+    }
+    if (!this.hasCustomer) {
+      this.snackbar.error("Attach a customer to the plan first (Planning Edit)");
+      return;
+    }
+    this.showQuickModal = true;
+  }
+  cancelQuickDispatch() {
+    this.showQuickModal = false;
+  }
+  confirmQuickDispatch() {
+    if (!this.planning || !this.selectedDispatch.size || this.isDispatching) {
+      return;
+    }
+    this.isDispatching = true;
+    this.planDispatchService.quickDispatch(this.planning.id, [...this.selectedDispatch]).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.snackbar.success(response.message || "Dispatch created successfully");
+          this.selectedDispatch.clear();
+          this.showQuickModal = false;
+          this.transactionsByItem = {};
+          this.expandedItemId = null;
+          this.loadDetail(this.planning.id);
+        }
+        this.isDispatching = false;
+      },
+      error: (error) => {
+        this.snackbar.error(error?.error?.message || "Failed to create dispatch");
+        this.isDispatching = false;
+      }
+    });
+  }
+  constructor(route, router, planningService, productionService, planDispatchService, encryptionService, snackbar) {
     this.route = route;
     this.router = router;
     this.planningService = planningService;
     this.productionService = productionService;
+    this.planDispatchService = planDispatchService;
     this.encryptionService = encryptionService;
     this.snackbar = snackbar;
     this.planning = null;
@@ -84888,6 +85030,9 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
     this.transactionsByItem = {};
     this.loadingTx = {};
     this.statusLabel = planningStatusLabel;
+    this.selectedDispatch = /* @__PURE__ */ new Set();
+    this.showQuickModal = false;
+    this.isDispatching = false;
   }
   ngOnInit() {
     const rawId = this.route.snapshot.paramMap.get("id");
@@ -85021,15 +85166,22 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
   }
   static {
     this.\u0275fac = function PlanningDetailComponent_Factory(t) {
-      return new (t || _PlanningDetailComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(ProductionService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(SnackbarService));
+      return new (t || _PlanningDetailComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(PlanningService), \u0275\u0275directiveInject(ProductionService), \u0275\u0275directiveInject(PlanDispatchService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(SnackbarService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningDetailComponent, selectors: [["app-planning-detail"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 6, vars: 5, consts: [[1, "planning-detail-container"], [3, "show"], ["class", "action-bar", 4, "ngIf"], ["class", "card", 4, "ngIf"], ["class", "card summary-card", 4, "ngIf"], [1, "action-bar"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-arrow-left"], [1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-edit"], [1, "btn", "btn-primary", 3, "routerLink", "queryParams"], [1, "fas", "fa-plus"], [1, "btn", "btn-secondary", 3, "routerLink", "queryParams"], [1, "fas", "fa-chart-bar"], [1, "fas", "fa-truck"], [1, "fas", "fa-spray-can"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-file-excel"], [1, "card"], [1, "info-grid"], [1, "full"], [1, "card", "summary-card"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-label"], [1, "stat-value"], [1, "hint"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "btn", "btn-sm", "btn-secondary", 3, "click"], ["title", "Direct production entry \u2014 planning and product pre-selected, changeable", 1, "btn", "btn-sm", "btn-primary", 3, "routerLink", "queryParams"], [4, "ngIf"], [1, "badge"], ["colspan", "12"], ["class", "table inner", 4, "ngIf"], [1, "table", "inner"], [1, "actions"], ["title", "Edit entry (quantity/date/remarks)", 1, "btn-icon", "edit", 3, "routerLink"], ["title", "Delete entry and reverse stock", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"]], template: function PlanningDetailComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningDetailComponent, selectors: [["app-planning-detail"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 8, vars: 8, consts: [[1, "planning-detail-container"], [3, "show"], ["class", "action-bar", 4, "ngIf"], ["class", "hint", 4, "ngIf"], ["class", "card", 4, "ngIf"], ["class", "card summary-card", 4, "ngIf"], ["title", "Confirm Dispatch", 3, "confirm", "cancel", "show", "message"], [1, "action-bar"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-arrow-left"], [1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-edit"], [1, "btn", "btn-primary", 3, "routerLink", "queryParams"], [1, "fas", "fa-plus"], [1, "btn", "btn-secondary", 3, "routerLink", "queryParams"], [1, "fas", "fa-chart-bar"], [1, "fas", "fa-truck"], [1, "fas", "fa-spray-can"], ["type", "button", 1, "btn", "btn-primary", 3, "click", "disabled", "title"], [1, "fas", 3, "ngClass"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-file-excel"], [1, "hint"], [1, "card"], [1, "info-grid"], [1, "full"], [1, "card", "summary-card"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-label"], [1, "stat-value"], [1, "table-responsive"], [1, "table"], [1, "check-col"], ["type", "checkbox", "title", "Select all dispatchable products", 3, "change", "click", "checked", "disabled"], [4, "ngFor", "ngForOf"], ["type", "checkbox", 3, "change", "click", "checked", "disabled", "title"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "btn", "btn-sm", "btn-secondary", 3, "click"], ["title", "Direct production entry \u2014 planning and product pre-selected, changeable", 1, "btn", "btn-sm", "btn-primary", 3, "routerLink", "queryParams"], [4, "ngIf"], [1, "badge"], ["colspan", "13"], ["class", "table inner", 4, "ngIf"], [1, "table", "inner"], [1, "actions"], ["title", "Edit entry (quantity/date/remarks)", 1, "btn-icon", "edit", 3, "routerLink"], ["title", "Delete entry and reverse stock", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"]], template: function PlanningDetailComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
-        \u0275\u0275template(2, PlanningDetailComponent_div_2_Template, 22, 23, "div", 2)(3, PlanningDetailComponent_div_3_Template, 29, 9, "div", 3)(4, PlanningDetailComponent_div_4_Template, 41, 9, "div", 4)(5, PlanningDetailComponent_div_5_Template, 32, 1, "div", 3);
+        \u0275\u0275template(2, PlanningDetailComponent_div_2_Template, 25, 27, "div", 2)(3, PlanningDetailComponent_p_3_Template, 2, 0, "p", 3)(4, PlanningDetailComponent_div_4_Template, 29, 9, "div", 4)(5, PlanningDetailComponent_div_5_Template, 41, 9, "div", 5)(6, PlanningDetailComponent_div_6_Template, 34, 3, "div", 4);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(7, "app-confirm-modal", 6);
+        \u0275\u0275listener("confirm", function PlanningDetailComponent_Template_app_confirm_modal_confirm_7_listener() {
+          return ctx.confirmQuickDispatch();
+        })("cancel", function PlanningDetailComponent_Template_app_confirm_modal_cancel_7_listener() {
+          return ctx.cancelQuickDispatch();
+        });
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
@@ -85038,17 +85190,21 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.planning);
         \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.planning);
+        \u0275\u0275property("ngIf", ctx.planning && !ctx.hasCustomer);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.planning);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.planning);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.planning);
+        \u0275\u0275advance();
+        \u0275\u0275property("show", ctx.showQuickModal)("message", "Dispatch full pack balance? " + ctx.selectedLines().join(" | "));
       }
-    }, dependencies: [CommonModule, NgForOf, NgIf, DatePipe, RouterModule, RouterLink, LoaderComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.planning-detail-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.4rem;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .action-bar[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  margin-bottom: 20px;\n  flex-wrap: wrap;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n  gap: 12px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin-right: 6px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%]   .full[_ngcontent-%COMP%] {\n  grid-column: 1/-1;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));\n  gap: 12px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%] {\n  border: 1px solid #eee;\n  border-left: 4px solid var(--primary);\n  border-radius: 8px;\n  padding: 12px;\n  display: flex;\n  flex-direction: column;\n  background: #fff;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-label[_ngcontent-%COMP%] {\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  font-size: 1.4rem;\n  font-weight: 700;\n  color: var(--text-primary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card.negative[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 10px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge[_ngcontent-%COMP%] {\n  background: rgba(0, 153, 156, 0.12);\n  color: var(--secondary);\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 0.75rem;\n  margin-left: 6px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%] {\n  height: 8px;\n  background: #eee;\n  border-radius: 4px;\n  overflow: hidden;\n  min-width: 90px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%]   .progress-bar[_ngcontent-%COMP%] {\n  height: 100%;\n  background: var(--primary);\n}\n@media (max-width: 768px) {\n  .planning-detail-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n}\n/*# sourceMappingURL=planning-detail.component.css.map */"] });
+    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, DatePipe, RouterModule, RouterLink, LoaderComponent, ConfirmModalComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.planning-detail-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.4rem;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .action-bar[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  margin-bottom: 20px;\n  flex-wrap: wrap;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n  gap: 12px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin-right: 6px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%]   .full[_ngcontent-%COMP%] {\n  grid-column: 1/-1;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));\n  gap: 12px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%] {\n  border: 1px solid #eee;\n  border-left: 4px solid var(--primary);\n  border-radius: 8px;\n  padding: 12px;\n  display: flex;\n  flex-direction: column;\n  background: #fff;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-label[_ngcontent-%COMP%] {\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  font-size: 1.4rem;\n  font-weight: 700;\n  color: var(--text-primary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card.negative[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 10px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%] {\n  width: 44px;\n  text-align: center;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  width: 20px;\n  height: 20px;\n  min-width: 44px;\n  min-height: 44px;\n  accent-color: var(--primary);\n  cursor: pointer;\n  vertical-align: middle;\n  touch-action: manipulation;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge[_ngcontent-%COMP%] {\n  background: rgba(0, 153, 156, 0.12);\n  color: var(--secondary);\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 0.75rem;\n  margin-left: 6px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%] {\n  height: 8px;\n  background: #eee;\n  border-radius: 4px;\n  overflow: hidden;\n  min-width: 90px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%]   .progress-bar[_ngcontent-%COMP%] {\n  height: 100%;\n  background: var(--primary);\n}\n@media (max-width: 768px) {\n  .planning-detail-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n}\n/*# sourceMappingURL=planning-detail.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanningDetailComponent, { className: "PlanningDetailComponent", filePath: "src\\app\\components\\planning\\planning-detail\\planning-detail.component.ts", lineNumber: 19 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanningDetailComponent, { className: "PlanningDetailComponent", filePath: "src\\app\\components\\planning\\planning-detail\\planning-detail.component.ts", lineNumber: 21 });
 })();
 
 // src/app/models/production.model.ts

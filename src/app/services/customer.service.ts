@@ -28,9 +28,14 @@ export class CustomerService {
     return this.http.post(`${this.apiUrl}`, customer);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateCustomer(id: number, customer: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, customer);
-  }  
+    return this.http.post(`${this.apiUrl}/update`, { ...customer, id });
+  }
+
+  deleteCustomer(id: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/delete`, { id });
+  }
 
   getCustomers(params: any): Observable<any> {
     if (params.status === 'A') {

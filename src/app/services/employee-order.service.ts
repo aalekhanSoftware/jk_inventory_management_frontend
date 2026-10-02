@@ -20,12 +20,13 @@ export class EmployeeOrderService {
     return this.http.post(`${this.apiUrl}/create`, order);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateEmployeeOrder(order: EmployeeOrder): Observable<any> {
-    return this.http.put(`${this.apiUrl}/update`, order);
+    return this.http.post(`${this.apiUrl}/update`, order);
   }
 
   deleteEmployeeOrder(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
 
   getEmployeeOrderDetail(id: number): Observable<any> {

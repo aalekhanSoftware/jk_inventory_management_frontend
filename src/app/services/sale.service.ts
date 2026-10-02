@@ -20,11 +20,12 @@ export class SaleService {
     return this.http.post(`${this.apiUrl}/create`, sale);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateSale(id: number, sale: Sale): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, sale);
+    return this.http.post(`${this.apiUrl}/update`, { ...sale, id });
   }
 
   deleteSale(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
 }

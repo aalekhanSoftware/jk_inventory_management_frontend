@@ -16,20 +16,17 @@ export class TransportService {
     return this.http.post(`${this.apiUrl}/create`, data);
   }
 
+  // ENC_URL_POST_V1: POST with id in body; GET/PUT/DELETE with id in URL kept on backend for backward compat.
   getTransports(params: any): Observable<any> {
-    return this.http.get(`${this.apiUrl}/list`, { params });
+    return this.http.post(`${this.apiUrl}/search`, params);
   }
 
   getTransport(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/detail`, { id });
   }
 
-  // updateTransport(id: number, data: any): Observable<any> {
-  //   return this.http.put(`${this.apiUrl}/${id}`, data);
-  // }
-
   deleteTransport(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
 
   searchTransports(params: any): Observable<any> {
@@ -41,7 +38,7 @@ export class TransportService {
   }
 
   updateTransport(data: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/update`, data);
+    return this.http.post(`${this.apiUrl}/update`, data);
   }
 
   generatePdf(id: number): Observable<{ blob: Blob; filename: string }> {

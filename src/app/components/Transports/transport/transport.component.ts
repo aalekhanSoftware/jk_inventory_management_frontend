@@ -12,6 +12,7 @@ import { TransportService } from '../../../services/transport.service';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { PriceService } from '../../../services/price.service';
 import { PageAccessService } from '../../../services/page-access.service';
+import { EncryptionService } from '../../../shared/services/encryption.service';
 import { distinctUntilChanged } from 'rxjs/operators';
 import { debounceTime } from 'rxjs/operators';
 
@@ -69,16 +70,30 @@ export class TransportComponent implements OnInit {
     private transportService: TransportService,
     private snackbar: SnackbarService,
     private priceService: PriceService,
-    private pageAccessService: PageAccessService
+    private pageAccessService: PageAccessService,
+    private encryptionService: EncryptionService
   ) {
     this.initializeForm();
+    // ENC_URL_POST_V1: Encrypted id in URL: decrypt before use.
     this.route.params.subscribe(params => {
-      if (params['id']) {
-        this.transportId = +params['id'];
+      const rawId = params['id'];
+      if (rawId) {
+        const id = Number(this.encryptionService.decrypt(rawId));
+        if (!id) {
+          this.snackbar.error('Invalid link');
+          this.router.navigate(['/transport']);
+          return;
+        }
+        this.transportId = id;
         this.isEditMode = true;
         this.loadTransportDetail();
       }
     });
+  }
+
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id: number | null | undefined): string {
+    return this.encryptionService.encrypt(String(id ?? ''));
   }
 
   ngOnInit(): void {

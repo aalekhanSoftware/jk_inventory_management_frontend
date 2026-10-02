@@ -5,6 +5,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { EmployeeService } from '../../../services/employee.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
+import { EncryptionService } from '../../../shared/services/encryption.service';
 
 @Component({
   selector: 'app-employee-form',
@@ -29,17 +30,31 @@ export class EmployeeFormComponent implements OnInit {
     private employeeService: EmployeeService,
     private router: Router,
     private route: ActivatedRoute,
-    private snackbar: SnackbarService
+    private snackbar: SnackbarService,
+    private encryptionService: EncryptionService
   ) {
     this.initializeForm();
   }
 
   ngOnInit(): void {
-    this.employeeId = Number(this.route.snapshot.paramMap.get('id'));
-    if (this.employeeId) {
+    // ENC_URL_POST_V1: Encrypted id in URL: decrypt before use.
+    const rawId = this.route.snapshot.paramMap.get('id');
+    const decrypted = rawId ? Number(this.encryptionService.decrypt(rawId)) : NaN;
+    if (rawId && !decrypted) {
+      this.snackbar.error('Invalid link');
+      this.router.navigate(['/employee']);
+      return;
+    }
+    if (decrypted) {
+      this.employeeId = decrypted;
       this.isEditMode = true;
       this.loadEmployee();
     }
+  }
+
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id: number | null | undefined): string {
+    return this.encryptionService.encrypt(String(id ?? ''));
   }
 
   private initializeForm(): void {

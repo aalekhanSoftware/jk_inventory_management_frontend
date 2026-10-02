@@ -20,7 +20,8 @@ export class PurchaseService {
     return this.http.post(`${this.apiUrl}/create`, purchase);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   deletePurchase(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
 }

@@ -8,6 +8,7 @@ import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
+import { EncryptionService } from '../../../shared/services/encryption.service';
 
 @Component({
   selector: 'app-transport-list',
@@ -46,9 +47,15 @@ export class TransportListComponent implements OnInit {
   constructor(
     private transportService: TransportService,
     private fb: FormBuilder,
-    private snackbar: SnackbarService
+    private snackbar: SnackbarService,
+    private encryptionService: EncryptionService
   ) {
     this.initializeForm();
+  }
+
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id: number | null | undefined): string {
+    return this.encryptionService.encrypt(String(id ?? ''));
   }
 
   ngOnInit(): void {

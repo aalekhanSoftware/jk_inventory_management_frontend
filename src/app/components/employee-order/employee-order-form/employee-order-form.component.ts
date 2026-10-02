@@ -9,6 +9,7 @@ import { ProductService } from '../../../services/product.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
+import { EncryptionService } from '../../../shared/services/encryption.service';
 
 @Component({
   selector: 'app-employee-order-form',
@@ -64,14 +65,23 @@ export class EmployeeOrderFormComponent implements OnInit, OnDestroy {
     private productService: ProductService,
     private router: Router,
     private route: ActivatedRoute,
-    private snackbar: SnackbarService
+    private snackbar: SnackbarService,
+    private encryptionService: EncryptionService
   ) {
     this.initializeForm();
   }
 
   ngOnInit(): void {
-    this.orderId = Number(this.route.snapshot.paramMap.get('id'));
-    if (this.orderId) {
+    // ENC_URL_POST_V1: Encrypted id in URL: decrypt before use.
+    const rawId = this.route.snapshot.paramMap.get('id');
+    const decrypted = rawId ? Number(this.encryptionService.decrypt(rawId)) : NaN;
+    if (rawId && !decrypted) {
+      this.snackbar.error('Invalid link');
+      this.router.navigate(['/employee-order']);
+      return;
+    }
+    if (decrypted) {
+      this.orderId = decrypted;
       this.isEditMode = true;
       this.loadEmployeeOrder();
     } else {
@@ -79,6 +89,11 @@ export class EmployeeOrderFormComponent implements OnInit, OnDestroy {
     }
     this.loadProducts();
     this.loadEmployees();
+  }
+
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id: number | null | undefined): string {
+    return this.encryptionService.encrypt(String(id ?? ''));
   }
 
   ngOnDestroy(): void {

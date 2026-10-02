@@ -14,6 +14,7 @@ import { ReturnModalComponent } from '../return-modal/return-modal.component';
 import { ModalService } from '../../../services/modal.service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
+import { EncryptionService } from '../../../shared/services/encryption.service';
 
 @Component({
   selector: 'app-powder-coating-process',
@@ -62,9 +63,15 @@ export class PowderCoatingProcessComponent implements OnInit {
     private fb: FormBuilder,
     private snackbar: SnackbarService,
     private customerService: CustomerService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private encryptionService: EncryptionService
   ) {
     this.initializeForm();
+  }
+
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id: number | null | undefined): string {
+    return this.encryptionService.encrypt(String(id ?? ''));
   }
 
   ngOnInit(): void {

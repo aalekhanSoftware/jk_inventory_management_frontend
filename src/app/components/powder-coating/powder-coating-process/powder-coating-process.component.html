@@ -140,7 +140,7 @@
             <td class="actions-cell">
               <button 
                 class="btn btn-icon btn-primary" 
-                [routerLink]="['/powder-coating-process/edit', process.id]"
+                [routerLink]="['/powder-coating-process/edit', encId(process.id)]"
                 title="Edit Process"
                 aria-label="Edit Process"
                 *appCanAccess="'ADD_EDIT_COATING'"

@@ -25,11 +25,12 @@ export class CategoryService {
     return this.http.post<ApiResponse<Category>>(`${this.apiUrl}`, category);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateCategory(id: number, category: Category): Observable<ApiResponse<Category>> {
-    return this.http.put<ApiResponse<Category>>(`${this.apiUrl}/${id}`, category);
+    return this.http.post<ApiResponse<Category>>(`${this.apiUrl}/update`, { ...category, id });
   }
 
   deleteCategory(id: number): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`);
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/delete`, { id });
   }
 }

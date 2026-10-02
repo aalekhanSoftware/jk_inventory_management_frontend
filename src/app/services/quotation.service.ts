@@ -18,9 +18,10 @@ export class QuotationService {
     return this.http.post<QuotationResponse>(`${this.apiUrl}/create`, quotation);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateQuotation(id: number, data: any): Observable<any> {
     data.quotationId = id;
-    return this.http.put<any>(`${this.apiUrl}/update`, data);
+    return this.http.post<any>(`${this.apiUrl}/update`, data);
   }
 
   searchQuotations(params: any): Observable<QuotationResponse> {
@@ -59,8 +60,9 @@ export class QuotationService {
     );
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateQuotationStatus(id: number, status: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/update-status`, { id, status });
+    return this.http.post(`${this.apiUrl}/update-status`, { id, status });
   }
 
   getQuotationDetail(id: number): Observable<any> {

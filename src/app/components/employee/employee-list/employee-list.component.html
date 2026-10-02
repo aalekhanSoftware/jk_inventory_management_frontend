@@ -63,7 +63,7 @@
                 <td class="actions">
                   <button 
                     class="btn-icon edit" 
-                    [routerLink]="['/employee/edit', employee.id]"
+                    [routerLink]="['/employee/edit', encId(employee.id)]"
                     title="Edit Employee"
                     *appCanAccess="'ADD_EDIT_EMPLOYEE'"
                   >

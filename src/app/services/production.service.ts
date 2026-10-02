@@ -39,8 +39,9 @@ export class ProductionService {
     return this.http.post(`${this.apiUrl}/report`, params);
   }
 
+  // ENC_URL_POST_V1: POST with id in body (no id in URL).
   getTransactionsByItem(planningItemId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/by-planning-item/${planningItemId}`, {});
+    return this.http.post(`${this.apiUrl}/by-planning-item`, { planningItemId });
   }
 
   getDashboardSummary(planningId?: number | null, currentPage?: number | null, perPageRecord?: number | null,

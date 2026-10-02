@@ -20,12 +20,13 @@ export class EmployeeService {
     return this.http.post(this.apiUrl, employee);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateEmployee(id: number, employee: Partial<Employee>): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, employee);
+    return this.http.post(`${this.apiUrl}/update`, { ...employee, id });
   }
 
   deleteEmployee(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
 
   getEmployeeDetail(id: number): Observable<any> {

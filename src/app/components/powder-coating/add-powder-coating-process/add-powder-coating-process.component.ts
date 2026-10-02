@@ -11,6 +11,7 @@ import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { PowderCoatingReturn } from '../../../models/powder-coating.model';
 import { ReturnModalComponent } from '../return-modal/return-modal.component';
 import { ModalService } from '../../../services/modal.service';
+import { EncryptionService } from '../../../shared/services/encryption.service';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -55,18 +56,32 @@ export class AddPowderCoatingProcessComponent implements OnInit, OnDestroy {
     private customerService: CustomerService,
     private powderCoatingService: PowderCoatingService,
     private snackbar: SnackbarService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private encryptionService: EncryptionService
   ) {
     this.initializeForm();
-    this.processId = this.route.snapshot.params['id'];
-    this.isEditMode = !!this.processId;
+  }
+
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id: number | null | undefined): string {
+    return this.encryptionService.encrypt(String(id ?? ''));
   }
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadCustomers();
     this.setupCustomerChange();
-    if (this.isEditMode) {
+    // ENC_URL_POST_V1: Encrypted id in URL: decrypt before use.
+    const rawId = this.route.snapshot.paramMap.get('id') ?? this.route.snapshot.params['id'];
+    const decrypted = rawId ? Number(this.encryptionService.decrypt(rawId)) : NaN;
+    if (rawId && !decrypted) {
+      this.snackbar.error('Invalid link');
+      this.router.navigate(['/powder-coating-process']);
+      return;
+    }
+    if (decrypted) {
+      this.processId = decrypted;
+      this.isEditMode = true;
       this.loadProcess();
     } else {
       this.addItem();

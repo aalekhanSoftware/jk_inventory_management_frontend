@@ -65,10 +65,11 @@ export class RoleAdminService {
     return this.http.post<ApiResponse<any>>(`${environment.apiUrl}/api/users/search`, body);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateUserRole(userId: number, roleId: number): Observable<ApiResponse<UserRoleItem>> {
-    return this.http.put<ApiResponse<UserRoleItem>>(
-      `${environment.apiUrl}/api/users/${userId}/role`,
-      { roleId }
+    return this.http.post<ApiResponse<UserRoleItem>>(
+      `${environment.apiUrl}/api/users/update-role`,
+      { id: userId, roleId }
     );
   }
 }

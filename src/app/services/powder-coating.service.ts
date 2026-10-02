@@ -32,6 +32,7 @@ export class PowderCoatingService {
     return this.http.post<any>(this.apiUrl, data);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateProcess(id: number, data: {
     customerId: number;
     status: string;
@@ -44,11 +45,11 @@ export class PowderCoatingService {
       remarks?: string;
     }>;
   }): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/${id}`, data);
+    return this.http.post<any>(`${this.apiUrl}/update`, { ...data, id });
   }
 
   deleteProcess(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`);
+    return this.http.post<any>(`${this.apiUrl}/delete`, { id });
   }
   
 

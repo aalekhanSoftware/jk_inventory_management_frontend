@@ -10,6 +10,7 @@ import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { DateUtils } from '../../../shared/utils/date-utils';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
+import { EncryptionService } from '../../../shared/services/encryption.service';
 
 @Component({
   selector: 'app-employee-order-list',
@@ -54,9 +55,15 @@ export class EmployeeOrderListComponent implements OnInit {
     private employeeOrderService: EmployeeOrderService,
     private fb: FormBuilder,
     private snackbar: SnackbarService,
-    private dateUtils: DateUtils
+    private dateUtils: DateUtils,
+    private encryptionService: EncryptionService
   ) {
     this.initializeForm();
+  }
+
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id: number | null | undefined): string {
+    return this.encryptionService.encrypt(String(id ?? ''));
   }
 
   ngOnInit(): void {

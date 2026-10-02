@@ -57,11 +57,12 @@ export class ProductService {
     return this.http.post(`${this.apiUrl}`, product);
   }
 
+  // ENC_URL_POST_V1: POST with id in body.
   updateProduct(id: number, product: Product): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, product);
+    return this.http.post(`${this.apiUrl}/update`, { ...product, id });
   }
 
   deleteProduct(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
 }

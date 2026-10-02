@@ -1,0 +1,128 @@
+@import '../../../variables';
+
+.user-role-container {
+  padding: 20px;
+  background-color: var(--background);
+
+  .card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    padding: 20px;
+
+    h2 {
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      font-size: 1.5rem;
+    }
+  }
+
+  .search-section {
+    .search-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+
+      .form-group {
+        flex: 1;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 8px;
+      }
+    }
+  }
+
+  .table-wrapper {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .table-container {
+    position: relative;
+    min-height: 200px;
+    background: white;
+
+    app-loader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+
+    .table-responsive {
+      position: relative;
+      width: 100%;
+      overflow-x: auto;
+
+      &.loading {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+    }
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+
+    th {
+      white-space: nowrap;
+      padding: 15px 12px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background-color: var(--background);
+      color: var(--text-primary);
+    }
+
+    td {
+      padding: 12px;
+      vertical-align: middle;
+      border-top: 1px solid var(--supporting);
+      color: var(--text-primary);
+    }
+  }
+
+  .role-select {
+    min-width: 160px;
+    max-width: 220px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--supporting);
+    background: white;
+  }
+
+  .actions {
+    .btn-sm {
+      padding: 8px 12px;
+      min-height: 40px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .user-role-container {
+    padding: 10px;
+
+    .search-section .search-controls {
+      flex-direction: column;
+      align-items: stretch;
+
+      .button-group {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+
+    .role-select {
+      max-width: 100%;
+      width: 100%;
+    }
+  }
+}

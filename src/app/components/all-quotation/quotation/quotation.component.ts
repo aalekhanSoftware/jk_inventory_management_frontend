@@ -14,6 +14,7 @@ import { SearchableSelectComponent } from '../../../shared/components/searchable
 import { QuotationStatus, StatusOption } from '../../../models/quotation.model';
 import { EncryptionService } from '../../../shared/services/encryption.service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-quotation',
@@ -27,7 +28,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     SaleModalComponent,
     LoaderComponent,
     SearchableSelectComponent,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './quotation.component.html',
   styleUrl: './quotation.component.scss'

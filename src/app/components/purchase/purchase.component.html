@@ -61,7 +61,7 @@
       </div>
     </form>
   </div>
-    <button routerLink="/purchase/create" class="btn btn-primary">Add Purchase</button>
+    <button routerLink="/purchase/create" class="btn btn-primary" *appCanAccess="'ADD_EDIT_PURCHASE'">Add Purchase</button>
   <div class="purchases-list card">
     <h2>Purchases</h2>
 
@@ -98,6 +98,7 @@
                 (click)="openSaleModal(purchase)"
                 [disabled]="purchase.remainingQuantity === 0"
                 title="Create Sale"
+                *appCanAccess="'ADD_EDIT_PURCHASE'"
               >
                 <i class="fas fa-shopping-cart"></i>
               </button>
@@ -105,6 +106,7 @@
                 class="btn-icon delete" 
                 (click)="deletePurchase(purchase.id!)"
                 title="Delete Purchase"
+                *appCanAccess="'ADD_EDIT_PURCHASE'"
               >
                 <i class="fas fa-trash"></i>
               </button>

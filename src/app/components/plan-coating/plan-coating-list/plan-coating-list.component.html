@@ -44,7 +44,7 @@
     </form>
   </div>
   <div class="add-process-btn">
-    <button class="btn btn-primary" routerLink="/plan-coating/create">
+    <button class="btn btn-primary" routerLink="/plan-coating/create" *appCanAccess="'ADD_EDIT_PLAN_COATING'">
       <i class="fas fa-plus"></i> Add New Process
     </button>
   </div>
@@ -128,6 +128,7 @@
                 [routerLink]="['/plan-coating/edit', encId(process.id)]"
                 title="Edit Process"
                 aria-label="Edit Process"
+                *appCanAccess="'ADD_EDIT_PLAN_COATING'"
               >
                 <i class="fas fa-edit" aria-hidden="true"></i>
               </button>
@@ -137,6 +138,7 @@
                 (click)="deleteProcess(process.id)"
                 title="Delete Process"
                 aria-label="Delete Process"
+                *appCanAccess="'ADD_EDIT_PLAN_COATING'"
               >
                 <i class="fas fa-trash" aria-hidden="true"></i>
               </button>

@@ -40,7 +40,7 @@
   </div>
 
   <div class="action-buttons">
-      <button routerLink="/plan-dispatch/create" class="btn btn-primary">
+      <button routerLink="/plan-dispatch/create" class="btn btn-primary" *appCanAccess="'ADD_EDIT_PLAN_DISPATCH'">
         <i class="fas fa-plus"></i> Create Dispatch
       </button>
   </div>
@@ -77,13 +77,13 @@
               <td>{{ dispatch.totalBags }}</td>
               <td>{{ dispatch.createdAt | date:'medium' }}</td>
               <td class="actions">
-                <button class="btn-icon" [routerLink]="['/plan-dispatch/edit', encId(dispatch.id)]" title="Edit Dispatch">
+                <button class="btn-icon" [routerLink]="['/plan-dispatch/edit', encId(dispatch.id)]" title="Edit Dispatch" *appCanAccess="'ADD_EDIT_PLAN_DISPATCH'">
                   <i class="fas fa-edit"></i>
                 </button>
                 <button class="btn-icon print" (click)="onPrintDispatch(dispatch.id)" title="Print Dispatch">
                   <i class="fas fa-print"></i>
                 </button>
-                <button class="btn-icon delete" (click)="onDeleteDispatch(dispatch.id)" title="Delete Dispatch (linked progress reversed)">
+                <button class="btn-icon delete" (click)="onDeleteDispatch(dispatch.id)" title="Delete Dispatch (linked progress reversed)" *appCanAccess="'ADD_EDIT_PLAN_DISPATCH'">
                   <i class="fas fa-trash"></i>
                 </button>
               </td>

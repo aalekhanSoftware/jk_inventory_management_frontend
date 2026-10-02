@@ -17,7 +17,7 @@
       </form>
     </div>
   </div>
-  <button class="btn btn-primary" (click)="openCreateDialog()">
+  <button class="btn btn-primary" (click)="openCreateDialog()" *appCanAccess="'ADD_EDIT_CATEGORY'">
     <i class="fas fa-plus"></i> Create Category
   </button>
 
@@ -42,10 +42,10 @@
               </span>
             </td>
             <td>
-              <button class="btn btn-icon" (click)="editCategory(category)" title="Edit">
+              <button class="btn btn-icon" (click)="editCategory(category)" title="Edit" *appCanAccess="'ADD_EDIT_CATEGORY'">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="btn btn-icon" (click)="deleteCategory(category.id!)" title="Delete">
+              <button class="btn btn-icon" (click)="deleteCategory(category.id!)" title="Delete" *appCanAccess="'ADD_EDIT_CATEGORY'">
                 <i class="fas fa-trash"></i>
               </button>
             </td>

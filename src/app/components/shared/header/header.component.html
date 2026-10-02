@@ -12,50 +12,52 @@
 
     <div class="nav-content" [class.show]="isMobileMenuOpen" *ngIf="isAuthenticated">
       <ul class="nav-links">
-        <li class="dropdown">
+        <li class="dropdown" *ngIf="hasMasterItems()">
           <a (click)="toggleMasterMenu($event)" [class.active]="isMasterActive()">
             <i class="fas fa-th-large"></i> Master
             <i class="fas fa-chevron-down"></i>
           </a>
           <ul class="dropdown-menu" [class.show]="showMasterMenu">
-            <li><a routerLink="/category" routerLinkActive="active">Category</a></li>
-            <li><a routerLink="/product" routerLinkActive="active">Product</a></li>
-            <li><a routerLink="/customer" routerLinkActive="active">Party Payment</a></li>
-            <li><a routerLink="/employee" routerLinkActive="active">Employee</a></li>
-            <li><a routerLink="/machinery" routerLinkActive="active">Machinery</a></li>
+            <li *ngIf="can('SELECT_CATEGORY')"><a routerLink="/category" routerLinkActive="active">Category</a></li>
+            <li *ngIf="can('SELECT_PRODUCT')"><a routerLink="/product" routerLinkActive="active">Product</a></li>
+            <li *ngIf="can('SELECT_PARTY_PAYMENT')"><a routerLink="/customer" routerLinkActive="active">Party Payment</a></li>
+            <li *ngIf="can('SELECT_EMPLOYEE')"><a routerLink="/employee" routerLinkActive="active">Employee</a></li>
+            <li *ngIf="can('SELECT_MACHINERY')"><a routerLink="/machinery" routerLinkActive="active">Machinery</a></li>
+            <li *ngIf="isAdmin()"><a routerLink="/role-config" routerLinkActive="active">Role Config</a></li>
+            <li *ngIf="isAdmin()"><a routerLink="/user-role" routerLinkActive="active">User Role</a></li>
           </ul>
         </li>
         
-        <li class="dropdown">
+        <li class="dropdown" *ngIf="hasTransactionItems()">
           <a (click)="toggleTransactionMenu($event)" [class.active]="isTransactionActive()">
             <i class="fas fa-exchange-alt"></i> Transaction
             <i class="fas fa-chevron-down"></i>
           </a>
           <ul class="dropdown-menu" [class.show]="showTransactionMenu">
-            <li><a routerLink="/purchase" routerLinkActive="active">Purchase</a></li>
-            <li><a routerLink="/sale" routerLinkActive="active">Sale</a></li>
-            <li><a routerLink="/profit" routerLinkActive="active">Product Wise Profit</a></li>
-            <li><a routerLink="/daily-profit" routerLinkActive="active">Daily Profit</a></li>
+            <li *ngIf="can('SELECT_PURCHASE')"><a routerLink="/purchase" routerLinkActive="active">Purchase</a></li>
+            <li *ngIf="can('SELECT_SALE')"><a routerLink="/sale" routerLinkActive="active">Sale</a></li>
+            <li *ngIf="can('SELECT_PRODUCT_WISE_PROFIT')"><a routerLink="/profit" routerLinkActive="active">Product Wise Profit</a></li>
+            <li *ngIf="can('SELECT_DAILY_PROFIT')"><a routerLink="/daily-profit" routerLinkActive="active">Daily Profit</a></li>
           </ul>
         </li>
         
-        <li><a routerLink="/powder-coating-process" routerLinkActive="active">Coating</a></li>
-        <li><a routerLink="/transport" routerLinkActive="active">Transport</a></li>
-        <li><a routerLink="/quotation" routerLinkActive="active">Quotation</a></li>
-        <li><a routerLink="/employee-order" routerLinkActive="active">Employee Order</a></li>
-        <li class="dropdown">
+        <li *ngIf="can('SELECT_COATING')"><a routerLink="/powder-coating-process" routerLinkActive="active">Coating</a></li>
+        <li *ngIf="can('SELECT_TRANSPORT')"><a routerLink="/transport" routerLinkActive="active">Transport</a></li>
+        <li *ngIf="can('SELECT_QUOTATION')"><a routerLink="/quotation" routerLinkActive="active">Quotation</a></li>
+        <li *ngIf="can('SELECT_EMPLOYEE_ORDER')"><a routerLink="/employee-order" routerLinkActive="active">Employee Order</a></li>
+        <li class="dropdown" *ngIf="hasPlanningItems()">
           <a (click)="togglePlanningMenu($event)" [class.active]="isPlanningActive()">
             <i class="fas fa-industry"></i> Planning &amp; Production
             <i class="fas fa-chevron-down"></i>
           </a>
           <ul class="dropdown-menu" [class.show]="showPlanningMenu">
-            <li><a routerLink="/planning" routerLinkActive="active">Planning</a></li>
-            <li><a routerLink="/production/entry" routerLinkActive="active">Production</a></li>
-            <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
-            <li><a routerLink="/stock-movements" routerLinkActive="active">Stock Moves</a></li>
-            <li><a routerLink="/production/report" routerLinkActive="active">Date Report</a></li>
-            <li><a routerLink="/plan-dispatch" routerLinkActive="active">Plan Dispatch</a></li>
-            <li><a routerLink="/plan-coating" routerLinkActive="active">Plan Coating</a></li>
+            <li *ngIf="can('SELECT_PLAN')"><a routerLink="/planning" routerLinkActive="active">Planning</a></li>
+            <li *ngIf="can('SELECT_PRODUCTION')"><a routerLink="/production/entry" routerLinkActive="active">Production</a></li>
+            <li *ngIf="can('SELECT_DASHBOARD')"><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+            <li *ngIf="can('SELECT_STOCK_MOVES')"><a routerLink="/stock-movements" routerLinkActive="active">Stock Moves</a></li>
+            <li *ngIf="can('SELECT_DATE_REPORT')"><a routerLink="/production/report" routerLinkActive="active">Date Report</a></li>
+            <li *ngIf="can('SELECT_PLAN_DISPATCH')"><a routerLink="/plan-dispatch" routerLinkActive="active">Plan Dispatch</a></li>
+            <li *ngIf="can('SELECT_PLAN_COATING')"><a routerLink="/plan-coating" routerLinkActive="active">Plan Coating</a></li>
           </ul>
         </li>
       </ul>

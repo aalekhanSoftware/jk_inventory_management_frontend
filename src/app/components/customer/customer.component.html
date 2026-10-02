@@ -39,7 +39,7 @@
     </form>
   </div>
 
-  <button class="btn btn-primary add-customer-btn" (click)="openCustomerModal()">
+  <button class="btn btn-primary add-customer-btn" (click)="openCustomerModal()" *appCanAccess="'ADD_EDIT_PARTY_PAYMENT'">
     <i class="fas fa-plus"></i> Add Customer
   </button>
 
@@ -81,7 +81,7 @@
                 </span>
               </td>
               <td class="actions">
-                <button class="btn-icon edit" (click)="openCustomerModal(customer)">
+                <button class="btn-icon edit" (click)="openCustomerModal(customer)" *appCanAccess="'ADD_EDIT_PARTY_PAYMENT'">
                   <i class="fas fa-edit"></i>
                 </button>
               </td>

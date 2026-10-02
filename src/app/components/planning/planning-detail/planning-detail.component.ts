@@ -10,11 +10,12 @@ import { LoaderComponent } from '../../../shared/components/loader/loader.compon
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-planning-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterLink, LoaderComponent, ConfirmModalComponent],
+  imports: [CommonModule, RouterModule, RouterLink, LoaderComponent, ConfirmModalComponent, CanAccessDirective],
   templateUrl: './planning-detail.component.html',
   styleUrls: ['./planning-detail.component.scss']
 })

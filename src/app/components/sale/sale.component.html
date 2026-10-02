@@ -48,7 +48,7 @@
     </div>
   
     <div class="action-buttons">
-      <button routerLink="/combined-purchase-sale" class="btn btn-primary">
+      <button routerLink="/combined-purchase-sale" class="btn btn-primary" *appCanAccess="'ADD_EDIT_SALE'">
         <i class="fas fa-cart-plus"></i> Create Combined Sale
       </button>
     </div>
@@ -88,6 +88,7 @@
                   class="btn-icon delete" 
                   (click)="deleteSale(sale.id!)"
                   title="Delete Sale"
+                  *appCanAccess="'ADD_EDIT_SALE'"
                 >
                   <i class="fas fa-trash"></i>
                 </button>

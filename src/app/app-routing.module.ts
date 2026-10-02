@@ -5,6 +5,7 @@ import { CategoryComponent } from './components/category/category.component';
 import { ProductComponent } from './components/product/product.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ClientPasswordGuard } from './guards/client-password.guard';
+import { PageAccessGuard } from './guards/page-access.guard';
 import { PurchaseComponent } from './components/purchase/purchase.component';
 import { AddPurchaseComponent } from './components/add-purchase/add-purchase.component';
 import { SaleComponent } from './components/sale/sale.component';
@@ -35,43 +36,55 @@ import { StockMovementListComponent } from './components/production/stock-moveme
 import { DailyProfitComponent } from './components/all-profits/daily-profit/daily-profit.component';
 import { AddQuotationComponent } from './components/all-quotation/add-quotation/add-quotation.component';
 import { QuotationComponent } from './components/all-quotation/quotation/quotation.component';
+import { RoleConfigComponent } from './components/role-config/role-config.component';
+import { UserRoleComponent } from './components/user-role/user-role.component';
+
+const accessGuards = [AuthGuard, PageAccessGuard];
+
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   {
     path: 'category',
     component: CategoryComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_CATEGORY' }
   },
   {
     path: 'product',
     component: ProductComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_PRODUCT' }
   },
   {
     path: 'purchase',
     component: PurchaseComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_PURCHASE' }
   },
   {
     path: 'purchase/create',
     component: AddPurchaseComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_PURCHASE' }
   },
   {
     path: 'sale',
     component: SaleComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_SALE' }
   },
   {
     path: 'profit',
     component: ProfitComponent,
-    canActivate: [AuthGuard, ClientPasswordGuard]
+    canActivate: [...accessGuards, ClientPasswordGuard],
+    data: { access: 'SELECT_PRODUCT_WISE_PROFIT' }
   },
   {
     path: 'customer',
     component: CustomerComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_PARTY_PAYMENT' }
   },
   {
     path: 'combined-purchase-sale',
@@ -81,167 +94,213 @@ const routes: Routes = [
   {
     path: 'powder-coating-process',
     component: PowderCoatingProcessComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_COATING' }
   },
   {
     path: 'powder-coating-process/create',
     component: AddPowderCoatingProcessComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_COATING' }
   },
   {
     path: 'powder-coating-process/edit/:id',
     component: AddPowderCoatingProcessComponent,
-    title: 'Edit Powder Coating Process'
+    title: 'Edit Powder Coating Process',
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_COATING' }
   },
   {
     path: 'transport/create',
     component: TransportComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_TRANSPORT' }
   },
   {
     path: 'transport',
     component: TransportListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_TRANSPORT' }
   },
   {
     path: 'quotation',
     component: QuotationComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_QUOTATION' }
   },
   {
     path: 'quotation/create',
     component: AddQuotationComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_QUOTATION' }
   },
   {
     path: 'transport/edit/:id',
     component: TransportComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_TRANSPORT' }
   },
   {
     path: 'plan-dispatch',
     component: PlanDispatchListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_PLAN_DISPATCH' }
   },
   {
     path: 'plan-dispatch/create',
     component: PlanDispatchFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_PLAN_DISPATCH' }
   },
   {
     path: 'plan-dispatch/edit/:id',
     component: PlanDispatchFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_PLAN_DISPATCH' }
   },
   {
     path: 'plan-coating',
     component: PlanCoatingListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_PLAN_COATING' }
   },
   {
     path: 'plan-coating/create',
     component: PlanCoatingFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_PLAN_COATING' }
   },
   {
     path: 'plan-coating/edit/:id',
     component: PlanCoatingFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_PLAN_COATING' }
   },
   {
     path: 'employee',
     component: EmployeeListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_EMPLOYEE' }
   },
   {
     path: 'employee/create',
     component: EmployeeFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_EMPLOYEE' }
   },
   {
     path: 'employee/edit/:id',
     component: EmployeeFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_EMPLOYEE' }
   },
   {
     path: 'machinery',
     component: MachineryListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_MACHINERY' }
   },
   {
     path: 'machinery/create',
     component: MachineryFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_MACHINERY' }
   },
   {
     path: 'machinery/edit/:id',
     component: MachineryFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_MACHINERY' }
   },
   {
     path: 'employee-order',
     component: EmployeeOrderListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_EMPLOYEE_ORDER' }
   },
   {
     path: 'employee-order/create',
     component: EmployeeOrderFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_EMPLOYEE_ORDER' }
   },
   {
     path: 'employee-order/edit/:id',
     component: EmployeeOrderFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_EMPLOYEE_ORDER' }
   },
   {
     path: 'daily-profit',
     component: DailyProfitComponent,
-    canActivate: [AuthGuard, ClientPasswordGuard]
+    canActivate: [...accessGuards, ClientPasswordGuard],
+    data: { access: 'SELECT_DAILY_PROFIT' }
   },
   {
     path: 'planning',
     component: PlanningListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_PLAN' }
   },
   {
     path: 'planning/create',
     component: PlanningFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_PLAN' }
   },
   {
     path: 'planning/edit/:id',
     component: PlanningFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_PLAN' }
   },
   {
     path: 'planning/:id',
     component: PlanningDetailComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_PLAN' }
   },
   {
     path: 'production/entry',
     component: ProductionEntryComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_PRODUCTION' }
   },
   {
     path: 'production/edit/:id',
     component: ProductionEntryComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'ADD_EDIT_PRODUCTION' }
   },
   {
     path: 'dashboard',
     component: ProductionDashboardComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_DASHBOARD' }
   },
   {
     path: 'stock-movements',
     component: StockMovementListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_STOCK_MOVES' }
   },
   {
     path: 'production/report',
     component: ProcessDateReportComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: 'SELECT_DATE_REPORT' }
+  },
+  {
+    path: 'role-config',
+    component: RoleConfigComponent,
+    canActivate: accessGuards,
+    data: { access: '__ADMIN__' }
+  },
+  {
+    path: 'user-role',
+    component: UserRoleComponent,
+    canActivate: accessGuards,
+    data: { access: '__ADMIN__' }
   },
   {
     path: '**',

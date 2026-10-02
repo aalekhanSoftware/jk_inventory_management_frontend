@@ -3,12 +3,12 @@
 
   <div class="action-bar" *ngIf="planning">
     <button routerLink="/planning" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</button>
-    <button [routerLink]="['/planning/edit', encId(planning.id)]" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</button>
-    <button [routerLink]="['/production/entry']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-plus"></i> Production Entry</button>
-    <button [routerLink]="['/dashboard']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Dashboard</button>
-    <button [routerLink]="['/plan-dispatch/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-truck"></i> Dispatch</button>
-    <button [routerLink]="['/plan-coating/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary"><i class="fas fa-spray-can"></i> Coating</button>
-    <button type="button" class="btn btn-primary" (click)="openQuickDispatch()" [disabled]="!selectedDispatch.size || isDispatching || !hasCustomer" [title]="hasCustomer ? 'Dispatch full pack balance of checked products' : 'Attach a customer to the plan first (Planning Edit)'">
+    <button [routerLink]="['/planning/edit', encId(planning.id)]" class="btn btn-secondary" *appCanAccess="'ADD_EDIT_PLAN'"><i class="fas fa-edit"></i> Edit</button>
+    <button [routerLink]="['/production/entry']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary" *appCanAccess="'SELECT_PRODUCTION'"><i class="fas fa-plus"></i> Production Entry</button>
+    <button [routerLink]="['/dashboard']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-secondary" *appCanAccess="'SELECT_DASHBOARD'"><i class="fas fa-chart-bar"></i> Dashboard</button>
+    <button [routerLink]="['/plan-dispatch/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary" *appCanAccess="'ADD_EDIT_PLAN_DISPATCH'"><i class="fas fa-truck"></i> Dispatch</button>
+    <button [routerLink]="['/plan-coating/create']" [queryParams]="{planningId: encId(planning.id)}" class="btn btn-primary" *appCanAccess="'ADD_EDIT_PLAN_COATING'"><i class="fas fa-spray-can"></i> Coating</button>
+    <button type="button" class="btn btn-primary" (click)="openQuickDispatch()" [disabled]="!selectedDispatch.size || isDispatching || !hasCustomer" [title]="hasCustomer ? 'Dispatch full pack balance of checked products' : 'Attach a customer to the plan first (Planning Edit)'" *appCanAccess="'ADD_EDIT_PLAN_DISPATCH'">
       <i class="fas" [ngClass]="isDispatching ? 'fa-spinner fa-spin' : 'fa-truck-fast'"></i>
       {{ isDispatching ? 'Dispatching…' : 'Dispatch Selected' + (selectedDispatch.size ? ' (' + selectedDispatch.size + ')' : '') }}
     </button>
@@ -93,7 +93,7 @@
                 <button class="btn btn-sm btn-secondary" (click)="toggleTransactions(item)">
                   {{ expandedItemId === item.id ? 'Hide' : 'Transactions' }}
                 </button>
-                <button class="btn btn-sm btn-primary" [routerLink]="['/production/entry']" [queryParams]="{planningId: encId(planning.id), planningItemId: encId(item.id)}" title="Direct production entry — planning and product pre-selected, changeable">
+                <button class="btn btn-sm btn-primary" [routerLink]="['/production/entry']" [queryParams]="{planningId: encId(planning.id), planningItemId: encId(item.id)}" title="Direct production entry — planning and product pre-selected, changeable" *appCanAccess="'ADD_EDIT_PRODUCTION'">
                   <i class="fas fa-plus"></i> Entry
                 </button>
               </td>
@@ -114,10 +114,10 @@
                       <td>{{ op.machineryName || '-' }}</td>
                       <td>{{ op.remarks || '-' }}</td>
                       <td class="actions">
-                        <button class="btn-icon edit" [routerLink]="['/production/edit', encId(op.id)]" title="Edit entry (quantity/date/remarks)">
+                        <button class="btn-icon edit" [routerLink]="['/production/edit', encId(op.id)]" title="Edit entry (quantity/date/remarks)" *appCanAccess="'ADD_EDIT_PRODUCTION'">
                           <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-icon delete" (click)="deleteEntry(op.id, item)" title="Delete entry and reverse stock">
+                        <button class="btn-icon delete" (click)="deleteEntry(op.id, item)" title="Delete entry and reverse stock" *appCanAccess="'ADD_EDIT_PRODUCTION'">
                           <i class="fas fa-trash"></i>
                         </button>
                       </td>

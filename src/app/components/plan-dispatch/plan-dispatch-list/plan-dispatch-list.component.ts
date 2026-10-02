@@ -8,6 +8,7 @@ import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 /**
  * PLAN_DISPATCH list: manages ALL dispatches (plan-linked + existing
@@ -23,7 +24,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     LoaderComponent,
     FormsModule,
     ConfirmModalComponent,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './plan-dispatch-list.component.html',
   styleUrls: ['./plan-dispatch-list.component.scss']

@@ -8,6 +8,7 @@ import { SnackbarService } from '../../shared/services/snackbar.service';
 import { DateUtils } from '../../shared/utils/date-utils';
 import { RouterModule } from '@angular/router';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-sale',
@@ -17,7 +18,8 @@ import { PaginationComponent } from '../../shared/components/pagination/paginati
     ReactiveFormsModule, 
     FormsModule, 
     RouterModule,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './sale.component.html',
   styleUrl: './sale.component.scss'

@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-employee-list',
@@ -20,7 +21,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     LoaderComponent,
     RouterLink,
     RouterModule,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './employee-list.component.html',
   styleUrls: ['./employee-list.component.scss']

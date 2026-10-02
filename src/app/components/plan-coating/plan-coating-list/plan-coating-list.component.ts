@@ -11,6 +11,7 @@ import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
 import { PlanCoatingProcess } from '../../../models/plan-coating.model';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 /**
  * PLAN_COATING list: shows ALL coating processes (plan-linked + plain), the
@@ -28,7 +29,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     SearchableSelectComponent,
     FormsModule,
     RouterLink,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './plan-coating-list.component.html',
   styleUrls: ['./plan-coating-list.component.scss']

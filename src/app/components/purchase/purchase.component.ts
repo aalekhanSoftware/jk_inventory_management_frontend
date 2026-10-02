@@ -15,6 +15,7 @@ import { SearchableSelectComponent } from '../../shared/components/searchable-se
 import { DateUtils } from '../../shared/utils/date-utils';
 import { CacheService } from '../../shared/services/cache.service';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-purchase',
@@ -28,7 +29,8 @@ import { PaginationComponent } from '../../shared/components/pagination/paginati
     SaleModalComponent,
     LoaderComponent,
     SearchableSelectComponent,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './purchase.component.html',
   styleUrls: ['./purchase.component.scss']

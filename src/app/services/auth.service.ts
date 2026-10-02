@@ -32,11 +32,16 @@ export class AuthService {
   login(credentials: { email: string; password: string }): Observable<any> {
     return this.http.post(`${environment.apiUrl}/api/auth/login`, credentials).pipe(
       tap((response: any) => {
+        // Drop previous user's encrypted page-access before new session starts.
+        localStorage.removeItem('pageAccess');
         localStorage.setItem('token', response.accessToken);
         localStorage.setItem('user', JSON.stringify({
           firstName: response.firstName,
           lastName: response.lastName,
-          email: response.email
+          email: response.email,
+          roleId: response.roleId || null,
+          roleName: response.roleName || null,
+          roleCode: response.roleCode || null
         }));
         // Encrypt and store refresh token
         const encryptedRefreshToken = this.encryptionService.encrypt(response.refreshToken);
@@ -94,6 +99,26 @@ export class AuthService {
   logout(): void {
     localStorage.clear();
     this.authStateSubject.next(false);
+  }
+
+  getUser(): { firstName?: string; lastName?: string; email?: string; roleId?: string; roleName?: string; roleCode?: string } | null {
+    const raw = localStorage.getItem('user');
+    if (!raw) {
+      return null;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  getRoleCode(): string | null {
+    return this.getUser()?.roleCode || null;
+  }
+
+  isAdmin(): boolean {
+    return (this.getRoleCode() || '').toUpperCase() === 'ADMIN';
   }
 
   isAuthenticated(): boolean {

@@ -33,7 +33,7 @@
     </form>
   </div>
 
-  <button class="btn btn-primary" (click)="openCreateDialog()">
+  <button class="btn btn-primary" (click)="openCreateDialog()" *appCanAccess="'ADD_EDIT_PRODUCT'">
     <i class="fas fa-plus"></i> Create Product
   </button>
 
@@ -71,10 +71,10 @@
             <td>{{ product.purchaseAmount }}</td>
             <td>{{ product.saleAmount }}</td>
             <td class="actions">
-              <button class="btn-icon" (click)="editProduct(product)">
+              <button class="btn-icon" (click)="editProduct(product)" *appCanAccess="'ADD_EDIT_PRODUCT'">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="btn-icon delete" (click)="deleteProduct(product.id!)">
+              <button class="btn-icon delete" (click)="deleteProduct(product.id!)" *appCanAccess="'ADD_EDIT_PRODUCT'">
                 <i class="fas fa-trash"></i>
               </button>
             </td>

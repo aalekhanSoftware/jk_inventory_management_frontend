@@ -36,7 +36,7 @@
   </div>
 
   <div class="action-buttons">
-    <button routerLink="/machinery/create" class="btn btn-primary">
+    <button routerLink="/machinery/create" class="btn btn-primary" *appCanAccess="'ADD_EDIT_MACHINERY'">
       <i class="fas fa-plus"></i> Create Machinery
     </button>
   </div>
@@ -64,10 +64,10 @@
             <td><span [ngClass]="'status-' + (m.status || 'a').toLowerCase()">{{ statusLabel(m.status) }}</span></td>
             <td>{{ m.updatedAt ? (m.updatedAt | date:'dd-MM-yyyy HH:mm') : '-' }}</td>
             <td class="actions">
-              <button class="btn-icon edit" [routerLink]="['/machinery/edit', encId(m.id)]" title="Edit">
+              <button class="btn-icon edit" [routerLink]="['/machinery/edit', encId(m.id)]" title="Edit" *appCanAccess="'ADD_EDIT_MACHINERY'">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="btn-icon delete" (click)="deleteMachinery(m.id ?? 0)" title="Delete">
+              <button class="btn-icon delete" (click)="deleteMachinery(m.id ?? 0)" title="Delete" *appCanAccess="'ADD_EDIT_MACHINERY'">
                 <i class="fas fa-trash"></i>
               </button>
             </td>

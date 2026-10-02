@@ -9,6 +9,7 @@ import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
 import { DateUtils } from '../../../shared/utils/date-utils';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-planning-list',
@@ -20,7 +21,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     RouterModule,
     LoaderComponent,
     RouterLink,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './planning-list.component.html',
   styleUrls: ['./planning-list.component.scss']

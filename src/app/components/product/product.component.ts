@@ -9,6 +9,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { CommonModule } from '@angular/common';
 import { SnackbarService } from '../../shared/services/snackbar.service';
+import { CanAccessDirective } from '../../shared/directives/can-access.directive';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 import { RouterModule } from '@angular/router';
 
@@ -23,7 +24,8 @@ import { RouterModule } from '@angular/router';
     ReactiveFormsModule,
     CommonModule,
     PaginationComponent,
-    RouterModule
+    RouterModule,
+    CanAccessDirective
   ],
   animations: [
     trigger('dialogAnimation', [

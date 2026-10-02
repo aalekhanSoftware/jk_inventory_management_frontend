@@ -9,6 +9,7 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-category',
@@ -19,7 +20,8 @@ import { PaginationComponent } from '../../shared/components/pagination/paginati
     RouterModule,
     LoaderComponent,
     FormsModule,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './category.component.html',
   styleUrls: ['./category.component.scss'],

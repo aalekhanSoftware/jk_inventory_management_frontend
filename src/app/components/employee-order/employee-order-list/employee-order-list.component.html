@@ -49,7 +49,7 @@
   </div>
 
   <div class="action-buttons">
-    <button routerLink="/employee-order/create" class="btn btn-primary">
+    <button routerLink="/employee-order/create" class="btn btn-primary" *appCanAccess="'ADD_EDIT_EMPLOYEE_ORDER'">
       <i class="fas fa-plus"></i> Create Employee Order
     </button>
   </div>
@@ -93,6 +93,7 @@
                 class="btn-icon edit" 
                 [routerLink]="['/employee-order/edit', order.id]"
                 title="Edit Order"
+                *appCanAccess="'ADD_EDIT_EMPLOYEE_ORDER'"
               >
                 <i class="fas fa-edit"></i>
               </button>
@@ -100,6 +101,7 @@
                 class="btn-icon delete" 
                 (click)="deleteEmployeeOrder(order.id ?? 0)"
                 title="Delete Order"
+                *appCanAccess="'ADD_EDIT_EMPLOYEE_ORDER'"
               >
                 <i class="fas fa-trash"></i>
               </button>

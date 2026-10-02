@@ -13,6 +13,7 @@ import { CustomerService } from '../../../services/customer.service';
 import { ReturnModalComponent } from '../return-modal/return-modal.component';
 import { ModalService } from '../../../services/modal.service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-powder-coating-process',
@@ -25,7 +26,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     FormsModule,
     RouterLink,
     ReturnModalComponent,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './powder-coating-process.component.html',
   styleUrls: ['./powder-coating-process.component.scss']

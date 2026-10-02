@@ -1,0 +1,90 @@
+<div class="user-role-container">
+  <div class="search-section card">
+    <h2>User Role</h2>
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+      <div class="search-controls">
+        <div class="form-group">
+          <input
+            type="text"
+            formControlName="search"
+            class="form-control"
+            placeholder="Search by name or email..."
+          >
+        </div>
+        <div class="button-group">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i> Search
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="resetForm()">
+            <i class="fas fa-undo"></i> Reset
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="users-list card">
+    <h2>Users</h2>
+    <div class="table-wrapper">
+      <div class="table-container">
+        <app-loader [show]="isLoading"></app-loader>
+        <div class="table-responsive" [class.loading]="isLoading">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Current Role</th>
+                <th>Assign Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let user of users">
+                <td>{{ displayName(user) }}</td>
+                <td>{{ user.email || '-' }}</td>
+                <td>{{ user.roleName || '-' }}</td>
+                <td>
+                  <select
+                    class="form-control role-select"
+                    [(ngModel)]="draftRoleIds[user.id]"
+                    [ngModelOptions]="{standalone: true}"
+                  >
+                    <option [ngValue]="null" disabled>Select role</option>
+                    <option *ngFor="let role of roles" [ngValue]="role.id">
+                      {{ role.name }}
+                    </option>
+                  </select>
+                </td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    (click)="saveRole(user)"
+                    [disabled]="isSaving(user.id)"
+                  >
+                    <i class="fas" [ngClass]="isSaving(user.id) ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                    Save
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!users?.length">
+                <td colspan="5" class="text-center">No users found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <app-pagination
+      *ngIf="totalPages > 0"
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
+      [totalElements]="totalElements"
+      [pageSizeOptions]="pageSizeOptions"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    ></app-pagination>
+  </div>
+</div>

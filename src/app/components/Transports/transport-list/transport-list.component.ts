@@ -7,6 +7,7 @@ import { LoaderComponent } from '../../../shared/components/loader/loader.compon
 import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-transport-list',
@@ -18,7 +19,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     LoaderComponent,
     FormsModule,
     ConfirmModalComponent,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './transport-list.component.html',
   styleUrls: ['./transport-list.component.scss']

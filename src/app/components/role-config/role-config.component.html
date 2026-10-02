@@ -1,0 +1,54 @@
+<div class="role-config-container">
+  <app-loader [show]="isLoading || isSaving"></app-loader>
+
+  <div class="search-section card">
+    <h2>Role Config</h2>
+    <p class="hint">Choose a role and tick the pages that role can open. Admin always has full access and is not listed here.</p>
+    <div class="search-controls">
+      <div class="form-group">
+        <label for="roleSelect">Role</label>
+        <select
+          id="roleSelect"
+          class="form-control"
+          [(ngModel)]="selectedRoleId"
+          (ngModelChange)="onRoleChange()"
+        >
+          <option *ngFor="let role of roles" [ngValue]="role.id">{{ role.name }} ({{ role.roleCode }})</option>
+        </select>
+      </div>
+      <div class="button-group">
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="!selectedRoleId || isSaving">
+          <i class="fas" [ngClass]="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+          {{ isSaving ? 'Saving...' : 'Save' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="access-list card" *ngIf="selectedRoleId">
+    <h2>Page Access</h2>
+    <div class="group" *ngFor="let group of groups">
+      <h3>{{ group.menuGroup }}</h3>
+      <div class="checkbox-grid">
+        <label class="checkbox-item" *ngFor="let item of group.items" [attr.for]="'pa-' + item.id">
+          <input
+            type="checkbox"
+            [id]="'pa-' + item.id"
+            [checked]="isChecked(item.id)"
+            (change)="onCheckboxChange(item.id, $event)"
+          >
+          <span class="label-text">
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.code }}</small>
+          </span>
+        </label>
+      </div>
+    </div>
+    <div class="footer-actions">
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="isSaving">
+        <i class="fas" [ngClass]="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+        {{ isSaving ? 'Saving...' : 'Save Access' }}
+      </button>
+    </div>
+  </div>
+</div>

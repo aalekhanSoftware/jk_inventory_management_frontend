@@ -40,7 +40,7 @@
   </div>
     
   <div class="action-buttons">
-      <button routerLink="/transport/create" class="btn btn-primary">
+      <button routerLink="/transport/create" class="btn btn-primary" *appCanAccess="'ADD_EDIT_TRANSPORT'">
         <i class="fas fa-plus"></i> Create Transport
       </button>
   </div>
@@ -70,13 +70,13 @@
               <td>{{ transport.totalBags }}</td>
               <td>{{ transport.createdAt | date:'medium' }}</td>
               <td class="actions">
-                <button class="btn-icon" [routerLink]="['/transport/edit', transport.id]" title="Edit Transport">
+                <button class="btn-icon" [routerLink]="['/transport/edit', transport.id]" title="Edit Transport" *appCanAccess="'ADD_EDIT_TRANSPORT'">
                   <i class="fas fa-edit"></i>
                 </button>
                 <button class="btn-icon print" (click)="onPrintTransport(transport.id)" title="Print Transport">
                   <i class="fas fa-print"></i>
                 </button>
-                <button class="btn-icon delete" (click)="onDeleteTransport(transport.id)" title="Delete Transport">
+                <button class="btn-icon delete" (click)="onDeleteTransport(transport.id)" title="Delete Transport" *appCanAccess="'ADD_EDIT_TRANSPORT'">
                   <i class="fas fa-trash"></i>
                 </button>
               </td>

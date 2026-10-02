@@ -36,13 +36,13 @@
   </div>
 
   <div class="action-buttons">
-    <button routerLink="/planning/create" class="btn btn-primary">
+    <button routerLink="/planning/create" class="btn btn-primary" *appCanAccess="'ADD_EDIT_PLAN'">
       <i class="fas fa-plus"></i> Create Planning
     </button>
-    <button routerLink="/dashboard" class="btn btn-secondary">
+    <button routerLink="/dashboard" class="btn btn-secondary" *appCanAccess="'SELECT_DASHBOARD'">
       <i class="fas fa-chart-bar"></i> Dashboard
     </button>
-    <button routerLink="/production/entry" class="btn btn-secondary">
+    <button routerLink="/production/entry" class="btn btn-secondary" *appCanAccess="'SELECT_PRODUCTION'">
       <i class="fas fa-industry"></i> Production Entry
     </button>
   </div>
@@ -87,10 +87,10 @@
               <button class="btn-icon edit" [routerLink]="['/planning', encId(p.id)]" title="View Detail">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="btn-icon edit" [routerLink]="['/planning/edit', encId(p.id)]" title="Edit">
+              <button class="btn-icon edit" [routerLink]="['/planning/edit', encId(p.id)]" title="Edit" *appCanAccess="'ADD_EDIT_PLAN'">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="btn-icon delete" (click)="deletePlanning(p.id ?? 0)" title="Delete">
+              <button class="btn-icon delete" (click)="deletePlanning(p.id ?? 0)" title="Delete" *appCanAccess="'ADD_EDIT_PLAN'">
                 <i class="fas fa-trash"></i>
               </button>
             </td>

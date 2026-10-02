@@ -76,7 +76,7 @@
         </div>
       </form>
     </div>
-      <button class="btn btn-sm btn-primary mb-2" (click)="addQuotation()">Add Quotation</button>
+      <button class="btn btn-sm btn-primary mb-2" (click)="addQuotation()" *appCanAccess="'ADD_EDIT_QUOTATION'">Add Quotation</button>
     <div class="quotations-list card">
       <h2>Quotations</h2>
   
@@ -138,6 +138,7 @@
                 >
                   <i class="fas" [ngClass]="quotation.isPrinting ? 'fa-spinner fa-spin' : ' fa-file-pdf'"></i>
                 </button>
+                <ng-container *appCanAccess="'ADD_EDIT_QUOTATION'">
                 <button *ngIf="quotation.status == 'D' || quotation.status == 'Q' || quotation.status == 'A' || quotation.status == 'C'
                 || quotation.status == 'PC'"
                   class="btn-icon edit" 
@@ -146,6 +147,7 @@
                 >
                   <i class="fas fa-edit"></i>
                 </button>
+                </ng-container>
                 <button 
                   class="btn-icon print" 
                   (click)="generatePdf(quotation.id!, quotation)"
@@ -154,6 +156,7 @@
                 >
                   <i class="fas" [ngClass]="quotation.isPrinting ? 'fa-spinner fa-spin' : 'fa-print'"></i>
                 </button>
+                <ng-container *appCanAccess="'ADD_EDIT_QUOTATION'">
                 <button *ngIf="quotation.status == 'D' || quotation.status == 'Q' || quotation.status == 'A' || quotation.status == 'C'
                 || quotation.status == 'PC'"
                   class="btn-icon delete" 
@@ -162,6 +165,7 @@
                 >
                   <i class="fas fa-trash"></i>
                 </button>
+                </ng-container>
               </td>
             </tr>
           </tbody>

@@ -9,6 +9,7 @@ import { SearchableSelectComponent } from '../../../shared/components/searchable
 import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { DateUtils } from '../../../shared/utils/date-utils';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-employee-order-list',
@@ -21,7 +22,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     LoaderComponent,
     SearchableSelectComponent,
     RouterLink,
-    PaginationComponent
+    PaginationComponent,
+    CanAccessDirective
   ],
   templateUrl: './employee-order-list.component.html',
   styleUrls: ['./employee-order-list.component.scss']

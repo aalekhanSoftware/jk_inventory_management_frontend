@@ -9,6 +9,7 @@ import { RouterModule } from '@angular/router';
 import { CustomerModalComponent } from '../customer-modal/customer-modal.component';
 import { ModalService } from '../../services/modal.service';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { CanAccessDirective } from '../../shared/directives/can-access.directive';
 
 @Component({
   selector: 'app-customer',
@@ -16,7 +17,7 @@ import { PaginationComponent } from '../../shared/components/pagination/paginati
   styleUrls: ['./customer.component.scss'],
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, 
-    CustomerModalComponent, PaginationComponent]
+    CustomerModalComponent, PaginationComponent, CanAccessDirective]
 })
 export class CustomerComponent implements OnInit {
   customers: Customer[] = [];

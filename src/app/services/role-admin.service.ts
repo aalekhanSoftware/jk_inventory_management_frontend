@@ -43,21 +43,21 @@ export class RoleAdminService {
   constructor(private http: HttpClient) {}
 
   getRoles(): Observable<ApiResponse<RoleItem[]>> {
-    return this.http.get<ApiResponse<RoleItem[]>>(`${environment.apiUrl}/api/roles`);
+    return this.http.post<ApiResponse<RoleItem[]>>(`${environment.apiUrl}/api/roles/getRoles`, {});
   }
 
   getCatalog(): Observable<ApiResponse<PageAccessItem[]>> {
-    return this.http.get<ApiResponse<PageAccessItem[]>>(`${environment.apiUrl}/api/page-access/catalog`);
+    return this.http.post<ApiResponse<PageAccessItem[]>>(`${environment.apiUrl}/api/page-access/catalog`, {});
   }
 
   getRoleAccess(roleId: number): Observable<ApiResponse<number[]>> {
-    return this.http.get<ApiResponse<number[]>>(`${environment.apiUrl}/api/page-access/role/${roleId}`);
+    return this.http.post<ApiResponse<number[]>>(`${environment.apiUrl}/api/page-access/role/detail`, { roleId });
   }
 
   updateRoleAccess(roleId: number, pageAccessIds: number[]): Observable<ApiResponse<number[]>> {
-    return this.http.put<ApiResponse<number[]>>(
-      `${environment.apiUrl}/api/page-access/role/${roleId}`,
-      { pageAccessIds }
+    return this.http.post<ApiResponse<number[]>>(
+      `${environment.apiUrl}/api/page-access/role/update`,
+      { roleId, pageAccessIds }
     );
   }
 

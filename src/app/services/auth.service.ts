@@ -35,14 +35,16 @@ export class AuthService {
         // Drop previous user's encrypted page-access before new session starts.
         localStorage.removeItem('pageAccess');
         localStorage.setItem('token', response.accessToken);
-        localStorage.setItem('user', JSON.stringify({
+        // Encrypt user object same like pageAccess/refreshToken/machinery cache.
+        const userObj = {
           firstName: response.firstName,
           lastName: response.lastName,
           email: response.email,
           roleId: response.roleId || null,
           roleName: response.roleName || null,
           roleCode: response.roleCode || null
-        }));
+        };
+        localStorage.setItem('user', this.encryptionService.encrypt(userObj));
         // Encrypt and store refresh token
         const encryptedRefreshToken = this.encryptionService.encrypt(response.refreshToken);
         localStorage.setItem('refreshToken', encryptedRefreshToken);
@@ -101,13 +103,28 @@ export class AuthService {
     this.authStateSubject.next(false);
   }
 
-  getUser(): { firstName?: string; lastName?: string; email?: string; roleId?: string; roleName?: string; roleCode?: string } | null {
-    const raw = localStorage.getItem('user');
-    if (!raw) {
+  getUser(): { firstName?: string; lastName?: string; email?: string; roleId?: number; roleName?: string; roleCode?: string } | null {
+    const stored = localStorage.getItem('user');
+    if (!stored) {
       return null;
     }
     try {
-      return JSON.parse(raw);
+      // Primary path: AES-encrypted user object (same as pageAccess/refreshToken).
+      const decrypted = this.encryptionService.decrypt(stored);
+      if (decrypted && typeof decrypted === 'object') {
+        return decrypted;
+      }
+      // Fallback: pre-encryption plain JSON (migrate to encrypted on read).
+      try {
+        const plain = JSON.parse(stored);
+        if (plain && typeof plain === 'object') {
+          localStorage.setItem('user', this.encryptionService.encrypt(plain));
+          return plain;
+        }
+      } catch {
+        // ignore, handled below
+      }
+      return null;
     } catch {
       return null;
     }

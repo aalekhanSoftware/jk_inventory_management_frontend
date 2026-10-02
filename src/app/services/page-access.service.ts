@@ -201,7 +201,7 @@ export class PageAccessService {
     }
 
     this.inFlight$ = this.http
-      .get<ApiResponse<MyPageAccess>>(`${environment.apiUrl}/api/page-access/mine`)
+      .post<ApiResponse<MyPageAccess>>(`${environment.apiUrl}/api/page-access/mine`, {})
       .pipe(
         map(res => res?.data || { admin: false, codes: [] }),
         tap(data => {

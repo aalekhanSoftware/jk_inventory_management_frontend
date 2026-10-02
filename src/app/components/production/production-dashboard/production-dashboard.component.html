@@ -11,33 +11,42 @@
       <div class="header-actions">
         <button routerLink="/planning" class="btn btn-secondary"><i class="fas fa-clipboard-list"></i> Plannings</button>
         <button routerLink="/production/entry" class="btn btn-primary"><i class="fas fa-plus"></i> Production Entry</button>
-        <button type="button" class="btn btn-secondary" (click)="exportExcel()" [disabled]="isLoading || isExporting || !summary?.breakdown?.length"><i class="fas" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i> {{ isExporting ? 'Exporting…' : 'Excel' }}</button>
+        <button type="button" class="btn btn-secondary" (click)="exportExcel()" [disabled]="isLoading || isExporting || !rows.length"><i class="fas" [ngClass]="isExporting ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i> {{ isExporting ? 'Exporting…' : 'Excel' }}</button>
       </div>
     </div>
     <form [formGroup]="filterForm" (ngSubmit)="onFilter()" class="filter-row">
       <app-plan-select formControlName="planningId" [placeholder]="'All Plannings'"></app-plan-select>
-      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
-      <button type="button" class="btn btn-secondary" (click)="resetFilter()"><i class="fas fa-undo"></i> Reset</button>
+      <app-searchable-select formControlName="employeeId" [options]="employees" labelKey="name" valueKey="id"
+        [placeholder]="'All Employees'" [allowClear]="true"></app-searchable-select>
+      <input type="date" formControlName="startDate" class="form-control" aria-label="Start date"
+        (touchstart)="$event.stopPropagation()" title="Planning start date">
+      <input type="date" formControlName="endDate" class="form-control" aria-label="End date"
+        (touchstart)="$event.stopPropagation()" title="Planning end date">
+      <div class="button-group">
+        <button type="submit" class="btn btn-primary" (touchstart)="$event.stopPropagation()"><i class="fas fa-search"></i> Filter</button>
+        <button type="button" class="btn btn-secondary" (click)="resetFilter()" (touchstart)="$event.stopPropagation()"><i class="fas fa-undo"></i> Reset</button>
+      </div>
     </form>
   </section>
 
-  <section class="stat-grid" *ngIf="summary">
-    <div class="stat-card"><div class="stat-icon"><i class="fas fa-clipboard-list"></i></div><div class="stat-content"><span class="stat-label">Planned</span><span class="stat-value">{{ summary.planned }}</span></div></div>
-    <div class="stat-card"><div class="stat-icon"><i class="fas fa-cut"></i></div><div class="stat-content"><span class="stat-label">Cutting</span><span class="stat-value">{{ summary.cutting }}</span></div></div>
-    <div class="stat-card"><div class="stat-icon"><i class="fas fa-stamp"></i></div><div class="stat-content"><span class="stat-label">Emboss</span><span class="stat-value">{{ summary.emboss }}</span></div></div>
-    <div class="stat-card"><div class="stat-icon"><i class="fas fa-spray-can-sparkles"></i></div><div class="stat-content"><span class="stat-label">Coating</span><span class="stat-value">{{ summary.coating }}</span></div></div>
-    <div class="stat-card"><div class="stat-icon"><i class="fas fa-box"></i></div><div class="stat-content"><span class="stat-label">Packing</span><span class="stat-value">{{ summary.packing }}</span></div></div>
-    <div class="stat-card"><div class="stat-icon"><i class="fas fa-truck"></i></div><div class="stat-content"><span class="stat-label">Dispatch</span><span class="stat-value">{{ summary.dispatch }}</span></div></div>
-    <div class="stat-card" [class.negative]="(summary.remaining ?? 0) < 0"><div class="stat-icon"><i class="fas fa-scale-balanced"></i></div><div class="stat-content"><span class="stat-label">Remaining</span><span class="stat-value">{{ summary.remaining }}</span></div></div>
+  <section class="stat-grid">
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-clipboard-list"></i></div><div class="stat-content"><span class="stat-label">Planned</span><span class="stat-value">{{ totalPlanned }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-cut"></i></div><div class="stat-content"><span class="stat-label">Cutting</span><span class="stat-value">{{ totalCutting }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-stamp"></i></div><div class="stat-content"><span class="stat-label">Emboss</span><span class="stat-value">{{ totalEmboss }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-spray-can-sparkles"></i></div><div class="stat-content"><span class="stat-label">Coating</span><span class="stat-value">{{ totalCoating }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-box"></i></div><div class="stat-content"><span class="stat-label">Packing</span><span class="stat-value">{{ totalPacking }}</span></div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-truck"></i></div><div class="stat-content"><span class="stat-label">Dispatch</span><span class="stat-value">{{ totalDispatch }}</span></div></div>
+    <div class="stat-card" [class.negative]="totalRemaining < 0"><div class="stat-icon"><i class="fas fa-scale-balanced"></i></div><div class="stat-content"><span class="stat-label">Remaining</span><span class="stat-value">{{ totalRemaining }}</span></div></div>
   </section>
 
-  <section class="card" *ngIf="summary">
-    <h2>Product Breakdown</h2>
+  <section class="card">
+    <h2>Product Breakdown (latest first, {{ totalElements }})</h2>
     <div class="table-responsive">
       <table class="table">
         <thead>
           <tr>
             <th>Planning</th>
+            <th>Date</th>
             <th>Product</th>
             <th>Planned</th>
             <th>Cutting</th>
@@ -50,8 +59,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let row of summary.breakdown">
+          <tr *ngFor="let row of rows">
             <td><a [routerLink]="['/planning', encId(row.planningId)]">{{ row.planningNumber }}</a></td>
+            <td>{{ row.planningDate ? (row.planningDate | date:'dd-MM-yyyy') : '-' }}</td>
             <td>{{ row.productName }} <span class="badge" *ngIf="row.coatingRequired">Coating</span></td>
             <td>{{ row.planned }}</td>
             <td>{{ row.cutting }}</td>
@@ -65,13 +75,13 @@
               <small>{{ rowPercent(row) }}%</small>
             </td>
           </tr>
-          <tr *ngIf="!summary.breakdown?.length">
-            <td colspan="10" class="text-center">No production data yet</td>
+          <tr *ngIf="!rows.length">
+            <td colspan="11" class="text-center">No production data yet</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="hint">Remaining = Planned − Cutting (combined entries count inside Cutting; later stages consume prior-stage stock).</p>
+    <p class="hint">Cards total the rows on screen (latest first). Remaining = Planned − Cutting.</p>
     <app-pagination
       *ngIf="totalPages > 0"
       [currentPage]="currentPage"

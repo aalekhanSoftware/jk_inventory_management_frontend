@@ -187,8 +187,10 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
    * Stage-chain balance for the selected operation (mirrors backend):
    * Emboss minuses Cutting, Coating minuses Emboss, Packing minuses Coating
    * (or Emboss when coating is not required), Dispatch minuses Packing.
+   * AUTO_PLAN_BUMP: cutting types are never capped here (enforce:false) —
+   * cutting over plan grows the plan with an alert instead of blocking.
    */
-  get availableInfo(): { label: string; qty: number } | null {
+  get availableInfo(): { label: string; qty: number; enforce: boolean } | null {
     if (!this.selectedItem || this.isEditMode) {
       return null;
     }
@@ -203,18 +205,18 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
     switch (this.entryForm.get('operationType')?.value) {
       case 'CUTTING':
       case 'CUTTING_EMBOSS':
-        return { label: 'Yet to cut (Planned − Cutting)', qty: planned - cutting };
+        return { label: 'Plan grows with cutting (alert on save)', qty: planned - cutting, enforce: false };
       case 'EMBOSS':
-        return { label: 'Available in Cutting stage (Cutting − Emboss)', qty: cutting - emboss };
+        return { label: 'Available in Cutting stage (Cutting − Emboss)', qty: cutting - emboss, enforce: true };
       case 'COATING':
-        return { label: 'Available in Emboss stage (Emboss − Coating)', qty: emboss - coating };
+        return { label: 'Available in Emboss stage (Emboss − Coating)', qty: emboss - coating, enforce: true };
       case 'PACKING': {
         const src = s.coatingRequired ? coating : emboss;
         const stage = s.coatingRequired ? 'Coating' : 'Emboss';
-        return { label: `Available in ${stage} stage`, qty: src - packing };
+        return { label: `Available in ${stage} stage`, qty: src - packing, enforce: true };
       }
       case 'DISPATCH':
-        return { label: 'Available in Packing stage (Packing − Dispatch)', qty: packing - dispatch };
+        return { label: 'Available in Packing stage (Packing − Dispatch)', qty: packing - dispatch, enforce: true };
       default:
         return null;
     }
@@ -324,6 +326,7 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
         next: (response) => {
           if (response.success) {
             this.snackbar.success(response.message);
+            this.notifyPlanBump(response.data);
             this.router.navigate(['/planning', this.encId(this.existingOp?.planningId)]);
           }
           this.isSaving = false;
@@ -344,7 +347,9 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
       return;
     }
     // Stage-chain guard (backend enforces authoritatively; immediate feedback only).
-    if (this.availableInfo && Number(v.quantity) > this.availableInfo.qty) {
+    // AUTO_PLAN_BUMP: cutting types are exempt here — over-plan cutting grows
+    // the plan with an alert instead of blocking.
+    if (this.availableInfo?.enforce && Number(v.quantity) > this.availableInfo.qty) {
       this.snackbar.error(`Only ${this.availableInfo.qty} pcs ${this.availableInfo.label}`);
       return;
     }
@@ -367,6 +372,7 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success) {
           this.snackbar.success(response.message);
+          this.notifyPlanBump(response.data);
           const pid = this.entryForm.get('planningId')?.value;
           this.router.navigate(['/planning', this.encId(pid)]);
         }
@@ -383,6 +389,18 @@ export class ProductionEntryComponent implements OnInit, OnDestroy {
     return this.isEditMode && this.existingOp?.planningId
       ? ['/planning', this.encId(this.existingOp.planningId)]
       : '/planning';
+  }
+
+  /**
+   * AUTO_PLAN_BUMP alert (notification only, never a block): e.g. plan was 100
+   * but cutting ran 5 more — total 105, plan auto-updated to 105.
+   */
+  private notifyPlanBump(data: any): void {
+    if (data?.planAutoUpdated) {
+      this.snackbar.warning(
+        `Plan was ${data.plannedBefore} but cutting is ${data.overBy} more — ` +
+        `total Cutting ${data.cuttingTotal}, plan updated to ${data.cuttingTotal}`);
+    }
   }
 
   /** Encrypted id for URLs ; numeric ids stay in POST bodies. */

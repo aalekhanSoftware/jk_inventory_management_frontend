@@ -15,6 +15,9 @@ export interface PlanningItem {
   dispatchQty?: number;
   remainingQty?: number;
   itemStatus?: string;
+  // AUTO_PLAN_BUMP: true when the plan was auto-raised to the cutting total.
+  autoUpdated?: boolean;
+  originalPlannedQuantity?: number | null;
   // Total recorded stage quantity, each entry counted once (backend).
   producedQty?: number;
 }

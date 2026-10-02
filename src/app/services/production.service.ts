@@ -43,10 +43,20 @@ export class ProductionService {
     return this.http.post(`${this.apiUrl}/by-planning-item/${planningItemId}`, {});
   }
 
-  getDashboardSummary(planningId?: number | null, currentPage?: number | null, perPageRecord?: number | null): Observable<any> {
+  getDashboardSummary(planningId?: number | null, currentPage?: number | null, perPageRecord?: number | null,
+    filters?: { employeeId?: number | null; startDate?: string | null; endDate?: string | null }): Observable<any> {
     const body: any = {};
     if (planningId) {
       body.planningId = planningId;
+    }
+    if (filters?.employeeId) {
+      body.employeeId = filters.employeeId;
+    }
+    if (filters?.startDate) {
+      body.startDate = filters.startDate;
+    }
+    if (filters?.endDate) {
+      body.endDate = filters.endDate;
     }
     if (currentPage !== undefined && currentPage !== null) {
       body.currentPage = currentPage;

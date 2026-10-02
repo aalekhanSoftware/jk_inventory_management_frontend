@@ -78,6 +78,7 @@ export interface DashboardSummary {
 export interface DashboardRow {
   planningId: number;
   planningNumber: string;
+  planningDate?: string | null;
   planningItemId: number;
   productId: number;
   productName: string;

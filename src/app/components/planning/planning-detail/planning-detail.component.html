@@ -75,7 +75,7 @@
                   [title]="isDispatchable(item) ? 'Select for dispatch (' + dispatchableQty(item) + ' pcs)' : dispatchBlockReason(item)"
                   (click)="$event.stopPropagation()">
               </td>
-              <td>{{ item.productName }} <span class="badge" *ngIf="item.coatingRequired">Coating</span></td>
+              <td>{{ item.productName }} <span class="badge" *ngIf="item.coatingRequired">Coating</span><span class="badge badge-auto" *ngIf="item.autoUpdated" [title]="'Original plan: ' + (item.originalPlannedQuantity ?? '-')">Auto (was {{ item.originalPlannedQuantity ?? '-' }})</span></td>
               <td>{{ item.plannedQuantity }}</td>
               <td>{{ item.totalBags ?? '-' }}</td>
               <td>{{ item.cuttingQty }}</td>

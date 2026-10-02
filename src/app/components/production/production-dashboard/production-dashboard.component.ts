@@ -3,25 +3,33 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink, RouterModule } from '@angular/router';
 import { ProductionService } from '../../../services/production.service';
-import { DashboardSummary } from '../../../models/production.model';
+import { EmployeeService } from '../../../services/employee.service';
+import { DashboardRow } from '../../../models/production.model';
 import { downloadCsv } from '../../../shared/utils/csv-export.util';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { PlanSelectComponent } from '../../../shared/components/plan-select/plan-select.component';
+import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
+import { DateUtils } from '../../../shared/utils/date-utils';
 
 @Component({
   selector: 'app-production-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, RouterLink, LoaderComponent, PlanSelectComponent, PaginationComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, RouterLink, LoaderComponent, PlanSelectComponent, SearchableSelectComponent, PaginationComponent],
   templateUrl: './production-dashboard.component.html',
   styleUrls: ['./production-dashboard.component.scss']
 })
 export class ProductionDashboardComponent implements OnInit {
-  summary: DashboardSummary | null = null;
+  // DASHBOARD_CLIENT_TOTALS: the API returns ONLY the requested page of rows
+  // (latest first). Every total below is summed in Angular from these rows,
+  // so the cards always reflect exactly the records on screen.
+  rows: DashboardRow[] = [];
+  employees: any[] = [];
   isLoading = false;
   isExporting = false;
+  isLoadingEmployees = false;
   filterForm!: FormGroup;
 
   // Breakdown pagination (page size 10 like all other lists)
@@ -33,12 +41,19 @@ export class ProductionDashboardComponent implements OnInit {
 
   constructor(
     private productionService: ProductionService,
+    private employeeService: EmployeeService,
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private encryptionService: EncryptionService,
-    private snackbar: SnackbarService
+    private snackbar: SnackbarService,
+    private dateUtils: DateUtils
   ) {
-    this.filterForm = this.fb.group({ planningId: [null] });
+    this.filterForm = this.fb.group({
+      planningId: [null],
+      employeeId: [null],
+      startDate: [null],
+      endDate: [null]
+    });
   }
 
   ngOnInit(): void {
@@ -48,6 +63,7 @@ export class ProductionDashboardComponent implements OnInit {
     if (qPlanningId) {
       this.filterForm.patchValue({ planningId: qPlanningId });
     }
+    this.loadEmployees();
     this.loadSummary();
   }
 
@@ -56,15 +72,40 @@ export class ProductionDashboardComponent implements OnInit {
     return this.encryptionService.encrypt(String(id ?? ''));
   }
 
+  loadEmployees(): void {
+    this.isLoadingEmployees = true;
+    this.employeeService.getAllEmployees().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.employees = response.data;
+        }
+        this.isLoadingEmployees = false;
+      },
+      error: () => {
+        this.isLoadingEmployees = false;
+      }
+    });
+  }
+
+  private filterParams() {
+    const v = this.filterForm.value;
+    return {
+      employeeId: v.employeeId || null,
+      startDate: v.startDate ? this.dateUtils.formatDateForApi(v.startDate, true) : null,
+      endDate: v.endDate ? this.dateUtils.formatDateForApi(v.endDate, false) : null
+    };
+  }
+
   loadSummary(): void {
     this.isLoading = true;
     const planningId = this.filterForm.value.planningId || null;
-    this.productionService.getDashboardSummary(planningId, this.currentPage, this.pageSize).subscribe({
+    this.productionService.getDashboardSummary(
+      planningId, this.currentPage, this.pageSize, this.filterParams()).subscribe({
       next: (response) => {
         if (response.success) {
-          this.summary = response.data;
+          this.rows = response.data.breakdown || [];
           this.totalPages = response.data.totalPages ?? 0;
-          this.totalElements = response.data.totalElements ?? response.data.breakdown?.length ?? 0;
+          this.totalElements = response.data.totalElements ?? this.rows.length;
         }
         this.isLoading = false;
       },
@@ -81,7 +122,7 @@ export class ProductionDashboardComponent implements OnInit {
   }
 
   resetFilter(): void {
-    this.filterForm.reset();
+    this.filterForm.reset({ planningId: null, employeeId: null, startDate: null, endDate: null });
     this.currentPage = 0;
     this.loadSummary();
   }
@@ -104,42 +145,41 @@ export class ProductionDashboardComponent implements OnInit {
     return Math.min(100, Math.round(((row.dispatch || 0) / row.planned) * 100));
   }
 
-  /** Excel-compatible download of the FULL breakdown (all pages, opens in Excel). */
+  // ---- Client-side totals: summed from the rows on screen only ----
+  private sumOf(pick: (r: DashboardRow) => any): number {
+    return this.rows.reduce((total, r) => total + (Number(pick(r)) || 0), 0);
+  }
+
+  get totalPlanned(): number { return this.sumOf(r => r.planned); }
+  get totalCutting(): number { return this.sumOf(r => r.cutting); }
+  get totalEmboss(): number { return this.sumOf(r => r.emboss); }
+  get totalCoating(): number { return this.sumOf(r => r.coating); }
+  get totalPacking(): number { return this.sumOf(r => r.packing); }
+  get totalDispatch(): number { return this.sumOf(r => r.dispatch); }
+  // Consistent with progress maths: Remaining = Planned − Cutting.
+  get totalRemaining(): number { return this.totalPlanned - this.totalCutting; }
+
+  /** Excel-compatible download of the rows on screen (opens in Excel). */
   exportExcel(): void {
-    if (!this.summary) {
+    if (!this.rows.length) {
       this.snackbar.error('No data to export');
       return;
     }
     this.isExporting = true;
-    const planningId = this.filterForm.value.planningId || null;
-    this.productionService.getDashboardSummary(planningId).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.writeCsv(response.data);
-        }
-        this.isExporting = false;
-      },
-      error: (error) => {
-        this.snackbar.error(error?.error?.message || 'Failed to export');
-        this.isExporting = false;
-      }
-    });
-  }
-
-  private writeCsv(data: DashboardSummary): void {
-    if (!data.breakdown?.length) {
-      this.snackbar.error('No data to export');
-      return;
+    try {
+      const headers = ['Planning', 'Product', 'Planned', 'Cutting', 'Emboss', 'Coating', 'Packing', 'Dispatch', 'Remaining', 'Status'];
+      const rows = this.rows.map(r => [
+        r.planningNumber, r.productName, r.planned, r.cutting, r.emboss,
+        r.coatingRequired ? r.coating : 'N/A', r.packing, r.dispatch,
+        (Number(r.planned) || 0) - (Number(r.cutting) || 0),
+        r.status === 'O' ? 'Not Started' : r.status === 'P' ? 'In Progress' : r.status === 'C' ? 'Completed' : r.status
+      ]);
+      rows.push(['TOTAL', '', this.totalPlanned, this.totalCutting, this.totalEmboss,
+        this.totalCoating, this.totalPacking, this.totalDispatch, this.totalRemaining, '']);
+      downloadCsv('production-dashboard', headers, rows);
+      this.snackbar.success('Excel sheet downloaded successfully');
+    } finally {
+      this.isExporting = false;
     }
-    const headers = ['Planning', 'Product', 'Planned', 'Cutting', 'Emboss', 'Coating', 'Packing', 'Dispatch', 'Remaining', 'Status'];
-    const rows = data.breakdown.map(r => [
-      r.planningNumber, r.productName, r.planned, r.cutting, r.emboss,
-      r.coatingRequired ? r.coating : 'N/A', r.packing, r.dispatch, r.remaining,
-      r.status === 'O' ? 'Not Started' : r.status === 'P' ? 'In Progress' : r.status === 'C' ? 'Completed' : r.status
-    ]);
-    rows.push(['TOTAL', '', data.planned, data.cutting, data.emboss,
-      data.coating, data.packing, data.dispatch, data.remaining, '']);
-    downloadCsv('production-dashboard', headers, rows);
-    this.snackbar.success('Excel sheet downloaded successfully');
   }
 }

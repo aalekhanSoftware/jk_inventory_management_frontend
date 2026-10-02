@@ -164,6 +164,19 @@
         </div>
       </div>
 
+      <div class="form-group" *ngIf="isEditing">
+        <label for="remainingQuantity">
+          <i class="fas fa-boxes"></i> Remaining Quantity
+        </label>
+        <input 
+          type="number" 
+          id="remainingQuantity" 
+          formControlName="remainingQuantity" 
+          class="form-control"
+          placeholder="Enter remaining quantity"
+        >
+      </div>
+
       <div class="form-group">
         <label for="status">
           <i class="fas fa-toggle-on"></i> Status

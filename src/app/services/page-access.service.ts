@@ -138,6 +138,17 @@ export class PageAccessService {
     return this.can(code);
   }
 
+  /**
+   * When HIDE_TRANSPORT_FINANCIALS is assigned (and user is not Admin),
+   * Transport / Plan Dispatch edit screens hide purchase/sale amounts.
+   */
+  shouldHideTransportFinancials(): boolean {
+    if (this.isAdmin()) {
+      return false;
+    }
+    return this.can('HIDE_TRANSPORT_FINANCIALS');
+  }
+
   getFirstAllowedRoute(): string {
     const order = [
       { code: 'SELECT_CATEGORY', route: '/category' },

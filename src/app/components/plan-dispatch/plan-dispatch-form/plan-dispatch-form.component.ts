@@ -13,6 +13,7 @@ import { SnackbarService } from '../../../shared/services/snackbar.service';
 import { EncryptionService } from '../../../shared/services/encryption.service';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { PriceService } from '../../../services/price.service';
+import { PageAccessService } from '../../../services/page-access.service';
 import { distinctUntilChanged } from 'rxjs/operators';
 import { debounceTime } from 'rxjs/operators';
 
@@ -74,6 +75,11 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
   private pendingItemPlanningIdMap: Record<string, number> = {};
   private destroy$ = new Subject<void>();
 
+  /** Hide purchase/sale amounts on edit when role has HIDE_TRANSPORT_FINANCIALS. */
+  get hideTransportFinancials(): boolean {
+    return this.isEditMode && this.pageAccessService.shouldHideTransportFinancials();
+  }
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -83,7 +89,8 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
     private planDispatchService: PlanDispatchService,
     private snackbar: SnackbarService,
     private encryptionService: EncryptionService,
-    private priceService: PriceService
+    private priceService: PriceService,
+    private pageAccessService: PageAccessService
   ) {
     this.initializeForm();
   }

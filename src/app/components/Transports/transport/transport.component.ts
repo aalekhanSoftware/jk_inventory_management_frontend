@@ -11,6 +11,7 @@ import { Transport, TransportSummary } from '../../../models/transport.model';
 import { TransportService } from '../../../services/transport.service';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { PriceService } from '../../../services/price.service';
+import { PageAccessService } from '../../../services/page-access.service';
 import { distinctUntilChanged } from 'rxjs/operators';
 import { debounceTime } from 'rxjs/operators';
 
@@ -54,6 +55,11 @@ export class TransportComponent implements OnInit {
   isPrinting = false;
   submitted = false;
 
+  /** Hide purchase/sale amounts on edit when role has HIDE_TRANSPORT_FINANCIALS. */
+  get hideTransportFinancials(): boolean {
+    return this.isEditMode && this.pageAccessService.shouldHideTransportFinancials();
+  }
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -62,7 +68,8 @@ export class TransportComponent implements OnInit {
     private customerService: CustomerService,
     private transportService: TransportService,
     private snackbar: SnackbarService,
-    private priceService: PriceService
+    private priceService: PriceService,
+    private pageAccessService: PageAccessService
   ) {
     this.initializeForm();
     this.route.params.subscribe(params => {

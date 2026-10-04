@@ -299,22 +299,8 @@ export class PlanSelectComponent implements ControlValueAccessor, OnInit, OnDest
   }
 
   private adjustDropDirection(): void {
+    // Always opens below (matches searchable-select default) so the panel
+    // never flips over headers/sections inside scrolling tables.
     this.dropUp = false;
-    setTimeout(() => {
-      if (!this.isOpen || window.innerWidth <= 768) {
-        return;
-      }
-      const host = this.el.nativeElement as HTMLElement;
-      const dd = host.querySelector('.plan-select-dropdown') as HTMLElement | null;
-      if (!dd) {
-        return;
-      }
-      const rect = host.getBoundingClientRect();
-      const need = Math.min(dd.offsetHeight || 260, 320);
-      const spaceBelow = window.innerHeight - rect.bottom;
-      if (spaceBelow < need && rect.top > need) {
-        this.dropUp = true;
-      }
-    }, 0);
   }
 }

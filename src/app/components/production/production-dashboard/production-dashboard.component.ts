@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterLink, RouterModule } from '@angular/router';
 import { ProductionService } from '../../../services/production.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { DashboardRow } from '../../../models/production.model';
+import { planningPriorityLabel } from '../../../models/planning.model';
 import { downloadCsv } from '../../../shared/utils/csv-export.util';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { PlanSelectComponent } from '../../../shared/components/plan-select/plan-select.component';
@@ -51,9 +52,47 @@ export class ProductionDashboardComponent implements OnInit {
     this.filterForm = this.fb.group({
       planningId: [null],
       employeeId: [null],
+      process: [null],
       startDate: [null],
       endDate: [null]
     });
+  }
+
+  /** Process choices for the pending-work view (combined Cutting+Emboss
+   * counts as emboss completed, so it needs no separate option). */
+  get processOptions(): { label: string; value: string }[] {
+    return [
+      { label: 'Cutting', value: 'CUTTING' },
+      { label: 'Emboss', value: 'EMBOSS' },
+      { label: 'Coating', value: 'COATING' },
+      { label: 'Packing', value: 'PACKING' },
+      { label: 'Dispatch', value: 'DISPATCH' }
+    ];
+  }
+
+  get selectedProcess(): string | null {
+    return this.filterForm.value.process || null;
+  }
+
+  /** Pending work in the selected process, from the row's own numbers. */
+  pendingFor(row: DashboardRow): number | null {
+    if (!this.selectedProcess) {
+      return null;
+    }
+    const num = (v: any) => Number(v) || 0;
+    switch (this.selectedProcess) {
+      case 'CUTTING': return num(row.planned) - num(row.cutting);
+      case 'EMBOSS': return num(row.cutting) - num(row.emboss);
+      case 'COATING': return num(row.emboss) - num(row.coating);
+      case 'PACKING':
+        return (row.coatingRequired ? num(row.coating) : num(row.emboss)) - num(row.packing);
+      case 'DISPATCH': return num(row.packing) - num(row.dispatch);
+      default: return null;
+    }
+  }
+
+  processLabel(value: string | null): string {
+    return this.processOptions.find(o => o.value === value)?.label || '';
   }
 
   ngOnInit(): void {
@@ -71,6 +110,8 @@ export class ProductionDashboardComponent implements OnInit {
   encId(id: number | null | undefined): string {
     return this.encryptionService.encrypt(String(id ?? ''));
   }
+
+  priorityLabel = planningPriorityLabel;
 
   loadEmployees(): void {
     this.isLoadingEmployees = true;
@@ -91,6 +132,7 @@ export class ProductionDashboardComponent implements OnInit {
     const v = this.filterForm.value;
     return {
       employeeId: v.employeeId || null,
+      process: v.process || null,
       startDate: v.startDate ? this.dateUtils.formatDateForApi(v.startDate, true) : null,
       endDate: v.endDate ? this.dateUtils.formatDateForApi(v.endDate, false) : null
     };
@@ -122,7 +164,7 @@ export class ProductionDashboardComponent implements OnInit {
   }
 
   resetFilter(): void {
-    this.filterForm.reset({ planningId: null, employeeId: null, startDate: null, endDate: null });
+    this.filterForm.reset({ planningId: null, employeeId: null, process: null, startDate: null, endDate: null });
     this.currentPage = 0;
     this.loadSummary();
   }
@@ -167,15 +209,20 @@ export class ProductionDashboardComponent implements OnInit {
     }
     this.isExporting = true;
     try {
-      const headers = ['Planning', 'Product', 'Planned', 'Cutting', 'Emboss', 'Coating', 'Packing', 'Dispatch', 'Remaining', 'Status'];
+      const showPending = !!this.selectedProcess;
+      const headers = ['Planning', 'Product', 'Planned', 'Cutting', 'Emboss', 'Coating', 'Packing', 'Dispatch', 'Remaining',
+        ...(showPending ? [`${this.processLabel(this.selectedProcess)} Pending`] : []), 'Priority', 'Status'];
       const rows = this.rows.map(r => [
         r.planningNumber, r.productName, r.planned, r.cutting, r.emboss,
         r.coatingRequired ? r.coating : 'N/A', r.packing, r.dispatch,
         (Number(r.planned) || 0) - (Number(r.cutting) || 0),
+        ...(showPending ? [this.pendingFor(r) ?? ''] : []),
+        planningPriorityLabel(r.priority),
         r.status === 'O' ? 'Not Started' : r.status === 'P' ? 'In Progress' : r.status === 'C' ? 'Completed' : r.status
       ]);
       rows.push(['TOTAL', '', this.totalPlanned, this.totalCutting, this.totalEmboss,
-        this.totalCoating, this.totalPacking, this.totalDispatch, this.totalRemaining, '']);
+        this.totalCoating, this.totalPacking, this.totalDispatch, this.totalRemaining,
+        ...(showPending ? [''] : []), '', '']);
       downloadCsv('production-dashboard', headers, rows);
       this.snackbar.success('Excel sheet downloaded successfully');
     } finally {

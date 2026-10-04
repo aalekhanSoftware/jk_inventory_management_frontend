@@ -136,11 +136,17 @@ export class SearchableSelectComponent implements ControlValueAccessor, OnInit, 
   }
 
   /**
-   * Opens upward when there is no room below (desktop tables). Mobile keeps
-   * the bottom-sheet positioning from CSS.
+   * Upward opening is opt-in only ([openUpwards]="true"). By default the
+   * options always open BELOW the select — flipping upward inside scrolling
+   * tables misplaces the panel over headers and other sections.
    */
+  @Input() openUpwards = false;
+
   private adjustDropDirection(): void {
     this.dropUp = false;
+    if (!this.openUpwards) {
+      return;
+    }
     setTimeout(() => {
       if (!this.isOpen || window.innerWidth <= 768) {
         return;

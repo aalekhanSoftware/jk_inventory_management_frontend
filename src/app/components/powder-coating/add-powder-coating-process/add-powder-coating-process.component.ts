@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ProductService } from '../../../services/product.service';
@@ -96,6 +96,8 @@ export class AddPowderCoatingProcessComponent implements OnInit, OnDestroy {
   private initializeForm(): void {
     this.processForm = this.fb.group({
       customerId: ['', [Validators.required]],
+      // TRANSPORT_COATING_DATE: business date, defaults to today, editable.
+      coatingDate: [formatDate(new Date(), 'yyyy-MM-dd', 'en'), Validators.required],
       status: ['A'],
       items: this.fb.array([])
     });
@@ -261,9 +263,12 @@ export class AddPowderCoatingProcessComponent implements OnInit, OnDestroy {
             this.itemsFormArray.removeAt(0);
           }
 
-          // Set customer and status
+          // Set customer, status and coating date
           this.processForm.patchValue({
             customerId: data.customerId,
+            coatingDate: data.coatingDate
+              ? formatDate(data.coatingDate, 'yyyy-MM-dd', 'en')
+              : formatDate(new Date(), 'yyyy-MM-dd', 'en'),
             status: data.status || 'A'
           });
 
@@ -312,6 +317,7 @@ export class AddPowderCoatingProcessComponent implements OnInit, OnDestroy {
       const formValue = this.processForm.getRawValue();
       const requestData = {
         customerId: formValue.customerId,
+        coatingDate: formValue.coatingDate || null,
         status: formValue.status,
         items: this.itemsFormArray.controls.map((control) => {
           const itemGroup = control as FormGroup;

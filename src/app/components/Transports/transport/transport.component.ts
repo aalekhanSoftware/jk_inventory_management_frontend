@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl, FormControl } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '../../../services/product.service';
@@ -117,6 +117,8 @@ export class TransportComponent implements OnInit {
   private initializeForm(): void {
     this.transportForm = this.fb.group({
       customerId: ['', [Validators.required]],
+      // TRANSPORT_COATING_DATE: business date, defaults to today, editable.
+      transportDate: [formatDate(new Date(), 'yyyy-MM-dd', 'en'), Validators.required],
       bags: this.fb.array([])
     });
   }
@@ -455,6 +457,7 @@ export class TransportComponent implements OnInit {
     const payload = {
       id: this.isEditMode ? this.transportId : undefined,
       customerId: formValue.customerId,
+      transportDate: formValue.transportDate || null,
       bags: formValue.bags.map((bag: any) => ({
         id: bag.id,
         weight: bag.weight,
@@ -583,9 +586,13 @@ export class TransportComponent implements OnInit {
       this.bags.removeAt(0);
     }
 
-    // Set customer
+    // Set customer and transport date (falls back to today for old rows
+    // whose date predates the column, though backend already coalesces).
     this.transportForm.patchValue({
-      customerId: data.customerId
+      customerId: data.customerId,
+      transportDate: data.transportDate
+        ? formatDate(data.transportDate, 'yyyy-MM-dd', 'en')
+        : formatDate(new Date(), 'yyyy-MM-dd', 'en')
     });
 
     // Add bags and their items

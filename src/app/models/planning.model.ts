@@ -15,6 +15,8 @@ export interface PlanningItem {
   dispatchQty?: number;
   remainingQty?: number;
   itemStatus?: string;
+  // PLAN_PRIORITY: U = Urgent, N = Normal, F = For Stock.
+  priority?: string;
   // AUTO_PLAN_BUMP: true when the plan was auto-raised to the cutting total.
   autoUpdated?: boolean;
   originalPlannedQuantity?: number | null;
@@ -72,6 +74,20 @@ export const PLANNING_STATUS_OPTIONS = [
   { label: 'Completed', value: 'C' },
   { label: 'Inactive', value: 'I' }
 ];
+
+export const PLANNING_PRIORITY_OPTIONS = [
+  { label: 'Urgent', value: 'U' },
+  { label: 'Normal', value: 'N' },
+  { label: 'For Stock', value: 'F' }
+];
+
+export function planningPriorityLabel(priority?: string): string {
+  switch (priority) {
+    case 'U': return 'Urgent';
+    case 'F': return 'For Stock';
+    default: return 'Normal';
+  }
+}
 
 export function planningStatusLabel(status?: string): string {
   switch (status) {

@@ -54227,12 +54227,17 @@ var AuthService = class _AuthService {
   }
   login(credentials) {
     return this.http.post(`${environment.apiUrl}/api/auth/login`, credentials).pipe(tap((response) => {
+      localStorage.removeItem("pageAccess");
       localStorage.setItem("token", response.accessToken);
-      localStorage.setItem("user", JSON.stringify({
+      const userObj = {
         firstName: response.firstName,
         lastName: response.lastName,
-        email: response.email
-      }));
+        email: response.email,
+        roleId: response.roleId || null,
+        roleName: response.roleName || null,
+        roleCode: response.roleCode || null
+      };
+      localStorage.setItem("user", this.encryptionService.encrypt(userObj));
       const encryptedRefreshToken = this.encryptionService.encrypt(response.refreshToken);
       localStorage.setItem("refreshToken", encryptedRefreshToken);
       this.authStateSubject.next(true);
@@ -54273,6 +54278,35 @@ var AuthService = class _AuthService {
   logout() {
     localStorage.clear();
     this.authStateSubject.next(false);
+  }
+  getUser() {
+    const stored = localStorage.getItem("user");
+    if (!stored) {
+      return null;
+    }
+    try {
+      const decrypted = this.encryptionService.decrypt(stored);
+      if (decrypted && typeof decrypted === "object") {
+        return decrypted;
+      }
+      try {
+        const plain = JSON.parse(stored);
+        if (plain && typeof plain === "object") {
+          localStorage.setItem("user", this.encryptionService.encrypt(plain));
+          return plain;
+        }
+      } catch {
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+  getRoleCode() {
+    return this.getUser()?.roleCode || null;
+  }
+  isAdmin() {
+    return (this.getRoleCode() || "").toUpperCase() === "ADMIN";
   }
   isAuthenticated() {
     return !!localStorage.getItem("token");
@@ -66204,6 +66238,213 @@ var PasswordValidationModalComponent = class _PasswordValidationModalComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PasswordValidationModalComponent, { className: "PasswordValidationModalComponent", filePath: "src\\app\\components\\password-validation-modal\\password-validation-modal.component.ts", lineNumber: 17 });
 })();
 
+// src/app/services/page-access.service.ts
+var STORAGE_KEY = "pageAccess";
+var PageAccessService = class _PageAccessService {
+  constructor(http, encryptionService) {
+    this.http = http;
+    this.encryptionService = encryptionService;
+    this.cached = null;
+    this.inFlight$ = null;
+    this.sessionLoaded = false;
+    this.accessSubject = new BehaviorSubject(null);
+    this.access$ = this.accessSubject.asObservable();
+    this.routeFallback = [
+      { prefix: "/role-config", code: "__ADMIN__" },
+      { prefix: "/user-role", code: "__ADMIN__" },
+      { prefix: "/category", code: "SELECT_CATEGORY" },
+      { prefix: "/product", code: "SELECT_PRODUCT" },
+      { prefix: "/customer", code: "SELECT_PARTY_PAYMENT" },
+      { prefix: "/employee-order", code: "SELECT_EMPLOYEE_ORDER" },
+      { prefix: "/employee", code: "SELECT_EMPLOYEE" },
+      { prefix: "/machinery", code: "SELECT_MACHINERY" },
+      { prefix: "/purchase", code: "SELECT_PURCHASE" },
+      { prefix: "/sale", code: "SELECT_SALE" },
+      { prefix: "/profit", code: "SELECT_PRODUCT_WISE_PROFIT" },
+      { prefix: "/daily-profit", code: "SELECT_DAILY_PROFIT" },
+      { prefix: "/powder-coating-process", code: "SELECT_COATING" },
+      { prefix: "/transport", code: "SELECT_TRANSPORT" },
+      { prefix: "/quotation", code: "SELECT_QUOTATION" },
+      { prefix: "/planning", code: "SELECT_PLAN" },
+      { prefix: "/production/entry", code: "SELECT_PRODUCTION" },
+      { prefix: "/production/edit", code: "ADD_EDIT_PRODUCTION" },
+      { prefix: "/production/report", code: "SELECT_DATE_REPORT" },
+      { prefix: "/dashboard", code: "SELECT_DASHBOARD" },
+      { prefix: "/stock-movements", code: "SELECT_STOCK_MOVES" },
+      { prefix: "/plan-dispatch", code: "SELECT_PLAN_DISPATCH" },
+      { prefix: "/plan-coating", code: "SELECT_PLAN_COATING" }
+    ];
+    const stored = this.readFromStorage();
+    if (stored) {
+      this.cached = stored;
+      this.accessSubject.next(stored);
+    }
+  }
+  /**
+   * Use cached access when already loaded this session.
+   * Calls API only when force=true (login) or first load after page refresh.
+   */
+  loadMine(force = false) {
+    if (!force && this.sessionLoaded && this.cached) {
+      return of(this.cached);
+    }
+    if (this.inFlight$) {
+      return this.inFlight$;
+    }
+    return this.fetchFromApi();
+  }
+  /** Force API call (login). Shares in-flight request if header already started one. */
+  refresh() {
+    this.sessionLoaded = false;
+    this.cached = null;
+    if (this.inFlight$) {
+      return this.inFlight$;
+    }
+    return this.fetchFromApi();
+  }
+  /** Ensure access for guards/header without refetching on every navigation. */
+  ensureLoaded() {
+    return this.loadMine(false);
+  }
+  clear() {
+    this.cached = null;
+    this.inFlight$ = null;
+    this.sessionLoaded = false;
+    localStorage.removeItem(STORAGE_KEY);
+    this.accessSubject.next(null);
+  }
+  getSnapshot() {
+    return this.cached;
+  }
+  isAdmin() {
+    return !!this.cached?.admin;
+  }
+  can(code) {
+    if (!code) {
+      return true;
+    }
+    if (code === "__ADMIN__") {
+      return this.isAdmin();
+    }
+    if (this.cached?.admin) {
+      return true;
+    }
+    return !!this.cached?.codes?.includes(code);
+  }
+  canSync(code) {
+    if (!code) {
+      return true;
+    }
+    return this.can(code);
+  }
+  /**
+   * When HIDE_TRANSPORT_FINANCIALS is assigned (and user is not Admin),
+   * Transport / Plan Dispatch edit screens hide purchase/sale amounts.
+   */
+  shouldHideTransportFinancials() {
+    if (this.isAdmin()) {
+      return false;
+    }
+    return this.can("HIDE_TRANSPORT_FINANCIALS");
+  }
+  getFirstAllowedRoute() {
+    const order = [
+      { code: "SELECT_CATEGORY", route: "/category" },
+      { code: "SELECT_PRODUCT", route: "/product" },
+      { code: "SELECT_PARTY_PAYMENT", route: "/customer" },
+      { code: "SELECT_EMPLOYEE", route: "/employee" },
+      { code: "SELECT_MACHINERY", route: "/machinery" },
+      { code: "SELECT_PURCHASE", route: "/purchase" },
+      { code: "SELECT_SALE", route: "/sale" },
+      { code: "SELECT_PRODUCT_WISE_PROFIT", route: "/profit" },
+      { code: "SELECT_DAILY_PROFIT", route: "/daily-profit" },
+      { code: "SELECT_COATING", route: "/powder-coating-process" },
+      { code: "SELECT_TRANSPORT", route: "/transport" },
+      { code: "SELECT_QUOTATION", route: "/quotation" },
+      { code: "SELECT_EMPLOYEE_ORDER", route: "/employee-order" },
+      { code: "SELECT_PLAN", route: "/planning" },
+      { code: "SELECT_PRODUCTION", route: "/production/entry" },
+      { code: "SELECT_DASHBOARD", route: "/dashboard" },
+      { code: "SELECT_STOCK_MOVES", route: "/stock-movements" },
+      { code: "SELECT_DATE_REPORT", route: "/production/report" },
+      { code: "SELECT_PLAN_DISPATCH", route: "/plan-dispatch" },
+      { code: "SELECT_PLAN_COATING", route: "/plan-coating" }
+    ];
+    if (this.isAdmin()) {
+      return "/category";
+    }
+    for (const item of order) {
+      if (this.can(item.code)) {
+        return item.route;
+      }
+    }
+    return "/login";
+  }
+  resolveAccessCode(url) {
+    const path = (url || "").split("?")[0];
+    for (const item of this.routeFallback) {
+      if (path === item.prefix || path.startsWith(item.prefix + "/")) {
+        return item.code;
+      }
+    }
+    return null;
+  }
+  fetchFromApi() {
+    if (this.inFlight$) {
+      return this.inFlight$;
+    }
+    this.inFlight$ = this.http.post(`${environment.apiUrl}/api/page-access/mine`, {}).pipe(map((res) => res?.data || { admin: false, codes: [] }), tap((data) => {
+      this.applyAccess(data);
+      this.inFlight$ = null;
+    }), catchError(() => {
+      this.inFlight$ = null;
+      const stored = this.readFromStorage();
+      const fallback = stored || { admin: false, codes: [] };
+      this.applyAccess(fallback);
+      return of(fallback);
+    }), shareReplay(1));
+    return this.inFlight$;
+  }
+  applyAccess(data) {
+    this.cached = data;
+    this.sessionLoaded = true;
+    this.writeToStorage(data);
+    this.accessSubject.next(data);
+  }
+  writeToStorage(data) {
+    try {
+      const encrypted = this.encryptionService.encrypt(data);
+      if (encrypted) {
+        localStorage.setItem(STORAGE_KEY, encrypted);
+      }
+    } catch {
+    }
+  }
+  readFromStorage() {
+    try {
+      const encrypted = localStorage.getItem(STORAGE_KEY);
+      if (!encrypted) {
+        return null;
+      }
+      const data = this.encryptionService.decrypt(encrypted);
+      if (!data || typeof data !== "object") {
+        return null;
+      }
+      return data;
+    } catch {
+      return null;
+    }
+  }
+  static {
+    this.\u0275fac = function PageAccessService_Factory(t) {
+      return new (t || _PageAccessService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(EncryptionService));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _PageAccessService, factory: _PageAccessService.\u0275fac, providedIn: "root" });
+  }
+};
+
 // src/app/components/shared/header/header.component.ts
 function HeaderComponent_button_6_Template(rf, ctx) {
   if (rf & 1) {
@@ -66223,129 +66464,310 @@ function HeaderComponent_button_6_Template(rf, ctx) {
     \u0275\u0275classProp("fa-bars", !ctx_r1.isMobileMenuOpen)("fa-times", ctx_r1.isMobileMenuOpen);
   }
 }
+function HeaderComponent_div_7_li_2_li_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 20);
+    \u0275\u0275text(2, "Category");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_2_li_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 21);
+    \u0275\u0275text(2, "Product");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_2_li_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 22);
+    \u0275\u0275text(2, "Party Payment");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_2_li_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 23);
+    \u0275\u0275text(2, "Employee");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_2_li_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 24);
+    \u0275\u0275text(2, "Machinery");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_2_li_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 25);
+    \u0275\u0275text(2, "Role Config");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_2_li_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 26);
+    \u0275\u0275text(2, "User Role");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_2_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "li", 15)(1, "a", 16);
+    \u0275\u0275listener("click", function HeaderComponent_div_7_li_2_Template_a_click_1_listener($event) {
+      \u0275\u0275restoreView(_r4);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.toggleMasterMenu($event));
+    });
+    \u0275\u0275element(2, "i", 17);
+    \u0275\u0275text(3, " Master ");
+    \u0275\u0275element(4, "i", 18);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "ul", 19);
+    \u0275\u0275template(6, HeaderComponent_div_7_li_2_li_6_Template, 3, 0, "li", 11)(7, HeaderComponent_div_7_li_2_li_7_Template, 3, 0, "li", 11)(8, HeaderComponent_div_7_li_2_li_8_Template, 3, 0, "li", 11)(9, HeaderComponent_div_7_li_2_li_9_Template, 3, 0, "li", 11)(10, HeaderComponent_div_7_li_2_li_10_Template, 3, 0, "li", 11)(11, HeaderComponent_div_7_li_2_li_11_Template, 3, 0, "li", 11)(12, HeaderComponent_div_7_li_2_li_12_Template, 3, 0, "li", 11);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275classProp("active", ctx_r1.isMasterActive());
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("show", ctx_r1.showMasterMenu);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_CATEGORY"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_PRODUCT"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_PARTY_PAYMENT"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_EMPLOYEE"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_MACHINERY"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isAdmin());
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isAdmin());
+  }
+}
+function HeaderComponent_div_7_li_3_li_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 28);
+    \u0275\u0275text(2, "Purchase");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_3_li_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 29);
+    \u0275\u0275text(2, "Sale");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_3_li_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 30);
+    \u0275\u0275text(2, "Product Wise Profit");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_3_li_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 31);
+    \u0275\u0275text(2, "Daily Profit");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_3_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "li", 15)(1, "a", 16);
+    \u0275\u0275listener("click", function HeaderComponent_div_7_li_3_Template_a_click_1_listener($event) {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.toggleTransactionMenu($event));
+    });
+    \u0275\u0275element(2, "i", 27);
+    \u0275\u0275text(3, " Transaction ");
+    \u0275\u0275element(4, "i", 18);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "ul", 19);
+    \u0275\u0275template(6, HeaderComponent_div_7_li_3_li_6_Template, 3, 0, "li", 11)(7, HeaderComponent_div_7_li_3_li_7_Template, 3, 0, "li", 11)(8, HeaderComponent_div_7_li_3_li_8_Template, 3, 0, "li", 11)(9, HeaderComponent_div_7_li_3_li_9_Template, 3, 0, "li", 11);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275classProp("active", ctx_r1.isTransactionActive());
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("show", ctx_r1.showTransactionMenu);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_PURCHASE"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_SALE"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_PRODUCT_WISE_PROFIT"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_DAILY_PROFIT"));
+  }
+}
+function HeaderComponent_div_7_li_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 32);
+    \u0275\u0275text(2, "Coating");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 33);
+    \u0275\u0275text(2, "Transport");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 34);
+    \u0275\u0275text(2, "Quotation");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 35);
+    \u0275\u0275text(2, "Employee Order");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_8_li_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 37);
+    \u0275\u0275text(2, "Planning");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_8_li_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 38);
+    \u0275\u0275text(2, "Production");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_8_li_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 39);
+    \u0275\u0275text(2, "Dashboard");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_8_li_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 40);
+    \u0275\u0275text(2, "Stock Moves");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_8_li_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 41);
+    \u0275\u0275text(2, "Date Report");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_8_li_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 42);
+    \u0275\u0275text(2, "Plan Dispatch");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_8_li_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "li")(1, "a", 43);
+    \u0275\u0275text(2, "Plan Coating");
+    \u0275\u0275elementEnd()();
+  }
+}
+function HeaderComponent_div_7_li_8_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "li", 15)(1, "a", 16);
+    \u0275\u0275listener("click", function HeaderComponent_div_7_li_8_Template_a_click_1_listener($event) {
+      \u0275\u0275restoreView(_r6);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.togglePlanningMenu($event));
+    });
+    \u0275\u0275element(2, "i", 36);
+    \u0275\u0275text(3, " Planning & Production ");
+    \u0275\u0275element(4, "i", 18);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "ul", 19);
+    \u0275\u0275template(6, HeaderComponent_div_7_li_8_li_6_Template, 3, 0, "li", 11)(7, HeaderComponent_div_7_li_8_li_7_Template, 3, 0, "li", 11)(8, HeaderComponent_div_7_li_8_li_8_Template, 3, 0, "li", 11)(9, HeaderComponent_div_7_li_8_li_9_Template, 3, 0, "li", 11)(10, HeaderComponent_div_7_li_8_li_10_Template, 3, 0, "li", 11)(11, HeaderComponent_div_7_li_8_li_11_Template, 3, 0, "li", 11)(12, HeaderComponent_div_7_li_8_li_12_Template, 3, 0, "li", 11);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275classProp("active", ctx_r1.isPlanningActive());
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("show", ctx_r1.showPlanningMenu);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_PLAN"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_PRODUCTION"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_DASHBOARD"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_STOCK_MOVES"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_DATE_REPORT"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_PLAN_DISPATCH"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_PLAN_COATING"));
+  }
+}
 function HeaderComponent_div_7_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 8)(1, "ul", 9)(2, "li", 10)(3, "a", 11);
-    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_a_click_3_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.toggleMasterMenu($event));
-    });
-    \u0275\u0275element(4, "i", 12);
-    \u0275\u0275text(5, " Master ");
-    \u0275\u0275element(6, "i", 13);
+    \u0275\u0275elementStart(0, "div", 8)(1, "ul", 9);
+    \u0275\u0275template(2, HeaderComponent_div_7_li_2_Template, 13, 11, "li", 10)(3, HeaderComponent_div_7_li_3_Template, 10, 8, "li", 10)(4, HeaderComponent_div_7_li_4_Template, 3, 0, "li", 11)(5, HeaderComponent_div_7_li_5_Template, 3, 0, "li", 11)(6, HeaderComponent_div_7_li_6_Template, 3, 0, "li", 11)(7, HeaderComponent_div_7_li_7_Template, 3, 0, "li", 11)(8, HeaderComponent_div_7_li_8_Template, 13, 11, "li", 10);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "ul", 14)(8, "li")(9, "a", 15);
-    \u0275\u0275text(10, "Category");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(11, "li")(12, "a", 16);
-    \u0275\u0275text(13, "Product");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "li")(15, "a", 17);
-    \u0275\u0275text(16, "Party Payment");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(17, "li")(18, "a", 18);
-    \u0275\u0275text(19, "Employee");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(20, "li")(21, "a", 19);
-    \u0275\u0275text(22, "Machinery");
-    \u0275\u0275elementEnd()()()();
-    \u0275\u0275elementStart(23, "li", 10)(24, "a", 11);
-    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_a_click_24_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.toggleTransactionMenu($event));
-    });
-    \u0275\u0275element(25, "i", 20);
-    \u0275\u0275text(26, " Transaction ");
-    \u0275\u0275element(27, "i", 13);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(28, "ul", 14)(29, "li")(30, "a", 21);
-    \u0275\u0275text(31, "Purchase");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(32, "li")(33, "a", 22);
-    \u0275\u0275text(34, "Sale");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(35, "li")(36, "a", 23);
-    \u0275\u0275text(37, "Product Wise Profit");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(38, "li")(39, "a", 24);
-    \u0275\u0275text(40, "Daily Profit");
-    \u0275\u0275elementEnd()()()();
-    \u0275\u0275elementStart(41, "li")(42, "a", 25);
-    \u0275\u0275text(43, "Coating");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(44, "li")(45, "a", 26);
-    \u0275\u0275text(46, "Transport");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(47, "li")(48, "a", 27);
-    \u0275\u0275text(49, "Quotation");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(50, "li")(51, "a", 28);
-    \u0275\u0275text(52, "Employee Order");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(53, "li", 10)(54, "a", 11);
-    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_a_click_54_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.togglePlanningMenu($event));
-    });
-    \u0275\u0275element(55, "i", 29);
-    \u0275\u0275text(56, " Planning & Production ");
-    \u0275\u0275element(57, "i", 13);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(58, "ul", 14)(59, "li")(60, "a", 30);
-    \u0275\u0275text(61, "Planning");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(62, "li")(63, "a", 31);
-    \u0275\u0275text(64, "Production");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(65, "li")(66, "a", 32);
-    \u0275\u0275text(67, "Dashboard");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(68, "li")(69, "a", 33);
-    \u0275\u0275text(70, "Stock Moves");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(71, "li")(72, "a", 34);
-    \u0275\u0275text(73, "Date Report");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(74, "li")(75, "a", 35);
-    \u0275\u0275text(76, "Plan Dispatch");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(77, "li")(78, "a", 36);
-    \u0275\u0275text(79, "Plan Coating");
-    \u0275\u0275elementEnd()()()()();
-    \u0275\u0275elementStart(80, "div", 37)(81, "button", 38);
-    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_button_click_81_listener() {
+    \u0275\u0275elementStart(9, "div", 12)(10, "button", 13);
+    \u0275\u0275listener("click", function HeaderComponent_div_7_Template_button_click_10_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.logout());
     });
-    \u0275\u0275element(82, "i", 39);
-    \u0275\u0275text(83, " Logout ");
+    \u0275\u0275element(11, "i", 14);
+    \u0275\u0275text(12, " Logout ");
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275classProp("show", ctx_r1.isMobileMenuOpen);
-    \u0275\u0275advance(3);
-    \u0275\u0275classProp("active", ctx_r1.isMasterActive());
-    \u0275\u0275advance(4);
-    \u0275\u0275classProp("show", ctx_r1.showMasterMenu);
-    \u0275\u0275advance(17);
-    \u0275\u0275classProp("active", ctx_r1.isTransactionActive());
-    \u0275\u0275advance(4);
-    \u0275\u0275classProp("show", ctx_r1.showTransactionMenu);
-    \u0275\u0275advance(26);
-    \u0275\u0275classProp("active", ctx_r1.isPlanningActive());
-    \u0275\u0275advance(4);
-    \u0275\u0275classProp("show", ctx_r1.showPlanningMenu);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r1.hasMasterItems());
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.hasTransactionItems());
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_COATING"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_TRANSPORT"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_QUOTATION"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.can("SELECT_EMPLOYEE_ORDER"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.hasPlanningItems());
   }
 }
 var HeaderComponent = class _HeaderComponent {
-  constructor(authService, router) {
+  constructor(authService, pageAccessService, router) {
     this.authService = authService;
+    this.pageAccessService = pageAccessService;
     this.router = router;
     this.isAuthenticated = false;
     this.showMasterMenu = false;
@@ -66354,15 +66776,43 @@ var HeaderComponent = class _HeaderComponent {
     this.isMobileMenuOpen = false;
     this.authSubscription = this.authService.authState$.subscribe((isAuthenticated) => {
       this.isAuthenticated = isAuthenticated;
+      if (isAuthenticated) {
+        this.pageAccessService.ensureLoaded().subscribe();
+      } else {
+        this.pageAccessService.clear();
+      }
     });
   }
   ngOnInit() {
     this.isAuthenticated = this.authService.isAuthenticated();
+    if (this.isAuthenticated) {
+      this.pageAccessService.ensureLoaded().subscribe();
+    }
+    this.accessSubscription = this.pageAccessService.access$.subscribe(() => {
+    });
   }
   ngOnDestroy() {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
+    if (this.accessSubscription) {
+      this.accessSubscription.unsubscribe();
+    }
+  }
+  can(code) {
+    return this.pageAccessService.can(code);
+  }
+  isAdmin() {
+    return this.pageAccessService.isAdmin() || this.authService.isAdmin();
+  }
+  hasMasterItems() {
+    return this.can("SELECT_CATEGORY") || this.can("SELECT_PRODUCT") || this.can("SELECT_PARTY_PAYMENT") || this.can("SELECT_EMPLOYEE") || this.can("SELECT_MACHINERY") || this.isAdmin();
+  }
+  hasTransactionItems() {
+    return this.can("SELECT_PURCHASE") || this.can("SELECT_SALE") || this.can("SELECT_PRODUCT_WISE_PROFIT") || this.can("SELECT_DAILY_PROFIT");
+  }
+  hasPlanningItems() {
+    return this.can("SELECT_PLAN") || this.can("SELECT_PRODUCTION") || this.can("SELECT_DASHBOARD") || this.can("SELECT_STOCK_MOVES") || this.can("SELECT_DATE_REPORT") || this.can("SELECT_PLAN_DISPATCH") || this.can("SELECT_PLAN_COATING");
   }
   onDocumentClick(event2) {
     const target = event2.target;
@@ -66401,7 +66851,7 @@ var HeaderComponent = class _HeaderComponent {
   }
   isMasterActive() {
     const currentUrl = this.router.url;
-    return ["/category", "/product", "/customer", "/employee", "/machinery"].some((path) => currentUrl.includes(path));
+    return ["/category", "/product", "/customer", "/employee", "/machinery", "/role-config", "/user-role"].some((path) => currentUrl.includes(path));
   }
   isTransactionActive() {
     const currentUrl = this.router.url;
@@ -66409,7 +66859,7 @@ var HeaderComponent = class _HeaderComponent {
   }
   isPlanningActive() {
     const currentUrl = this.router.url;
-    return ["/planning", "/production/entry", "/production/report", "/dashboard", "/stock-moves", "/stock-movements", "/plan-dispatch"].some((path) => currentUrl.includes(path));
+    return ["/planning", "/production/entry", "/production/report", "/dashboard", "/stock-moves", "/stock-movements", "/plan-dispatch", "/plan-coating"].some((path) => currentUrl.includes(path));
   }
   logout() {
     this.authService.logout();
@@ -66419,7 +66869,7 @@ var HeaderComponent = class _HeaderComponent {
   }
   static {
     this.\u0275fac = function HeaderComponent_Factory(t) {
-      return new (t || _HeaderComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router));
+      return new (t || _HeaderComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(PageAccessService), \u0275\u0275directiveInject(Router));
     };
   }
   static {
@@ -66429,14 +66879,14 @@ var HeaderComponent = class _HeaderComponent {
           return ctx.onDocumentClick($event);
         }, false, \u0275\u0275resolveDocument);
       }
-    }, decls: 8, vars: 2, consts: [[1, "header"], [1, "nav-container"], [1, "nav-top"], [1, "logo"], ["class", "mobile-menu-toggle", 3, "click", 4, "ngIf"], ["class", "nav-content", 3, "show", 4, "ngIf"], [1, "mobile-menu-toggle", 3, "click"], [1, "fas"], [1, "nav-content"], [1, "nav-links"], [1, "dropdown"], [3, "click"], [1, "fas", "fa-th-large"], [1, "fas", "fa-chevron-down"], [1, "dropdown-menu"], ["routerLink", "/category", "routerLinkActive", "active"], ["routerLink", "/product", "routerLinkActive", "active"], ["routerLink", "/customer", "routerLinkActive", "active"], ["routerLink", "/employee", "routerLinkActive", "active"], ["routerLink", "/machinery", "routerLinkActive", "active"], [1, "fas", "fa-exchange-alt"], ["routerLink", "/purchase", "routerLinkActive", "active"], ["routerLink", "/sale", "routerLinkActive", "active"], ["routerLink", "/profit", "routerLinkActive", "active"], ["routerLink", "/daily-profit", "routerLinkActive", "active"], ["routerLink", "/powder-coating-process", "routerLinkActive", "active"], ["routerLink", "/transport", "routerLinkActive", "active"], ["routerLink", "/quotation", "routerLinkActive", "active"], ["routerLink", "/employee-order", "routerLinkActive", "active"], [1, "fas", "fa-industry"], ["routerLink", "/planning", "routerLinkActive", "active"], ["routerLink", "/production/entry", "routerLinkActive", "active"], ["routerLink", "/dashboard", "routerLinkActive", "active"], ["routerLink", "/stock-movements", "routerLinkActive", "active"], ["routerLink", "/production/report", "routerLinkActive", "active"], ["routerLink", "/plan-dispatch", "routerLinkActive", "active"], ["routerLink", "/plan-coating", "routerLinkActive", "active"], [1, "nav-actions"], [1, "btn", "btn-logout", 3, "click"], [1, "fas", "fa-sign-out-alt"]], template: function HeaderComponent_Template(rf, ctx) {
+    }, decls: 8, vars: 2, consts: [[1, "header"], [1, "nav-container"], [1, "nav-top"], [1, "logo"], ["class", "mobile-menu-toggle", 3, "click", 4, "ngIf"], ["class", "nav-content", 3, "show", 4, "ngIf"], [1, "mobile-menu-toggle", 3, "click"], [1, "fas"], [1, "nav-content"], [1, "nav-links"], ["class", "dropdown", 4, "ngIf"], [4, "ngIf"], [1, "nav-actions"], [1, "btn", "btn-logout", 3, "click"], [1, "fas", "fa-sign-out-alt"], [1, "dropdown"], [3, "click"], [1, "fas", "fa-th-large"], [1, "fas", "fa-chevron-down"], [1, "dropdown-menu"], ["routerLink", "/category", "routerLinkActive", "active"], ["routerLink", "/product", "routerLinkActive", "active"], ["routerLink", "/customer", "routerLinkActive", "active"], ["routerLink", "/employee", "routerLinkActive", "active"], ["routerLink", "/machinery", "routerLinkActive", "active"], ["routerLink", "/role-config", "routerLinkActive", "active"], ["routerLink", "/user-role", "routerLinkActive", "active"], [1, "fas", "fa-exchange-alt"], ["routerLink", "/purchase", "routerLinkActive", "active"], ["routerLink", "/sale", "routerLinkActive", "active"], ["routerLink", "/profit", "routerLinkActive", "active"], ["routerLink", "/daily-profit", "routerLinkActive", "active"], ["routerLink", "/powder-coating-process", "routerLinkActive", "active"], ["routerLink", "/transport", "routerLinkActive", "active"], ["routerLink", "/quotation", "routerLinkActive", "active"], ["routerLink", "/employee-order", "routerLinkActive", "active"], [1, "fas", "fa-industry"], ["routerLink", "/planning", "routerLinkActive", "active"], ["routerLink", "/production/entry", "routerLinkActive", "active"], ["routerLink", "/dashboard", "routerLinkActive", "active"], ["routerLink", "/stock-movements", "routerLinkActive", "active"], ["routerLink", "/production/report", "routerLinkActive", "active"], ["routerLink", "/plan-dispatch", "routerLinkActive", "active"], ["routerLink", "/plan-coating", "routerLinkActive", "active"]], template: function HeaderComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "header", 0)(1, "nav", 1)(2, "div", 2)(3, "div", 3)(4, "span");
         \u0275\u0275text(5, "Inventory System");
         \u0275\u0275elementEnd()();
         \u0275\u0275template(6, HeaderComponent_button_6_Template, 2, 4, "button", 4);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(7, HeaderComponent_div_7_Template, 84, 14, "div", 5);
+        \u0275\u0275template(7, HeaderComponent_div_7_Template, 13, 9, "div", 5);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
@@ -66449,7 +66899,7 @@ var HeaderComponent = class _HeaderComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HeaderComponent, { className: "HeaderComponent", filePath: "src\\app\\components\\shared\\header\\header.component.ts", lineNumber: 11 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HeaderComponent, { className: "HeaderComponent", filePath: "src\\app\\components\\shared\\header\\header.component.ts", lineNumber: 12 });
 })();
 
 // src/app/app.component.ts
@@ -66523,9 +66973,10 @@ function LoginComponent_div_14_Template(rf, ctx) {
   }
 }
 var LoginComponent = class _LoginComponent {
-  constructor(fb, authService, router, snackbar) {
+  constructor(fb, authService, pageAccessService, router, snackbar) {
     this.fb = fb;
     this.authService = authService;
+    this.pageAccessService = pageAccessService;
     this.router = router;
     this.snackbar = snackbar;
     this.isLoading = false;
@@ -66538,11 +66989,19 @@ var LoginComponent = class _LoginComponent {
     if (this.loginForm.valid) {
       this.isLoading = true;
       this.authService.login(this.loginForm.value).subscribe({
-        next: (response) => {
-          localStorage.setItem("token", response.accessToken);
-          localStorage.setItem("user", JSON.stringify(response.user));
+        next: () => {
           this.snackbar.success("Login successful");
-          this.router.navigate(["/category"]);
+          this.pageAccessService.refresh().subscribe({
+            next: () => {
+              const route = this.pageAccessService.getFirstAllowedRoute();
+              this.router.navigate([route === "/login" ? "/category" : route]);
+              this.isLoading = false;
+            },
+            error: () => {
+              this.router.navigate(["/category"]);
+              this.isLoading = false;
+            }
+          });
         },
         error: (error) => {
           this.snackbar.error(error?.error?.message || "Login failed");
@@ -66555,7 +67014,7 @@ var LoginComponent = class _LoginComponent {
   }
   static {
     this.\u0275fac = function LoginComponent_Factory(t) {
-      return new (t || _LoginComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(SnackbarService));
+      return new (t || _LoginComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(PageAccessService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(SnackbarService));
     };
   }
   static {
@@ -66602,7 +67061,7 @@ var LoginComponent = class _LoginComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(LoginComponent, { className: "LoginComponent", filePath: "src\\app\\components\\auth\\login\\login.component.ts", lineNumber: 12 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(LoginComponent, { className: "LoginComponent", filePath: "src\\app\\components\\auth\\login\\login.component.ts", lineNumber: 13 });
 })();
 
 // src/app/interceptors/auth.interceptor.ts
@@ -66933,6 +67392,46 @@ var PaginationComponent = class _PaginationComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PaginationComponent, { className: "PaginationComponent", filePath: "src\\app\\shared\\components\\pagination\\pagination.component.ts", lineNumber: 13 });
 })();
 
+// src/app/shared/directives/can-access.directive.ts
+var CanAccessDirective = class _CanAccessDirective {
+  constructor(templateRef, viewContainer, pageAccessService) {
+    this.templateRef = templateRef;
+    this.viewContainer = viewContainer;
+    this.pageAccessService = pageAccessService;
+    this.code = "";
+    this.hasView = false;
+  }
+  set appCanAccess(code) {
+    this.code = code || "";
+    this.updateView();
+  }
+  ngOnInit() {
+    this.accessSub = this.pageAccessService.access$.subscribe(() => this.updateView());
+    this.updateView();
+  }
+  ngOnDestroy() {
+    this.accessSub?.unsubscribe();
+  }
+  updateView() {
+    const allowed = !this.code || this.pageAccessService.can(this.code);
+    if (allowed && !this.hasView) {
+      this.viewContainer.createEmbeddedView(this.templateRef);
+      this.hasView = true;
+    } else if (!allowed && this.hasView) {
+      this.viewContainer.clear();
+      this.hasView = false;
+    }
+  }
+  static {
+    this.\u0275fac = function CanAccessDirective_Factory(t) {
+      return new (t || _CanAccessDirective)(\u0275\u0275directiveInject(TemplateRef), \u0275\u0275directiveInject(ViewContainerRef), \u0275\u0275directiveInject(PageAccessService));
+    };
+  }
+  static {
+    this.\u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({ type: _CanAccessDirective, selectors: [["", "appCanAccess", ""]], inputs: { appCanAccess: "appCanAccess" }, standalone: true });
+  }
+};
+
 // src/app/services/category.service.ts
 var CategoryService = class _CategoryService {
   constructor(http) {
@@ -66948,11 +67447,12 @@ var CategoryService = class _CategoryService {
   createCategory(category) {
     return this.http.post(`${this.apiUrl}`, category);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateCategory(id, category) {
-    return this.http.put(`${this.apiUrl}/${id}`, category);
+    return this.http.post(`${this.apiUrl}/update`, __spreadProps(__spreadValues({}, category), { id }));
   }
   deleteCategory(id) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   static {
     this.\u0275fac = function CategoryService_Factory(t) {
@@ -66965,160 +67465,192 @@ var CategoryService = class _CategoryService {
 };
 
 // src/app/components/category/category.component.ts
-function CategoryComponent_tr_34_Template(rf, ctx) {
+function CategoryComponent_button_17_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 10);
+    \u0275\u0275listener("click", function CategoryComponent_button_17_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.openCreateDialog());
+    });
+    \u0275\u0275element(1, "i", 21);
+    \u0275\u0275text(2, " Create Category ");
+    \u0275\u0275elementEnd();
+  }
+}
+function CategoryComponent_tr_32_button_7_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 24);
+    \u0275\u0275listener("click", function CategoryComponent_tr_32_button_7_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r3);
+      const category_r4 = \u0275\u0275nextContext().$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.editCategory(category_r4));
+    });
+    \u0275\u0275element(1, "i", 25);
+    \u0275\u0275elementEnd();
+  }
+}
+function CategoryComponent_tr_32_button_8_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 26);
+    \u0275\u0275listener("click", function CategoryComponent_tr_32_button_8_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r5);
+      const category_r4 = \u0275\u0275nextContext().$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.deleteCategory(category_r4.id));
+    });
+    \u0275\u0275element(1, "i", 27);
+    \u0275\u0275elementEnd();
+  }
+}
+function CategoryComponent_tr_32_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(3, "td")(4, "span");
     \u0275\u0275text(5);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(6, "td")(7, "button", 21);
-    \u0275\u0275listener("click", function CategoryComponent_tr_34_Template_button_click_7_listener() {
-      const category_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.editCategory(category_r2));
-    });
-    \u0275\u0275element(8, "i", 22);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "button", 23);
-    \u0275\u0275listener("click", function CategoryComponent_tr_34_Template_button_click_9_listener() {
-      const category_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.deleteCategory(category_r2.id));
-    });
-    \u0275\u0275element(10, "i", 24);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(6, "td");
+    \u0275\u0275template(7, CategoryComponent_tr_32_button_7_Template, 2, 0, "button", 22)(8, CategoryComponent_tr_32_button_8_Template, 2, 0, "button", 23);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const category_r2 = ctx.$implicit;
+    const category_r4 = ctx.$implicit;
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(category_r2.name);
+    \u0275\u0275textInterpolate(category_r4.name);
     \u0275\u0275advance(2);
-    \u0275\u0275classMap("status-badge " + (category_r2.status === "A" ? "active" : "inactive"));
+    \u0275\u0275classMap("status-badge " + (category_r4.status === "A" ? "active" : "inactive"));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", category_r2.status === "A" ? "Active" : "Inactive", " ");
+    \u0275\u0275textInterpolate1(" ", category_r4.status === "A" ? "Active" : "Inactive", " ");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_CATEGORY");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_CATEGORY");
   }
 }
-function CategoryComponent_tr_35_Template(rf, ctx) {
+function CategoryComponent_tr_33_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 25);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 28);
     \u0275\u0275text(2, "No categories found");
     \u0275\u0275elementEnd()();
   }
 }
-function CategoryComponent_app_pagination_36_Template(rf, ctx) {
+function CategoryComponent_app_pagination_34_Template(rf, ctx) {
   if (rf & 1) {
-    const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 26);
-    \u0275\u0275listener("pageChange", function CategoryComponent_app_pagination_36_Template_app_pagination_pageChange_0_listener($event) {
-      \u0275\u0275restoreView(_r4);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.onPageChange($event));
-    })("pageSizeChange", function CategoryComponent_app_pagination_36_Template_app_pagination_pageSizeChange_0_listener($event) {
-      \u0275\u0275restoreView(_r4);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 29);
+    \u0275\u0275listener("pageChange", function CategoryComponent_app_pagination_34_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r6);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageChange($event));
+    })("pageSizeChange", function CategoryComponent_app_pagination_34_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r6);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageSizeChange($event));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r2 = \u0275\u0275nextContext();
-    \u0275\u0275property("currentPage", ctx_r2.currentPage)("pageSize", ctx_r2.pageSize)("totalElements", ctx_r2.totalElements)("pageSizeOptions", ctx_r2.pageSizeOptions);
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r1.currentPage)("pageSize", ctx_r1.pageSize)("totalElements", ctx_r1.totalElements)("pageSizeOptions", ctx_r1.pageSizeOptions);
   }
 }
-function CategoryComponent_div_37_Template(rf, ctx) {
+function CategoryComponent_div_35_Template(rf, ctx) {
   if (rf & 1) {
-    const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 27);
-    \u0275\u0275listener("click", function CategoryComponent_div_37_Template_div_click_0_listener() {
-      \u0275\u0275restoreView(_r5);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.closeDialog());
+    const _r7 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 30);
+    \u0275\u0275listener("click", function CategoryComponent_div_35_Template_div_click_0_listener() {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.closeDialog());
     });
     \u0275\u0275elementEnd();
   }
 }
-function CategoryComponent_div_38_div_12_Template(rf, ctx) {
+function CategoryComponent_div_36_div_12_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 43);
+    \u0275\u0275elementStart(0, "div", 46);
     \u0275\u0275text(1, " Category name is required ");
     \u0275\u0275elementEnd();
   }
 }
-function CategoryComponent_div_38_span_25_Template(rf, ctx) {
+function CategoryComponent_div_36_span_25_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "span", 44);
+    \u0275\u0275element(0, "span", 47);
   }
 }
-function CategoryComponent_div_38_Template(rf, ctx) {
+function CategoryComponent_div_36_Template(rf, ctx) {
   if (rf & 1) {
-    const _r6 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 28)(1, "div", 29)(2, "h2");
+    const _r8 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 31)(1, "div", 32)(2, "h2");
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "button", 30);
-    \u0275\u0275listener("click", function CategoryComponent_div_38_Template_button_click_4_listener() {
-      \u0275\u0275restoreView(_r6);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.closeDialog());
+    \u0275\u0275elementStart(4, "button", 33);
+    \u0275\u0275listener("click", function CategoryComponent_div_36_Template_button_click_4_listener() {
+      \u0275\u0275restoreView(_r8);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.closeDialog());
     });
     \u0275\u0275text(5, "\xD7");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(6, "div", 31)(7, "form", 32);
-    \u0275\u0275listener("ngSubmit", function CategoryComponent_div_38_Template_form_ngSubmit_7_listener() {
-      \u0275\u0275restoreView(_r6);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.onSubmit());
+    \u0275\u0275elementStart(6, "div", 34)(7, "form", 35);
+    \u0275\u0275listener("ngSubmit", function CategoryComponent_div_36_Template_form_ngSubmit_7_listener() {
+      \u0275\u0275restoreView(_r8);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onSubmit());
     });
-    \u0275\u0275elementStart(8, "div", 33)(9, "label", 34);
+    \u0275\u0275elementStart(8, "div", 36)(9, "label", 37);
     \u0275\u0275text(10, "Category Name");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(11, "input", 35);
-    \u0275\u0275template(12, CategoryComponent_div_38_div_12_Template, 2, 0, "div", 36);
+    \u0275\u0275element(11, "input", 38);
+    \u0275\u0275template(12, CategoryComponent_div_36_div_12_Template, 2, 0, "div", 39);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "div", 33)(14, "label", 37);
+    \u0275\u0275elementStart(13, "div", 36)(14, "label", 40);
     \u0275\u0275text(15, "Status");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "select", 38)(17, "option", 8);
+    \u0275\u0275elementStart(16, "select", 41)(17, "option", 8);
     \u0275\u0275text(18, "Active");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(19, "option", 9);
     \u0275\u0275text(20, "Inactive");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(21, "div", 39)(22, "button", 40);
-    \u0275\u0275listener("click", function CategoryComponent_div_38_Template_button_click_22_listener() {
-      \u0275\u0275restoreView(_r6);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.closeDialog());
+    \u0275\u0275elementStart(21, "div", 42)(22, "button", 43);
+    \u0275\u0275listener("click", function CategoryComponent_div_36_Template_button_click_22_listener() {
+      \u0275\u0275restoreView(_r8);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.closeDialog());
     });
     \u0275\u0275text(23, "Cancel");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(24, "button", 41);
-    \u0275\u0275template(25, CategoryComponent_div_38_span_25_Template, 1, 0, "span", 42);
+    \u0275\u0275elementStart(24, "button", 44);
+    \u0275\u0275template(25, CategoryComponent_div_36_span_25_Template, 1, 0, "span", 45);
     \u0275\u0275text(26);
     \u0275\u0275elementEnd()()()()();
   }
   if (rf & 2) {
     let tmp_4_0;
     let tmp_5_0;
-    const ctx_r2 = \u0275\u0275nextContext();
+    const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275property("@dialogAnimation", void 0);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1("", ctx_r2.isEditing ? "Edit" : "Create", " Category");
+    \u0275\u0275textInterpolate1("", ctx_r1.isEditing ? "Edit" : "Create", " Category");
     \u0275\u0275advance(4);
-    \u0275\u0275property("formGroup", ctx_r2.categoryForm);
+    \u0275\u0275property("formGroup", ctx_r1.categoryForm);
     \u0275\u0275advance(4);
-    \u0275\u0275classProp("is-invalid", ((tmp_4_0 = ctx_r2.categoryForm.get("name")) == null ? null : tmp_4_0.invalid) && ((tmp_4_0 = ctx_r2.categoryForm.get("name")) == null ? null : tmp_4_0.touched));
+    \u0275\u0275classProp("is-invalid", ((tmp_4_0 = ctx_r1.categoryForm.get("name")) == null ? null : tmp_4_0.invalid) && ((tmp_4_0 = ctx_r1.categoryForm.get("name")) == null ? null : tmp_4_0.touched));
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((tmp_5_0 = ctx_r2.categoryForm.get("name")) == null ? null : tmp_5_0.invalid) && ((tmp_5_0 = ctx_r2.categoryForm.get("name")) == null ? null : tmp_5_0.touched));
+    \u0275\u0275property("ngIf", ((tmp_5_0 = ctx_r1.categoryForm.get("name")) == null ? null : tmp_5_0.invalid) && ((tmp_5_0 = ctx_r1.categoryForm.get("name")) == null ? null : tmp_5_0.touched));
     \u0275\u0275advance(12);
-    \u0275\u0275property("disabled", ctx_r2.categoryForm.invalid || ctx_r2.isLoading);
+    \u0275\u0275property("disabled", ctx_r1.categoryForm.invalid || ctx_r1.isLoading);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r2.isLoading);
+    \u0275\u0275property("ngIf", ctx_r1.isLoading);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r2.isEditing ? "Update" : "Create", " ");
+    \u0275\u0275textInterpolate1(" ", ctx_r1.isEditing ? "Update" : "Create", " ");
   }
 }
 var CategoryComponent = class _CategoryComponent {
@@ -67273,7 +67805,7 @@ var CategoryComponent = class _CategoryComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CategoryComponent, selectors: [["app-category"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 39, vars: 7, consts: [[1, "category-container"], [3, "show"], [1, "search-section", "card"], [1, "search-container"], [1, "search-form", 3, "formGroup"], [1, "search-inputs"], ["type", "text", "placeholder", "Search categories...", "formControlName", "search", 1, "form-control"], ["formControlName", "status", 1, "form-control"], ["value", "A"], ["value", "I"], [1, "btn", "btn-primary", 3, "click"], [1, "fas", "fa-search"], [1, "fas", "fa-plus"], [1, "categories-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["class", "dialog-backdrop", 3, "click", 4, "ngIf"], ["class", "dialog", 4, "ngIf"], ["title", "Edit", 1, "btn", "btn-icon", 3, "click"], [1, "fas", "fa-edit"], ["title", "Delete", 1, "btn", "btn-icon", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "3", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"], [1, "dialog-backdrop", 3, "click"], [1, "dialog"], [1, "dialog-header"], [1, "close-button", 3, "click"], [1, "dialog-content"], [3, "ngSubmit", "formGroup"], [1, "form-group"], ["for", "name"], ["type", "text", "id", "name", "formControlName", "name", 1, "form-control"], ["class", "invalid-feedback", 4, "ngIf"], ["for", "status"], ["id", "status", "formControlName", "status", 1, "form-control"], [1, "dialog-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["class", "spinner-border spinner-border-sm me-1", 4, "ngIf"], [1, "invalid-feedback"], [1, "spinner-border", "spinner-border-sm", "me-1"]], template: function CategoryComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CategoryComponent, selectors: [["app-category"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 37, vars: 8, consts: [[1, "category-container"], [3, "show"], [1, "search-section", "card"], [1, "search-container"], [1, "search-form", 3, "formGroup"], [1, "search-inputs"], ["type", "text", "placeholder", "Search categories...", "formControlName", "search", 1, "form-control"], ["formControlName", "status", 1, "form-control"], ["value", "A"], ["value", "I"], [1, "btn", "btn-primary", 3, "click"], [1, "fas", "fa-search"], ["class", "btn btn-primary", 3, "click", 4, "appCanAccess"], [1, "categories-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["class", "dialog-backdrop", 3, "click", 4, "ngIf"], ["class", "dialog", 4, "ngIf"], [1, "fas", "fa-plus"], ["class", "btn btn-icon", "title", "Edit", 3, "click", 4, "appCanAccess"], ["class", "btn btn-icon", "title", "Delete", 3, "click", 4, "appCanAccess"], ["title", "Edit", 1, "btn", "btn-icon", 3, "click"], [1, "fas", "fa-edit"], ["title", "Delete", 1, "btn", "btn-icon", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "3", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"], [1, "dialog-backdrop", 3, "click"], [1, "dialog"], [1, "dialog-header"], [1, "close-button", 3, "click"], [1, "dialog-content"], [3, "ngSubmit", "formGroup"], [1, "form-group"], ["for", "name"], ["type", "text", "id", "name", "formControlName", "name", 1, "form-control"], ["class", "invalid-feedback", 4, "ngIf"], ["for", "status"], ["id", "status", "formControlName", "status", 1, "form-control"], [1, "dialog-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["class", "spinner-border spinner-border-sm me-1", 4, "ngIf"], [1, "invalid-feedback"], [1, "spinner-border", "spinner-border-sm", "me-1"]], template: function CategoryComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -67295,38 +67827,34 @@ var CategoryComponent = class _CategoryComponent {
         \u0275\u0275element(15, "i", 11);
         \u0275\u0275text(16, " Search ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(17, "button", 10);
-        \u0275\u0275listener("click", function CategoryComponent_Template_button_click_17_listener() {
-          return ctx.openCreateDialog();
-        });
-        \u0275\u0275element(18, "i", 12);
-        \u0275\u0275text(19, " Create Category ");
+        \u0275\u0275template(17, CategoryComponent_button_17_Template, 3, 0, "button", 12);
+        \u0275\u0275elementStart(18, "div", 13)(19, "h2");
+        \u0275\u0275text(20, "Categories");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(20, "div", 13)(21, "h2");
-        \u0275\u0275text(22, "Categories");
+        \u0275\u0275elementStart(21, "div", 14)(22, "table", 15)(23, "thead")(24, "tr")(25, "th");
+        \u0275\u0275text(26, "Name");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(23, "div", 14)(24, "table", 15)(25, "thead")(26, "tr")(27, "th");
-        \u0275\u0275text(28, "Name");
+        \u0275\u0275elementStart(27, "th");
+        \u0275\u0275text(28, "Status");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(29, "th");
-        \u0275\u0275text(30, "Status");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(31, "th");
-        \u0275\u0275text(32, "Actions");
+        \u0275\u0275text(30, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(33, "tbody");
-        \u0275\u0275template(34, CategoryComponent_tr_34_Template, 11, 4, "tr", 16)(35, CategoryComponent_tr_35_Template, 3, 0, "tr", 17);
+        \u0275\u0275elementStart(31, "tbody");
+        \u0275\u0275template(32, CategoryComponent_tr_32_Template, 9, 6, "tr", 16)(33, CategoryComponent_tr_33_Template, 3, 0, "tr", 17);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(36, CategoryComponent_app_pagination_36_Template, 1, 4, "app-pagination", 18);
+        \u0275\u0275template(34, CategoryComponent_app_pagination_34_Template, 1, 4, "app-pagination", 18);
         \u0275\u0275elementEnd()();
-        \u0275\u0275template(37, CategoryComponent_div_37_Template, 1, 0, "div", 19)(38, CategoryComponent_div_38_Template, 27, 9, "div", 20);
+        \u0275\u0275template(35, CategoryComponent_div_35_Template, 1, 0, "div", 19)(36, CategoryComponent_div_36_Template, 27, 9, "div", 20);
       }
       if (rf & 2) {
         \u0275\u0275advance();
         \u0275\u0275property("show", ctx.isLoading);
         \u0275\u0275advance(5);
         \u0275\u0275property("formGroup", ctx.searchForm);
-        \u0275\u0275advance(28);
+        \u0275\u0275advance(11);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_CATEGORY");
+        \u0275\u0275advance(15);
         \u0275\u0275property("ngForOf", ctx.categories);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.categories.length === 0);
@@ -67354,7 +67882,8 @@ var CategoryComponent = class _CategoryComponent {
       RouterModule,
       LoaderComponent,
       FormsModule,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n.category-container[_ngcontent-%COMP%] {\n  position: relative;\n  min-height: 200px;\n  padding: 2rem;\n  margin: 0 auto;\n}\n.category-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n}\n.category-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  align-items: flex-end;\n}\n.category-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.category-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n  height: 42px;\n}\n.category-container[_ngcontent-%COMP%]   .category-form[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n}\n.category-container[_ngcontent-%COMP%]   .category-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  margin-top: 1rem;\n}\n.category-container[_ngcontent-%COMP%]   .categories-list[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.category-container[_ngcontent-%COMP%]   .categories-list[_ngcontent-%COMP%]   .badge-active[_ngcontent-%COMP%] {\n  background-color: var(--accent2);\n  color: white;\n  padding: 0.25rem 0.5rem;\n  border-radius: 4px;\n}\n.category-container[_ngcontent-%COMP%]   .categories-list[_ngcontent-%COMP%]   .badge-inactive[_ngcontent-%COMP%] {\n  background-color: var(--text-secondary);\n  color: white;\n  padding: 0.25rem 0.5rem;\n  border-radius: 4px;\n}\n.category-container[_ngcontent-%COMP%]   .categories-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n}\n.category-container[_ngcontent-%COMP%]   .categories-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  cursor: pointer;\n  padding: 0.5rem;\n  border-radius: 4px;\n  transition: background-color 0.3s;\n}\n.category-container[_ngcontent-%COMP%]   .categories-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.1);\n}\n.category-container[_ngcontent-%COMP%]   .categories-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%] {\n  color: #dc3545;\n}\n.category-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1rem;\n}\n.category-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.category-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  white-space: nowrap;\n}\n.category-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n  width: auto;\n  min-width: 80px;\n  padding: 0.5rem;\n  margin-bottom: 0;\n  border-color: var(--supporting);\n  background-color: white;\n  cursor: pointer;\n}\n.category-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%]:focus {\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.category-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%]   option[_ngcontent-%COMP%] {\n  padding: 0.5rem;\n}\n@media (max-width: 768px) {\n  .category-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .category-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n  }\n  .category-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n@media (max-width: 576px) {\n  .table-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n    align-items: flex-start;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n    flex: 1;\n  }\n}\n.search-container[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.search-container[_ngcontent-%COMP%]   .search-form[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n}\n.search-container[_ngcontent-%COMP%]   .search-inputs[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  width: 100%;\n}\n@media (max-width: 768px) {\n  .search-container[_ngcontent-%COMP%]   .search-inputs[_ngcontent-%COMP%] {\n    flex-direction: column;\n  }\n}\n.create-button-container[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  padding: 1rem;\n}\n.dialog-backdrop[_ngcontent-%COMP%] {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background-color: rgba(0, 0, 0, 0.5);\n  -webkit-backdrop-filter: blur(4px);\n  backdrop-filter: blur(4px);\n  z-index: 1000;\n}\n.dialog[_ngcontent-%COMP%] {\n  position: fixed;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  background: white;\n  border-radius: 12px;\n  min-width: 400px;\n  max-width: 90%;\n  width: 500px;\n  z-index: 1001;\n  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);\n}\n@media (max-width: 576px) {\n  .dialog[_ngcontent-%COMP%] {\n    min-width: 90%;\n    margin: 0 16px;\n  }\n}\n.dialog-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  padding: 1.5rem;\n  border-bottom: 1px solid var(--supporting);\n}\n.dialog-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1.5rem;\n  color: var(--text-primary);\n}\n.dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  font-size: 1.5rem;\n  color: var(--text-secondary);\n  cursor: pointer;\n  width: 32px;\n  height: 32px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border-radius: 50%;\n  transition: all 0.2s ease;\n}\n.dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.05);\n  color: var(--text-primary);\n}\n.dialog-content[_ngcontent-%COMP%] {\n  padding: 1.5rem;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1.5rem;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n  font-weight: 500;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: 100%;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.dialog-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  margin-top: 2rem;\n}\n.table-responsive[_ngcontent-%COMP%] {\n  margin: 1rem 0;\n}\n.status-badge[_ngcontent-%COMP%] {\n  padding: 0.25rem 0.75rem;\n  border-radius: 50px;\n  font-size: 0.875rem;\n  font-weight: 500;\n}\n.status-badge.active[_ngcontent-%COMP%] {\n  background-color: rgba(90, 158, 111, 0.1);\n  color: var(--accent2);\n}\n.status-badge.inactive[_ngcontent-%COMP%] {\n  background-color: rgba(118, 118, 118, 0.1);\n  color: var(--text-secondary);\n}\n.btn-icon[_ngcontent-%COMP%] {\n  width: 32px;\n  height: 32px;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  border-radius: 4px;\n  margin: 0 0.25rem;\n  background: none;\n  border: none;\n  color: var(--text-secondary);\n  transition: all 0.2s ease;\n}\n.btn-icon[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.05);\n  color: var(--text-primary);\n}\n.items-per-page[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  width: auto;\n  display: inline-block;\n}\n/*# sourceMappingURL=category.component.css.map */"], data: { animation: [
       trigger("dialogAnimation", [
         transition(":enter", [
@@ -67369,7 +67898,7 @@ var CategoryComponent = class _CategoryComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CategoryComponent, { className: "CategoryComponent", filePath: "src\\app\\components\\category\\category.component.ts", lineNumber: 38 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CategoryComponent, { className: "CategoryComponent", filePath: "src\\app\\components\\category\\category.component.ts", lineNumber: 40 });
 })();
 
 // src/app/shared/services/cache.service.ts
@@ -67457,11 +67986,12 @@ var ProductService = class _ProductService {
   createProduct(product) {
     return this.http.post(`${this.apiUrl}`, product);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateProduct(id, product) {
-    return this.http.put(`${this.apiUrl}/${id}`, product);
+    return this.http.post(`${this.apiUrl}/update`, __spreadProps(__spreadValues({}, product), { id }));
   }
   deleteProduct(id) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   static {
     this.\u0275fac = function ProductService_Factory(t) {
@@ -67476,7 +68006,7 @@ var ProductService = class _ProductService {
 // src/app/components/product/product.component.ts
 function ProductComponent_option_13_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 24);
+    \u0275\u0275elementStart(0, "option", 23);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -67487,9 +68017,50 @@ function ProductComponent_option_13_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", category_r1.name, " ");
   }
 }
-function ProductComponent_tr_52_Template(rf, ctx) {
+function ProductComponent_button_23_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 24);
+    \u0275\u0275listener("click", function ProductComponent_button_23_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.openCreateDialog());
+    });
+    \u0275\u0275element(1, "i", 25);
+    \u0275\u0275text(2, " Create Product ");
+    \u0275\u0275elementEnd();
+  }
+}
+function ProductComponent_tr_50_button_19_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 29);
+    \u0275\u0275listener("click", function ProductComponent_tr_50_button_19_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r4);
+      const product_r5 = \u0275\u0275nextContext().$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.editProduct(product_r5));
+    });
+    \u0275\u0275element(1, "i", 30);
+    \u0275\u0275elementEnd();
+  }
+}
+function ProductComponent_tr_50_button_20_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 31);
+    \u0275\u0275listener("click", function ProductComponent_tr_50_button_20_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r6);
+      const product_r5 = \u0275\u0275nextContext().$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.deleteProduct(product_r5.id));
+    });
+    \u0275\u0275element(1, "i", 32);
+    \u0275\u0275elementEnd();
+  }
+}
+function ProductComponent_tr_50_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -67514,207 +68085,209 @@ function ProductComponent_tr_52_Template(rf, ctx) {
     \u0275\u0275elementStart(16, "td");
     \u0275\u0275text(17);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "td", 25)(19, "button", 26);
-    \u0275\u0275listener("click", function ProductComponent_tr_52_Template_button_click_19_listener() {
-      const product_r3 = \u0275\u0275restoreView(_r2).$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.editProduct(product_r3));
-    });
-    \u0275\u0275element(20, "i", 27);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(21, "button", 28);
-    \u0275\u0275listener("click", function ProductComponent_tr_52_Template_button_click_21_listener() {
-      const product_r3 = \u0275\u0275restoreView(_r2).$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.deleteProduct(product_r3.id));
-    });
-    \u0275\u0275element(22, "i", 29);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(18, "td", 26);
+    \u0275\u0275template(19, ProductComponent_tr_50_button_19_Template, 2, 0, "button", 27)(20, ProductComponent_tr_50_button_20_Template, 2, 0, "button", 28);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const product_r3 = ctx.$implicit;
+    const product_r5 = ctx.$implicit;
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(product_r3.name);
+    \u0275\u0275textInterpolate(product_r5.name);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(product_r3.categoryName);
+    \u0275\u0275textInterpolate(product_r5.categoryName);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(product_r3.description);
+    \u0275\u0275textInterpolate(product_r5.description);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(product_r3.minimumStock);
+    \u0275\u0275textInterpolate(product_r5.minimumStock);
     \u0275\u0275advance(2);
-    \u0275\u0275classProp("badge-active", product_r3.status === "A")("badge-inactive", product_r3.status === "I");
+    \u0275\u0275classProp("badge-active", product_r5.status === "A")("badge-inactive", product_r5.status === "I");
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", product_r3.status === "A" ? "Active" : "Inactive", " ");
+    \u0275\u0275textInterpolate1(" ", product_r5.status === "A" ? "Active" : "Inactive", " ");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(product_r3.remainingQuantity);
+    \u0275\u0275textInterpolate(product_r5.remainingQuantity);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(product_r3.purchaseAmount);
+    \u0275\u0275textInterpolate(product_r5.purchaseAmount);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(product_r3.saleAmount);
+    \u0275\u0275textInterpolate(product_r5.saleAmount);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PRODUCT");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PRODUCT");
   }
 }
-function ProductComponent_app_pagination_53_Template(rf, ctx) {
+function ProductComponent_app_pagination_51_Template(rf, ctx) {
   if (rf & 1) {
-    const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 30);
-    \u0275\u0275listener("pageChange", function ProductComponent_app_pagination_53_Template_app_pagination_pageChange_0_listener($event) {
-      \u0275\u0275restoreView(_r5);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onPageChange($event));
-    })("pageSizeChange", function ProductComponent_app_pagination_53_Template_app_pagination_pageSizeChange_0_listener($event) {
-      \u0275\u0275restoreView(_r5);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onPageSizeChange($event));
+    const _r7 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 33);
+    \u0275\u0275listener("pageChange", function ProductComponent_app_pagination_51_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onPageChange($event));
+    })("pageSizeChange", function ProductComponent_app_pagination_51_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r3 = \u0275\u0275nextContext();
-    \u0275\u0275property("currentPage", ctx_r3.currentPage)("pageSize", ctx_r3.pageSize)("totalElements", ctx_r3.totalElements)("pageSizeOptions", ctx_r3.pageSizeOptions);
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r2.currentPage)("pageSize", ctx_r2.pageSize)("totalElements", ctx_r2.totalElements)("pageSizeOptions", ctx_r2.pageSizeOptions);
   }
 }
-function ProductComponent_div_54_Template(rf, ctx) {
+function ProductComponent_div_52_Template(rf, ctx) {
   if (rf & 1) {
-    const _r6 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 31);
-    \u0275\u0275listener("click", function ProductComponent_div_54_Template_div_click_0_listener() {
-      \u0275\u0275restoreView(_r6);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.closeDialog());
+    const _r8 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 34);
+    \u0275\u0275listener("click", function ProductComponent_div_52_Template_div_click_0_listener() {
+      \u0275\u0275restoreView(_r8);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.closeDialog());
     });
     \u0275\u0275elementEnd();
   }
 }
-function ProductComponent_div_55_div_16_Template(rf, ctx) {
+function ProductComponent_div_53_div_16_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 64);
+    \u0275\u0275elementStart(0, "div", 68);
     \u0275\u0275text(1, " Product name is required ");
     \u0275\u0275elementEnd();
   }
 }
-function ProductComponent_div_55_option_26_Template(rf, ctx) {
+function ProductComponent_div_53_option_26_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 24);
+    \u0275\u0275elementStart(0, "option", 23);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const category_r8 = ctx.$implicit;
-    \u0275\u0275property("value", category_r8.id);
+    const category_r10 = ctx.$implicit;
+    \u0275\u0275property("value", category_r10.id);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", category_r8.name, " ");
+    \u0275\u0275textInterpolate1(" ", category_r10.name, " ");
   }
 }
-function ProductComponent_div_55_div_27_Template(rf, ctx) {
+function ProductComponent_div_53_div_27_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 64);
+    \u0275\u0275elementStart(0, "div", 68);
     \u0275\u0275text(1, " Category is required ");
     \u0275\u0275elementEnd();
   }
 }
-function ProductComponent_div_55_div_35_Template(rf, ctx) {
+function ProductComponent_div_53_div_35_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 64);
+    \u0275\u0275elementStart(0, "div", 68);
     \u0275\u0275text(1, " Minimum stock must be 0 or greater ");
     \u0275\u0275elementEnd();
   }
 }
-function ProductComponent_div_55_Template(rf, ctx) {
+function ProductComponent_div_53_div_36_Template(rf, ctx) {
   if (rf & 1) {
-    const _r7 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 32)(1, "div", 33)(2, "h2");
+    \u0275\u0275elementStart(0, "div", 5)(1, "label", 69);
+    \u0275\u0275element(2, "i", 70);
+    \u0275\u0275text(3, " Remaining Quantity ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(4, "input", 71);
+    \u0275\u0275elementEnd();
+  }
+}
+function ProductComponent_div_53_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r9 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 35)(1, "div", 36)(2, "h2");
     \u0275\u0275element(3, "i");
     \u0275\u0275text(4);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "button", 34);
-    \u0275\u0275listener("click", function ProductComponent_div_55_Template_button_click_5_listener() {
-      \u0275\u0275restoreView(_r7);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.closeDialog());
+    \u0275\u0275elementStart(5, "button", 37);
+    \u0275\u0275listener("click", function ProductComponent_div_53_Template_button_click_5_listener() {
+      \u0275\u0275restoreView(_r9);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.closeDialog());
     });
-    \u0275\u0275element(6, "i", 35);
+    \u0275\u0275element(6, "i", 38);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(7, "form", 3);
-    \u0275\u0275listener("ngSubmit", function ProductComponent_div_55_Template_form_ngSubmit_7_listener() {
-      \u0275\u0275restoreView(_r7);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onSubmit());
+    \u0275\u0275listener("ngSubmit", function ProductComponent_div_53_Template_form_ngSubmit_7_listener() {
+      \u0275\u0275restoreView(_r9);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onSubmit());
     });
-    \u0275\u0275elementStart(8, "div", 36)(9, "div", 5)(10, "label", 37);
-    \u0275\u0275element(11, "i", 38);
+    \u0275\u0275elementStart(8, "div", 39)(9, "div", 5)(10, "label", 40);
+    \u0275\u0275element(11, "i", 41);
     \u0275\u0275text(12, " Product Name ");
-    \u0275\u0275elementStart(13, "span", 39);
+    \u0275\u0275elementStart(13, "span", 42);
     \u0275\u0275text(14, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(15, "input", 40);
-    \u0275\u0275template(16, ProductComponent_div_55_div_16_Template, 2, 0, "div", 41);
+    \u0275\u0275element(15, "input", 43);
+    \u0275\u0275template(16, ProductComponent_div_53_div_16_Template, 2, 0, "div", 44);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "div", 5)(18, "label", 42);
-    \u0275\u0275element(19, "i", 43);
+    \u0275\u0275elementStart(17, "div", 5)(18, "label", 45);
+    \u0275\u0275element(19, "i", 46);
     \u0275\u0275text(20, " Category ");
-    \u0275\u0275elementStart(21, "span", 39);
+    \u0275\u0275elementStart(21, "span", 42);
     \u0275\u0275text(22, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(23, "select", 44)(24, "option", 8);
+    \u0275\u0275elementStart(23, "select", 47)(24, "option", 8);
     \u0275\u0275text(25, "Select Category");
     \u0275\u0275elementEnd();
-    \u0275\u0275template(26, ProductComponent_div_55_option_26_Template, 2, 2, "option", 9);
+    \u0275\u0275template(26, ProductComponent_div_53_option_26_Template, 2, 2, "option", 9);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(27, ProductComponent_div_55_div_27_Template, 2, 0, "div", 41);
+    \u0275\u0275template(27, ProductComponent_div_53_div_27_Template, 2, 0, "div", 44);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(28, "div", 5)(29, "label", 45);
-    \u0275\u0275element(30, "i", 46);
+    \u0275\u0275elementStart(28, "div", 5)(29, "label", 48);
+    \u0275\u0275element(30, "i", 49);
     \u0275\u0275text(31, " Minimum Stock ");
-    \u0275\u0275elementStart(32, "span", 39);
+    \u0275\u0275elementStart(32, "span", 42);
     \u0275\u0275text(33, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(34, "input", 47);
-    \u0275\u0275template(35, ProductComponent_div_55_div_35_Template, 2, 0, "div", 41);
+    \u0275\u0275element(34, "input", 50);
+    \u0275\u0275template(35, ProductComponent_div_53_div_35_Template, 2, 0, "div", 44);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(36, "div", 5)(37, "label", 48);
-    \u0275\u0275element(38, "i", 49);
-    \u0275\u0275text(39, " Status ");
+    \u0275\u0275template(36, ProductComponent_div_53_div_36_Template, 5, 0, "div", 51);
+    \u0275\u0275elementStart(37, "div", 5)(38, "label", 52);
+    \u0275\u0275element(39, "i", 53);
+    \u0275\u0275text(40, " Status ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(40, "select", 50)(41, "option", 11);
-    \u0275\u0275text(42, "Active");
+    \u0275\u0275elementStart(41, "select", 54)(42, "option", 11);
+    \u0275\u0275text(43, "Active");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(43, "option", 12);
-    \u0275\u0275text(44, "Inactive");
+    \u0275\u0275elementStart(44, "option", 12);
+    \u0275\u0275text(45, "Inactive");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(45, "div", 5)(46, "label", 51);
-    \u0275\u0275element(47, "i", 52);
-    \u0275\u0275text(48, " Purchase Amount ");
-    \u0275\u0275elementStart(49, "span", 39);
-    \u0275\u0275text(50, "*");
+    \u0275\u0275elementStart(46, "div", 5)(47, "label", 55);
+    \u0275\u0275element(48, "i", 56);
+    \u0275\u0275text(49, " Purchase Amount ");
+    \u0275\u0275elementStart(50, "span", 42);
+    \u0275\u0275text(51, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(51, "input", 53);
+    \u0275\u0275element(52, "input", 57);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(52, "div", 5)(53, "label", 54);
-    \u0275\u0275element(54, "i", 52);
-    \u0275\u0275text(55, " Sale Amount ");
-    \u0275\u0275elementStart(56, "span", 39);
-    \u0275\u0275text(57, "*");
+    \u0275\u0275elementStart(53, "div", 5)(54, "label", 58);
+    \u0275\u0275element(55, "i", 56);
+    \u0275\u0275text(56, " Sale Amount ");
+    \u0275\u0275elementStart(57, "span", 42);
+    \u0275\u0275text(58, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(58, "input", 55);
+    \u0275\u0275element(59, "input", 59);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(59, "div", 56)(60, "label", 57);
-    \u0275\u0275element(61, "i", 58);
-    \u0275\u0275text(62, " Description ");
+    \u0275\u0275elementStart(60, "div", 60)(61, "label", 61);
+    \u0275\u0275element(62, "i", 62);
+    \u0275\u0275text(63, " Description ");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(63, "textarea", 59);
+    \u0275\u0275element(64, "textarea", 63);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(64, "div", 60)(65, "button", 61);
-    \u0275\u0275listener("click", function ProductComponent_div_55_Template_button_click_65_listener() {
-      \u0275\u0275restoreView(_r7);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.closeDialog());
+    \u0275\u0275elementStart(65, "div", 64)(66, "button", 65);
+    \u0275\u0275listener("click", function ProductComponent_div_53_Template_button_click_66_listener() {
+      \u0275\u0275restoreView(_r9);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.closeDialog());
     });
-    \u0275\u0275element(66, "i", 35);
-    \u0275\u0275text(67, " Cancel ");
+    \u0275\u0275element(67, "i", 38);
+    \u0275\u0275text(68, " Cancel ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(68, "button", 62);
-    \u0275\u0275element(69, "i", 63);
-    \u0275\u0275text(70);
+    \u0275\u0275elementStart(69, "button", 66);
+    \u0275\u0275element(70, "i", 67);
+    \u0275\u0275text(71);
     \u0275\u0275elementEnd()()()();
   }
   if (rf & 2) {
@@ -67724,34 +68297,36 @@ function ProductComponent_div_55_Template(rf, ctx) {
     let tmp_9_0;
     let tmp_10_0;
     let tmp_11_0;
-    const ctx_r3 = \u0275\u0275nextContext();
+    const ctx_r2 = \u0275\u0275nextContext();
     \u0275\u0275property("@dialogAnimation", void 0);
     \u0275\u0275advance(3);
-    \u0275\u0275classMapInterpolate1("fas ", ctx_r3.isEditing ? "fa-edit" : "fa-plus-circle", "");
+    \u0275\u0275classMapInterpolate1("fas ", ctx_r2.isEditing ? "fa-edit" : "fa-plus-circle", "");
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r3.isEditing ? "Edit" : "Create", " Product ");
+    \u0275\u0275textInterpolate1(" ", ctx_r2.isEditing ? "Edit" : "Create", " Product ");
     \u0275\u0275advance(3);
-    \u0275\u0275property("formGroup", ctx_r3.productForm);
+    \u0275\u0275property("formGroup", ctx_r2.productForm);
     \u0275\u0275advance(8);
-    \u0275\u0275classProp("is-invalid", ((tmp_5_0 = ctx_r3.productForm.get("name")) == null ? null : tmp_5_0.invalid) && ((tmp_5_0 = ctx_r3.productForm.get("name")) == null ? null : tmp_5_0.touched));
+    \u0275\u0275classProp("is-invalid", ((tmp_5_0 = ctx_r2.productForm.get("name")) == null ? null : tmp_5_0.invalid) && ((tmp_5_0 = ctx_r2.productForm.get("name")) == null ? null : tmp_5_0.touched));
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((tmp_6_0 = ctx_r3.productForm.get("name")) == null ? null : tmp_6_0.invalid) && ((tmp_6_0 = ctx_r3.productForm.get("name")) == null ? null : tmp_6_0.touched));
+    \u0275\u0275property("ngIf", ((tmp_6_0 = ctx_r2.productForm.get("name")) == null ? null : tmp_6_0.invalid) && ((tmp_6_0 = ctx_r2.productForm.get("name")) == null ? null : tmp_6_0.touched));
     \u0275\u0275advance(7);
-    \u0275\u0275classProp("is-invalid", ((tmp_7_0 = ctx_r3.productForm.get("categoryId")) == null ? null : tmp_7_0.invalid) && ((tmp_7_0 = ctx_r3.productForm.get("categoryId")) == null ? null : tmp_7_0.touched));
+    \u0275\u0275classProp("is-invalid", ((tmp_7_0 = ctx_r2.productForm.get("categoryId")) == null ? null : tmp_7_0.invalid) && ((tmp_7_0 = ctx_r2.productForm.get("categoryId")) == null ? null : tmp_7_0.touched));
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngForOf", ctx_r3.categories);
+    \u0275\u0275property("ngForOf", ctx_r2.categories);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((tmp_9_0 = ctx_r3.productForm.get("categoryId")) == null ? null : tmp_9_0.invalid) && ((tmp_9_0 = ctx_r3.productForm.get("categoryId")) == null ? null : tmp_9_0.touched));
+    \u0275\u0275property("ngIf", ((tmp_9_0 = ctx_r2.productForm.get("categoryId")) == null ? null : tmp_9_0.invalid) && ((tmp_9_0 = ctx_r2.productForm.get("categoryId")) == null ? null : tmp_9_0.touched));
     \u0275\u0275advance(7);
-    \u0275\u0275classProp("is-invalid", ((tmp_10_0 = ctx_r3.productForm.get("minimumStock")) == null ? null : tmp_10_0.invalid) && ((tmp_10_0 = ctx_r3.productForm.get("minimumStock")) == null ? null : tmp_10_0.touched));
+    \u0275\u0275classProp("is-invalid", ((tmp_10_0 = ctx_r2.productForm.get("minimumStock")) == null ? null : tmp_10_0.invalid) && ((tmp_10_0 = ctx_r2.productForm.get("minimumStock")) == null ? null : tmp_10_0.touched));
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((tmp_11_0 = ctx_r3.productForm.get("minimumStock")) == null ? null : tmp_11_0.invalid) && ((tmp_11_0 = ctx_r3.productForm.get("minimumStock")) == null ? null : tmp_11_0.touched));
+    \u0275\u0275property("ngIf", ((tmp_11_0 = ctx_r2.productForm.get("minimumStock")) == null ? null : tmp_11_0.invalid) && ((tmp_11_0 = ctx_r2.productForm.get("minimumStock")) == null ? null : tmp_11_0.touched));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r2.isEditing);
     \u0275\u0275advance(33);
-    \u0275\u0275property("disabled", ctx_r3.productForm.invalid || ctx_r3.isLoading);
+    \u0275\u0275property("disabled", ctx_r2.productForm.invalid || ctx_r2.isLoading);
     \u0275\u0275advance();
-    \u0275\u0275property("ngClass", ctx_r3.isLoading ? "fa-spinner fa-spin" : ctx_r3.isEditing ? "fa-save" : "fa-plus");
+    \u0275\u0275property("ngClass", ctx_r2.isLoading ? "fa-spinner fa-spin" : ctx_r2.isEditing ? "fa-save" : "fa-plus");
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r3.isEditing ? "Update" : "Create", " ");
+    \u0275\u0275textInterpolate1(" ", ctx_r2.isEditing ? "Update" : "Create", " ");
   }
 }
 var ProductComponent = class _ProductComponent {
@@ -67784,6 +68359,7 @@ var ProductComponent = class _ProductComponent {
       categoryId: ["", Validators.required],
       description: [null],
       minimumStock: [0, [Validators.required, Validators.min(0)]],
+      remainingQuantity: [0],
       purchaseAmount: [0, [Validators.required, Validators.min(0)]],
       saleAmount: [0, [Validators.required, Validators.min(0)]],
       status: ["A", Validators.required]
@@ -67858,6 +68434,7 @@ var ProductComponent = class _ProductComponent {
       categoryId: product.categoryId,
       description: product.description,
       minimumStock: product.minimumStock,
+      remainingQuantity: product.remainingQuantity ?? 0,
       purchaseAmount: product.purchaseAmount,
       saleAmount: product.saleAmount,
       status: product.status
@@ -67919,7 +68496,7 @@ var ProductComponent = class _ProductComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductComponent, selectors: [["app-product"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 56, vars: 7, consts: [[1, "product-container"], ["message", "Processing...", 3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search products...", 1, "form-control"], ["formControlName", "categoryId", 1, "form-control"], ["value", ""], [3, "value", 4, "ngFor", "ngForOf"], ["formControlName", "status", 1, "form-control"], ["value", "A"], ["value", "I"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], [1, "btn", "btn-primary", 3, "click"], [1, "fas", "fa-plus"], [1, "products-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["class", "dialog-backdrop", 3, "click", 4, "ngIf"], ["class", "dialog", 4, "ngIf"], [3, "value"], [1, "actions"], [1, "btn-icon", 3, "click"], [1, "fas", "fa-edit"], [1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"], [1, "dialog-backdrop", 3, "click"], [1, "dialog"], [1, "dialog-header"], ["title", "Close", 1, "close-button", 3, "click"], [1, "fas", "fa-times"], [1, "form-grid"], ["for", "name"], [1, "fas", "fa-tag"], [1, "required"], ["type", "text", "id", "name", "formControlName", "name", "placeholder", "Enter product name", 1, "form-control"], ["class", "invalid-feedback", 4, "ngIf"], ["for", "categoryId"], [1, "fas", "fa-folder"], ["id", "categoryId", "formControlName", "categoryId", 1, "form-control"], ["for", "minimumStock"], [1, "fas", "fa-cubes"], ["type", "number", "id", "minimumStock", "formControlName", "minimumStock", "min", "0", "placeholder", "Enter minimum stock level", 1, "form-control"], ["for", "status"], [1, "fas", "fa-toggle-on"], ["id", "status", "formControlName", "status", 1, "form-control"], ["for", "purchaseAmount"], [1, "fas", "fa-rupee-sign"], ["type", "number", "id", "purchaseAmount", "formControlName", "purchaseAmount", 1, "form-control"], ["for", "saleAmount"], ["type", "number", "id", "saleAmount", "formControlName", "saleAmount", 1, "form-control"], [1, "form-group", "full-width"], ["for", "description"], [1, "fas", "fa-align-left"], ["id", "description", "formControlName", "description", "rows", "3", "placeholder", "Enter product description", 1, "form-control"], [1, "dialog-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", 3, "ngClass"], [1, "invalid-feedback"]], template: function ProductComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductComponent, selectors: [["app-product"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 54, vars: 8, consts: [[1, "product-container"], ["message", "Processing...", 3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search products...", 1, "form-control"], ["formControlName", "categoryId", 1, "form-control"], ["value", ""], [3, "value", 4, "ngFor", "ngForOf"], ["formControlName", "status", 1, "form-control"], ["value", "A"], ["value", "I"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["class", "btn btn-primary", 3, "click", 4, "appCanAccess"], [1, "products-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["class", "dialog-backdrop", 3, "click", 4, "ngIf"], ["class", "dialog", 4, "ngIf"], [3, "value"], [1, "btn", "btn-primary", 3, "click"], [1, "fas", "fa-plus"], [1, "actions"], ["class", "btn-icon", 3, "click", 4, "appCanAccess"], ["class", "btn-icon delete", 3, "click", 4, "appCanAccess"], [1, "btn-icon", 3, "click"], [1, "fas", "fa-edit"], [1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"], [1, "dialog-backdrop", 3, "click"], [1, "dialog"], [1, "dialog-header"], ["title", "Close", 1, "close-button", 3, "click"], [1, "fas", "fa-times"], [1, "form-grid"], ["for", "name"], [1, "fas", "fa-tag"], [1, "required"], ["type", "text", "id", "name", "formControlName", "name", "placeholder", "Enter product name", 1, "form-control"], ["class", "invalid-feedback", 4, "ngIf"], ["for", "categoryId"], [1, "fas", "fa-folder"], ["id", "categoryId", "formControlName", "categoryId", 1, "form-control"], ["for", "minimumStock"], [1, "fas", "fa-cubes"], ["type", "number", "id", "minimumStock", "formControlName", "minimumStock", "min", "0", "placeholder", "Enter minimum stock level", 1, "form-control"], ["class", "form-group", 4, "ngIf"], ["for", "status"], [1, "fas", "fa-toggle-on"], ["id", "status", "formControlName", "status", 1, "form-control"], ["for", "purchaseAmount"], [1, "fas", "fa-rupee-sign"], ["type", "number", "id", "purchaseAmount", "formControlName", "purchaseAmount", 1, "form-control"], ["for", "saleAmount"], ["type", "number", "id", "saleAmount", "formControlName", "saleAmount", 1, "form-control"], [1, "form-group", "full-width"], ["for", "description"], [1, "fas", "fa-align-left"], ["id", "description", "formControlName", "description", "rows", "3", "placeholder", "Enter product description", 1, "form-control"], [1, "dialog-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "fas", 3, "ngClass"], [1, "invalid-feedback"], ["for", "remainingQuantity"], [1, "fas", "fa-boxes"], ["type", "number", "id", "remainingQuantity", "formControlName", "remainingQuantity", "placeholder", "Enter remaining quantity", 1, "form-control"]], template: function ProductComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -67948,49 +68525,43 @@ var ProductComponent = class _ProductComponent {
         \u0275\u0275element(21, "i", 14);
         \u0275\u0275text(22, " Search ");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(23, "button", 15);
-        \u0275\u0275listener("click", function ProductComponent_Template_button_click_23_listener() {
-          return ctx.openCreateDialog();
-        });
-        \u0275\u0275element(24, "i", 16);
-        \u0275\u0275text(25, " Create Product ");
+        \u0275\u0275template(23, ProductComponent_button_23_Template, 3, 0, "button", 15);
+        \u0275\u0275elementStart(24, "div", 16)(25, "h2");
+        \u0275\u0275text(26, "Products");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(26, "div", 17)(27, "h2");
-        \u0275\u0275text(28, "Products");
+        \u0275\u0275elementStart(27, "div", 17)(28, "table", 18)(29, "thead")(30, "tr")(31, "th");
+        \u0275\u0275text(32, "Name");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(29, "div", 18)(30, "table", 19)(31, "thead")(32, "tr")(33, "th");
-        \u0275\u0275text(34, "Name");
+        \u0275\u0275elementStart(33, "th");
+        \u0275\u0275text(34, "Category");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(35, "th");
-        \u0275\u0275text(36, "Category");
+        \u0275\u0275text(36, "Description");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(37, "th");
-        \u0275\u0275text(38, "Description");
+        \u0275\u0275text(38, "Min Stock");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(39, "th");
-        \u0275\u0275text(40, "Min Stock");
+        \u0275\u0275text(40, "Status");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(41, "th");
-        \u0275\u0275text(42, "Status");
+        \u0275\u0275text(42, "Remaining Quantity");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(43, "th");
-        \u0275\u0275text(44, "Remaining Quantity");
+        \u0275\u0275text(44, "Purchase Amount");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(45, "th");
-        \u0275\u0275text(46, "Purchase Amount");
+        \u0275\u0275text(46, "Sale Amount");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(47, "th");
-        \u0275\u0275text(48, "Sale Amount");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(49, "th");
-        \u0275\u0275text(50, "Actions");
+        \u0275\u0275text(48, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(51, "tbody");
-        \u0275\u0275template(52, ProductComponent_tr_52_Template, 23, 12, "tr", 20);
+        \u0275\u0275elementStart(49, "tbody");
+        \u0275\u0275template(50, ProductComponent_tr_50_Template, 21, 14, "tr", 19);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(53, ProductComponent_app_pagination_53_Template, 1, 4, "app-pagination", 21);
+        \u0275\u0275template(51, ProductComponent_app_pagination_51_Template, 1, 4, "app-pagination", 20);
         \u0275\u0275elementEnd()();
-        \u0275\u0275template(54, ProductComponent_div_54_Template, 1, 0, "div", 22)(55, ProductComponent_div_55_Template, 71, 19, "div", 23);
+        \u0275\u0275template(52, ProductComponent_div_52_Template, 1, 0, "div", 21)(53, ProductComponent_div_53_Template, 72, 20, "div", 22);
       }
       if (rf & 2) {
         \u0275\u0275advance();
@@ -67999,7 +68570,9 @@ var ProductComponent = class _ProductComponent {
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(8);
         \u0275\u0275property("ngForOf", ctx.categories);
-        \u0275\u0275advance(39);
+        \u0275\u0275advance(10);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_PRODUCT");
+        \u0275\u0275advance(27);
         \u0275\u0275property("ngForOf", ctx.products);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.totalPages > 0);
@@ -68028,8 +68601,9 @@ var ProductComponent = class _ProductComponent {
       NgForOf,
       NgIf,
       PaginationComponent,
-      RouterModule
-    ], styles: ["\n\n.product-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  position: relative;\n  min-height: 200px;\n  margin: 0 auto;\n}\n.product-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n}\n.product-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  align-items: flex-end;\n}\n.product-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n  height: 42px;\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   textarea[_ngcontent-%COMP%] {\n  resize: vertical;\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  margin-top: 1rem;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .badge-active[_ngcontent-%COMP%] {\n  background-color: var(--accent2);\n  color: white;\n  padding: 0.25rem 0.5rem;\n  border-radius: 4px;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .badge-inactive[_ngcontent-%COMP%] {\n  background-color: var(--text-secondary);\n  color: white;\n  padding: 0.25rem 0.5rem;\n  border-radius: 4px;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  cursor: pointer;\n  padding: 0.5rem;\n  border-radius: 4px;\n  transition: background-color 0.3s;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.1);\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%] {\n  color: #dc3545;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1rem;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  white-space: nowrap;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n  width: auto;\n  min-width: 80px;\n  padding: 0.5rem;\n  margin-bottom: 0;\n  border-color: var(--supporting);\n  background-color: white;\n  cursor: pointer;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%]:focus {\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%]   option[_ngcontent-%COMP%] {\n  padding: 0.5rem;\n}\n@media (max-width: 768px) {\n  .product-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .product-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n  }\n  .product-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n@media (max-width: 576px) {\n  .table-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n    align-items: flex-start;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n    flex: 1;\n  }\n}\n.dialog-backdrop[_ngcontent-%COMP%] {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background-color: rgba(0, 0, 0, 0.5);\n  -webkit-backdrop-filter: blur(4px);\n  backdrop-filter: blur(4px);\n  z-index: 1000;\n}\n.dialog[_ngcontent-%COMP%] {\n  position: fixed;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  background: white;\n  border-radius: 12px;\n  min-width: 400px;\n  max-width: 90%;\n  width: 500px;\n  z-index: 1001;\n  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);\n  margin: 1rem;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 1rem 1.5rem;\n  border-bottom: 1px solid var(--border-color, #e0e0e0);\n  background-color: var(--background);\n  border-radius: 12px 12px 0 0;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1.25rem;\n  color: var(--text-primary);\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 1.1em;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  color: var(--text-secondary);\n  font-size: 1.5rem;\n  width: 32px;\n  height: 32px;\n  border-radius: 50%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  padding: 0;\n  margin: -0.5rem -0.5rem -0.5rem 0;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.05);\n  color: var(--text-primary);\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%]:active {\n  background-color: rgba(0, 0, 0, 0.1);\n}\n.dialog[_ngcontent-%COMP%]   .form-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(2, 1fr);\n  gap: 1.25rem;\n  padding: 1.5rem;\n}\n.dialog[_ngcontent-%COMP%]   .form-grid[_ngcontent-%COMP%]   .full-width[_ngcontent-%COMP%] {\n  grid-column: 1/-1;\n}\n@media (max-width: 576px) {\n  .dialog[_ngcontent-%COMP%] {\n    width: calc(100% - 2rem);\n    min-width: auto;\n    margin: 1rem;\n  }\n  .dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%] {\n    padding: 0.875rem 1.25rem;\n  }\n  .dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n    font-size: 1.125rem;\n  }\n  .dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%] {\n    width: 28px;\n    height: 28px;\n    font-size: 1.25rem;\n  }\n}\n.dialog-content[_ngcontent-%COMP%] {\n  padding: 1.5rem;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1.5rem;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n  font-weight: 500;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  padding: 0.75rem;\n  border: 1px solid #ced4da;\n  border-radius: 4px;\n  transition: all 0.3s ease;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%]:focus {\n  border-color: var(--primary);\n  box-shadow: 0 0 0 0.2rem rgba(253, 120, 35, 0.25);\n  outline: none;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control.is-invalid[_ngcontent-%COMP%] {\n  border-color: #dc3545;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control.is-invalid[_ngcontent-%COMP%]:focus {\n  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.dialog-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  padding: 1rem 1.5rem;\n  border-top: 1px solid var(--border);\n  margin-top: 0;\n}\n.dialog-actions[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n  min-width: 120px;\n}\n@media (max-width: 576px) {\n  .dialog-actions[_ngcontent-%COMP%] {\n    padding: 1rem;\n    flex-direction: column-reverse;\n  }\n  .dialog-actions[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n/*# sourceMappingURL=product.component.css.map */"], data: { animation: [
+      RouterModule,
+      CanAccessDirective
+    ], styles: ["\n\n.product-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  position: relative;\n  min-height: 200px;\n  margin: 0 auto;\n}\n.product-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n}\n.product-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  align-items: flex-end;\n}\n.product-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n  height: 42px;\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1rem;\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   textarea[_ngcontent-%COMP%] {\n  resize: vertical;\n}\n.product-container[_ngcontent-%COMP%]   .product-form[_ngcontent-%COMP%]   .form-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  margin-top: 1rem;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .badge-active[_ngcontent-%COMP%] {\n  background-color: var(--accent2);\n  color: white;\n  padding: 0.25rem 0.5rem;\n  border-radius: 4px;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .badge-inactive[_ngcontent-%COMP%] {\n  background-color: var(--text-secondary);\n  color: white;\n  padding: 0.25rem 0.5rem;\n  border-radius: 4px;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  cursor: pointer;\n  padding: 0.5rem;\n  border-radius: 4px;\n  transition: background-color 0.3s;\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.1);\n}\n.product-container[_ngcontent-%COMP%]   .products-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%] {\n  color: #dc3545;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1rem;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  white-space: nowrap;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n  width: auto;\n  min-width: 80px;\n  padding: 0.5rem;\n  margin-bottom: 0;\n  border-color: var(--supporting);\n  background-color: white;\n  cursor: pointer;\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%]:focus {\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.product-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%]   option[_ngcontent-%COMP%] {\n  padding: 0.5rem;\n}\n@media (max-width: 768px) {\n  .product-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .product-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n  }\n  .product-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n@media (max-width: 576px) {\n  .table-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n    align-items: flex-start;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n    flex: 1;\n  }\n}\n.dialog-backdrop[_ngcontent-%COMP%] {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background-color: rgba(0, 0, 0, 0.5);\n  -webkit-backdrop-filter: blur(4px);\n  backdrop-filter: blur(4px);\n  z-index: 1000;\n}\n.dialog[_ngcontent-%COMP%] {\n  position: fixed;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  background: white;\n  border-radius: 12px;\n  min-width: 560px;\n  max-width: 95%;\n  width: 720px;\n  z-index: 1001;\n  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);\n  margin: 1rem;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 1rem 1.5rem;\n  border-bottom: 1px solid var(--border-color, #e0e0e0);\n  background-color: var(--background);\n  border-radius: 12px 12px 0 0;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1.25rem;\n  color: var(--text-primary);\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 1.1em;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  color: var(--text-secondary);\n  font-size: 1.5rem;\n  width: 32px;\n  height: 32px;\n  border-radius: 50%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  padding: 0;\n  margin: -0.5rem -0.5rem -0.5rem 0;\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.05);\n  color: var(--text-primary);\n}\n.dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%]:active {\n  background-color: rgba(0, 0, 0, 0.1);\n}\n.dialog[_ngcontent-%COMP%]   .form-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(2, 1fr);\n  gap: 1.25rem;\n  padding: 1.5rem;\n}\n.dialog[_ngcontent-%COMP%]   .form-grid[_ngcontent-%COMP%]   .full-width[_ngcontent-%COMP%] {\n  grid-column: 1/-1;\n}\n@media (max-width: 576px) {\n  .dialog[_ngcontent-%COMP%] {\n    width: calc(100% - 2rem);\n    min-width: auto;\n    margin: 1rem;\n  }\n  .dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%] {\n    padding: 0.875rem 1.25rem;\n  }\n  .dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n    font-size: 1.125rem;\n  }\n  .dialog[_ngcontent-%COMP%]   .dialog-header[_ngcontent-%COMP%]   .close-button[_ngcontent-%COMP%] {\n    width: 28px;\n    height: 28px;\n    font-size: 1.25rem;\n  }\n}\n.dialog-content[_ngcontent-%COMP%] {\n  padding: 1.5rem;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin-bottom: 1.5rem;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 0.5rem;\n  color: var(--text-primary);\n  font-weight: 500;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  padding: 0.75rem;\n  border: 1px solid #ced4da;\n  border-radius: 4px;\n  transition: all 0.3s ease;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%]:focus {\n  border-color: var(--primary);\n  box-shadow: 0 0 0 0.2rem rgba(253, 120, 35, 0.25);\n  outline: none;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control.is-invalid[_ngcontent-%COMP%] {\n  border-color: #dc3545;\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control.is-invalid[_ngcontent-%COMP%]:focus {\n  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);\n}\n.dialog-content[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .invalid-feedback[_ngcontent-%COMP%] {\n  color: #dc3545;\n  font-size: 0.875rem;\n  margin-top: 0.25rem;\n}\n.dialog-actions[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: flex-end;\n  gap: 1rem;\n  padding: 1rem 1.5rem;\n  border-top: 1px solid var(--border);\n  margin-top: 0;\n}\n.dialog-actions[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n  min-width: 120px;\n}\n@media (max-width: 576px) {\n  .dialog-actions[_ngcontent-%COMP%] {\n    padding: 1rem;\n    flex-direction: column-reverse;\n  }\n  .dialog-actions[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n/*# sourceMappingURL=product.component.css.map */"], data: { animation: [
       trigger("dialogAnimation", [
         transition(":enter", [
           style({ transform: "translate(-50%, -48%) scale(0.95)", opacity: 0 }),
@@ -68043,7 +68617,7 @@ var ProductComponent = class _ProductComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductComponent, { className: "ProductComponent", filePath: "src\\app\\components\\product\\product.component.ts", lineNumber: 40 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductComponent, { className: "ProductComponent", filePath: "src\\app\\components\\product\\product.component.ts", lineNumber: 42 });
 })();
 
 // src/app/guards/auth.guard.ts
@@ -68090,6 +68664,40 @@ var ClientPasswordGuard = class _ClientPasswordGuard {
   }
   static {
     this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _ClientPasswordGuard, factory: _ClientPasswordGuard.\u0275fac, providedIn: "root" });
+  }
+};
+
+// src/app/guards/page-access.guard.ts
+var PageAccessGuard = class _PageAccessGuard {
+  constructor(pageAccessService, router, snackbar) {
+    this.pageAccessService = pageAccessService;
+    this.router = router;
+    this.snackbar = snackbar;
+  }
+  canActivate(route, state2) {
+    const accessCode = route.data?.["access"] || this.pageAccessService.resolveAccessCode(state2.url);
+    if (!accessCode) {
+      return of(true);
+    }
+    return this.pageAccessService.ensureLoaded().pipe(map(() => {
+      if (this.pageAccessService.canSync(accessCode)) {
+        return true;
+      }
+      this.snackbar.error("You do not have access to this page");
+      const fallback = this.pageAccessService.getFirstAllowedRoute();
+      if (fallback === "/login" || fallback === state2.url) {
+        return this.router.parseUrl("/login");
+      }
+      return this.router.parseUrl(fallback);
+    }));
+  }
+  static {
+    this.\u0275fac = function PageAccessGuard_Factory(t) {
+      return new (t || _PageAccessGuard)(\u0275\u0275inject(PageAccessService), \u0275\u0275inject(Router), \u0275\u0275inject(SnackbarService));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _PageAccessGuard, factory: _PageAccessGuard.\u0275fac, providedIn: "root" });
   }
 };
 
@@ -69785,11 +70393,12 @@ var SaleService = class _SaleService {
   createSale(sale) {
     return this.http.post(`${this.apiUrl}/create`, sale);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateSale(id, sale) {
-    return this.http.put(`${this.apiUrl}/${id}`, sale);
+    return this.http.post(`${this.apiUrl}/update`, __spreadProps(__spreadValues({}, sale), { id }));
   }
   deleteSale(id) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   static {
     this.\u0275fac = function SaleService_Factory(t) {
@@ -70277,6 +70886,7 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
     this.dropUp = false;
     this.containerPointerActive = false;
     this.containerTouchActive = false;
+    this.openUpwards = false;
   }
   ngOnInit() {
     this.filteredOptions = this.options ? [...this.options] : [];
@@ -70332,12 +70942,11 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
       this.syncSearchTextWithSelection();
     }
   }
-  /**
-   * Opens upward when there is no room below (desktop tables). Mobile keeps
-   * the bottom-sheet positioning from CSS.
-   */
   adjustDropDirection() {
     this.dropUp = false;
+    if (!this.openUpwards) {
+      return;
+    }
     setTimeout(() => {
       if (!this.isOpen || window.innerWidth <= 768) {
         return;
@@ -70638,7 +71247,7 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
       if (rf & 2) {
         \u0275\u0275styleProp("--dropdown-min-width", ctx.dropdownMinWidth);
       }
-    }, inputs: { options: "options", labelKey: "labelKey", valueKey: "valueKey", placeholder: "placeholder", defaultOption: "defaultOption", searchPlaceholder: "searchPlaceholder", multiple: "multiple", searchKeys: "searchKeys", allowClear: "allowClear", maxHeight: "maxHeight", focusWidthPx: "focusWidthPx" }, standalone: true, features: [\u0275\u0275ProvidersFeature([
+    }, inputs: { options: "options", labelKey: "labelKey", valueKey: "valueKey", placeholder: "placeholder", defaultOption: "defaultOption", searchPlaceholder: "searchPlaceholder", multiple: "multiple", searchKeys: "searchKeys", allowClear: "allowClear", maxHeight: "maxHeight", focusWidthPx: "focusWidthPx", openUpwards: "openUpwards" }, standalone: true, features: [\u0275\u0275ProvidersFeature([
       {
         provide: NG_VALUE_ACCESSOR,
         useExisting: forwardRef(() => _SearchableSelectComponent),
@@ -70685,7 +71294,7 @@ var SearchableSelectComponent = class _SearchableSelectComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.isOpen);
       }
-    }, dependencies: [CommonModule, NgForOf, NgIf, FormsModule, DefaultValueAccessor, NgControlStatus, NgModel], styles: ["\n\n.searchable-select[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%] {\n  position: relative;\n  display: flex;\n  align-items: center;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 8px 32px 8px 12px;\n  border: 1px solid var(--supporting);\n  border-radius: 4px;\n  font-size: 0.9rem;\n  transition: all 0.3s ease;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  position: absolute;\n  right: 12px;\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%] {\n  right: 34px;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%]:hover {\n  color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.toggle-icon[_ngcontent-%COMP%] {\n  pointer-events: auto;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n  position: absolute;\n  top: calc(100% + 4px);\n  left: 0;\n  right: auto;\n  min-width: max(100%, var(--dropdown-min-width, 100%));\n  width: max-content;\n  max-width: min(92vw, 620px);\n  background: white;\n  border-radius: 4px;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n  z-index: 1000;\n  border: 1px solid var(--supporting);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown.drop-up[_ngcontent-%COMP%] {\n  top: auto;\n  bottom: calc(100% + 4px);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%] {\n  position: absolute;\n  left: 0;\n  right: 0;\n  height: 24px;\n  background: white;\n  border: none;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  z-index: 2;\n  border-radius: 4px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn.scroll-up[_ngcontent-%COMP%] {\n  top: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn.scroll-down[_ngcontent-%COMP%] {\n  bottom: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-height: 0;\n  box-sizing: border-box;\n  overflow-y: auto;\n  overflow-x: hidden;\n  padding: 28px 0;\n  scroll-behavior: smooth;\n  -webkit-overflow-scrolling: touch;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar {\n  width: 6px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 3px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  font-size: 0.9rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  display: block;\n  min-width: 0;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%] {\n  width: 16px;\n  height: 16px;\n  border: 1px solid var(--supporting);\n  border-radius: 3px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 0.7rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%] {\n  background-color: rgba(var(--primary-rgb), 0.1);\n  color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  border-color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: white;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.highlighted[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .no-results[_ngcontent-%COMP%] {\n  padding: 12px;\n  text-align: center;\n  color: var(--text-secondary);\n  font-style: italic;\n  font-size: 0.9rem;\n}\n@media (max-width: 768px) {\n  .searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n    font-size: 1rem;\n    min-height: 44px;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%] {\n    min-width: 44px;\n    min-height: 44px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    right: 4px;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n    position: fixed;\n    left: 16px;\n    right: 16px;\n    width: auto;\n    max-width: none;\n    top: auto;\n    bottom: 16px;\n    max-height: 50vh;\n    margin: 0;\n    border-radius: 12px;\n    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.25);\n    z-index: 2000;\n    touch-action: pan-y;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n    max-height: calc(50vh - 60px);\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n    padding: 12px;\n    min-height: 44px;\n    display: flex;\n    align-items: center;\n  }\n}\n/*# sourceMappingURL=searchable-select.component.css.map */"] });
+    }, dependencies: [CommonModule, NgForOf, NgIf, FormsModule, DefaultValueAccessor, NgControlStatus, NgModel], styles: ["\n\n.searchable-select[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%] {\n  position: relative;\n  display: flex;\n  align-items: center;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 8px 32px 8px 12px;\n  border: 1px solid var(--supporting);\n  border-radius: 4px;\n  font-size: 0.9rem;\n  transition: all 0.3s ease;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  position: absolute;\n  right: 12px;\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%] {\n  right: 34px;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%]:hover {\n  color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.toggle-icon[_ngcontent-%COMP%] {\n  pointer-events: auto;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n  position: absolute;\n  top: calc(100% + 4px);\n  left: 0;\n  right: auto;\n  min-width: max(100%, var(--dropdown-min-width, 100%));\n  width: max-content;\n  max-width: min(94vw, 760px);\n  background: white;\n  border-radius: 4px;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n  z-index: 3000;\n  border: 1px solid var(--supporting);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown.drop-up[_ngcontent-%COMP%] {\n  top: auto;\n  bottom: calc(100% + 4px);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%] {\n  position: absolute;\n  left: 0;\n  right: 0;\n  height: 24px;\n  background: white;\n  border: none;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  z-index: 2;\n  border-radius: 4px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn.scroll-up[_ngcontent-%COMP%] {\n  top: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .scroll-btn.scroll-down[_ngcontent-%COMP%] {\n  bottom: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-height: 0;\n  box-sizing: border-box;\n  overflow-y: auto;\n  overflow-x: hidden;\n  padding: 28px 0;\n  scroll-behavior: smooth;\n  -webkit-overflow-scrolling: touch;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar {\n  width: 6px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 3px;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  font-size: 0.9rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  display: block;\n  min-width: 0;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%] {\n  width: 16px;\n  height: 16px;\n  border: 1px solid var(--supporting);\n  border-radius: 3px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: var(--primary);\n  font-size: 0.7rem;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%] {\n  background-color: rgba(var(--primary-rgb), 0.1);\n  color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  border-color: var(--primary);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%]   .checkbox[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  color: white;\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.highlighted[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .no-results[_ngcontent-%COMP%] {\n  padding: 12px;\n  text-align: center;\n  color: var(--text-secondary);\n  font-style: italic;\n  font-size: 0.9rem;\n}\n@media (max-width: 768px) {\n  .searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n    font-size: 1rem;\n    min-height: 44px;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%] {\n    min-width: 44px;\n    min-height: 44px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    right: 4px;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n    position: fixed;\n    left: 16px;\n    right: 16px;\n    width: auto;\n    max-width: none;\n    top: auto;\n    bottom: 16px;\n    max-height: 50vh;\n    margin: 0;\n    border-radius: 12px;\n    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.25);\n    z-index: 3000;\n    touch-action: pan-y;\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n    max-height: calc(50vh - 60px);\n  }\n  .searchable-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n    padding: 12px;\n    min-height: 44px;\n    display: flex;\n    align-items: center;\n  }\n}\n/*# sourceMappingURL=searchable-select.component.css.map */"] });
   }
 };
 (() => {
@@ -70704,8 +71313,9 @@ var PurchaseService = class _PurchaseService {
   createPurchase(purchase) {
     return this.http.post(`${this.apiUrl}/create`, purchase);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   deletePurchase(id) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   static {
     this.\u0275fac = function PurchaseService_Factory(t) {
@@ -70768,9 +71378,47 @@ var DateUtils = class _DateUtils {
 
 // src/app/components/purchase/purchase.component.ts
 var _c06 = () => ({ label: "All Products", value: "" });
-function PurchaseComponent_tr_51_Template(rf, ctx) {
+function PurchaseComponent_button_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 23);
+    \u0275\u0275text(1, "Add Purchase");
+    \u0275\u0275elementEnd();
+  }
+}
+function PurchaseComponent_tr_50_button_21_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 27);
+    \u0275\u0275listener("click", function PurchaseComponent_tr_50_button_21_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const purchase_r2 = \u0275\u0275nextContext().$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.openSaleModal(purchase_r2));
+    });
+    \u0275\u0275element(1, "i", 28);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const purchase_r2 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275property("disabled", purchase_r2.remainingQuantity === 0);
+  }
+}
+function PurchaseComponent_tr_50_button_22_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 29);
+    \u0275\u0275listener("click", function PurchaseComponent_tr_50_button_22_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r4);
+      const purchase_r2 = \u0275\u0275nextContext().$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.deletePurchase(purchase_r2.id));
+    });
+    \u0275\u0275element(1, "i", 30);
+    \u0275\u0275elementEnd();
+  }
+}
+function PurchaseComponent_tr_50_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -70799,22 +71447,9 @@ function PurchaseComponent_tr_51_Template(rf, ctx) {
     \u0275\u0275elementStart(18, "td");
     \u0275\u0275text(19);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "td", 23)(21, "button", 24);
-    \u0275\u0275listener("click", function PurchaseComponent_tr_51_Template_button_click_21_listener() {
-      const purchase_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.openSaleModal(purchase_r2));
-    });
-    \u0275\u0275element(22, "i", 25);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(23, "button", 26);
-    \u0275\u0275listener("click", function PurchaseComponent_tr_51_Template_button_click_23_listener() {
-      const purchase_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.deletePurchase(purchase_r2.id));
-    });
-    \u0275\u0275element(24, "i", 27);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(20, "td", 24);
+    \u0275\u0275template(21, PurchaseComponent_tr_50_button_21_Template, 2, 1, "button", 25)(22, PurchaseComponent_tr_50_button_22_Template, 2, 0, "button", 26);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const purchase_r2 = ctx.$implicit;
@@ -70833,23 +71468,25 @@ function PurchaseComponent_tr_51_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(purchase_r2.totalAmount);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(17, 10, purchase_r2.purchaseDate, "medium"));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(17, 11, purchase_r2.purchaseDate, "medium"));
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(purchase_r2.remainingQuantity);
     \u0275\u0275advance(2);
-    \u0275\u0275property("disabled", purchase_r2.remainingQuantity === 0);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PURCHASE");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PURCHASE");
   }
 }
-function PurchaseComponent_app_pagination_52_Template(rf, ctx) {
+function PurchaseComponent_app_pagination_51_Template(rf, ctx) {
   if (rf & 1) {
-    const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 28);
-    \u0275\u0275listener("pageChange", function PurchaseComponent_app_pagination_52_Template_app_pagination_pageChange_0_listener($event) {
-      \u0275\u0275restoreView(_r4);
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 31);
+    \u0275\u0275listener("pageChange", function PurchaseComponent_app_pagination_51_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r5);
       const ctx_r2 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r2.onPageChange($event));
-    })("pageSizeChange", function PurchaseComponent_app_pagination_52_Template_app_pagination_pageSizeChange_0_listener($event) {
-      \u0275\u0275restoreView(_r4);
+    })("pageSizeChange", function PurchaseComponent_app_pagination_51_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r5);
       const ctx_r2 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
     });
@@ -70860,12 +71497,12 @@ function PurchaseComponent_app_pagination_52_Template(rf, ctx) {
     \u0275\u0275property("currentPage", ctx_r2.currentPage)("pageSize", ctx_r2.pageSize)("totalElements", ctx_r2.totalElements)("pageSizeOptions", ctx_r2.pageSizeOptions);
   }
 }
-function PurchaseComponent_app_sale_modal_53_Template(rf, ctx) {
+function PurchaseComponent_app_sale_modal_52_Template(rf, ctx) {
   if (rf & 1) {
-    const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-sale-modal", 29);
-    \u0275\u0275listener("saleCreated", function PurchaseComponent_app_sale_modal_53_Template_app_sale_modal_saleCreated_0_listener() {
-      \u0275\u0275restoreView(_r5);
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-sale-modal", 32);
+    \u0275\u0275listener("saleCreated", function PurchaseComponent_app_sale_modal_52_Template_app_sale_modal_saleCreated_0_listener() {
+      \u0275\u0275restoreView(_r6);
       const ctx_r2 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r2.loadPurchases());
     });
@@ -71007,7 +71644,7 @@ var PurchaseComponent = class _PurchaseComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PurchaseComponent, selectors: [["app-purchase"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 54, vars: 11, consts: [[1, "purchase-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by invoice number...", 1, "form-control"], [1, "product-select-group"], ["formControlName", "productId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], ["routerLink", "/purchase/create", 1, "btn", "btn-primary"], [1, "purchases-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "purchase", "saleCreated", 4, "ngIf"], [1, "actions"], ["title", "Create Sale", 1, "btn-icon", "sale", 3, "click", "disabled"], [1, "fas", "fa-shopping-cart"], ["title", "Delete Purchase", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"], [3, "saleCreated", "purchase"]], template: function PurchaseComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PurchaseComponent, selectors: [["app-purchase"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 53, vars: 12, consts: [[1, "purchase-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by invoice number...", 1, "form-control"], [1, "product-select-group"], ["formControlName", "productId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], ["routerLink", "/purchase/create", "class", "btn btn-primary", 4, "appCanAccess"], [1, "purchases-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "purchase", "saleCreated", 4, "ngIf"], ["routerLink", "/purchase/create", 1, "btn", "btn-primary"], [1, "actions"], ["class", "btn-icon sale", "title", "Create Sale", 3, "disabled", "click", 4, "appCanAccess"], ["class", "btn-icon delete", "title", "Delete Purchase", 3, "click", 4, "appCanAccess"], ["title", "Create Sale", 1, "btn-icon", "sale", 3, "click", "disabled"], [1, "fas", "fa-shopping-cart"], ["title", "Delete Purchase", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"], [3, "saleCreated", "purchase"]], template: function PurchaseComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -71040,48 +71677,46 @@ var PurchaseComponent = class _PurchaseComponent {
         \u0275\u0275element(19, "i", 15);
         \u0275\u0275text(20, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(21, "button", 16);
-        \u0275\u0275text(22, "Add Purchase");
+        \u0275\u0275template(21, PurchaseComponent_button_21_Template, 2, 0, "button", 16);
+        \u0275\u0275elementStart(22, "div", 17)(23, "h2");
+        \u0275\u0275text(24, "Purchases");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(23, "div", 17)(24, "h2");
-        \u0275\u0275text(25, "Purchases");
+        \u0275\u0275elementStart(25, "div", 18)(26, "table", 19)(27, "thead")(28, "tr")(29, "th");
+        \u0275\u0275text(30, "Invoice No.");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(26, "div", 18)(27, "table", 19)(28, "thead")(29, "tr")(30, "th");
-        \u0275\u0275text(31, "Invoice No.");
+        \u0275\u0275elementStart(31, "th");
+        \u0275\u0275text(32, "Product");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(32, "th");
-        \u0275\u0275text(33, "Product");
+        \u0275\u0275elementStart(33, "th");
+        \u0275\u0275text(34, "Category");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(34, "th");
-        \u0275\u0275text(35, "Category");
+        \u0275\u0275elementStart(35, "th");
+        \u0275\u0275text(36, "Quantity");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(36, "th");
-        \u0275\u0275text(37, "Quantity");
+        \u0275\u0275elementStart(37, "th");
+        \u0275\u0275text(38, "Unit Price");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(38, "th");
-        \u0275\u0275text(39, "Unit Price");
+        \u0275\u0275elementStart(39, "th");
+        \u0275\u0275text(40, "Other Expenses");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(40, "th");
-        \u0275\u0275text(41, "Other Expenses");
+        \u0275\u0275elementStart(41, "th");
+        \u0275\u0275text(42, "Total Amount");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(42, "th");
-        \u0275\u0275text(43, "Total Amount");
+        \u0275\u0275elementStart(43, "th");
+        \u0275\u0275text(44, "Purchase Date");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(44, "th");
-        \u0275\u0275text(45, "Purchase Date");
+        \u0275\u0275elementStart(45, "th");
+        \u0275\u0275text(46, "Remaining Qty");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(46, "th");
-        \u0275\u0275text(47, "Remaining Qty");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(48, "th");
-        \u0275\u0275text(49, "Actions");
+        \u0275\u0275elementStart(47, "th");
+        \u0275\u0275text(48, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(50, "tbody");
-        \u0275\u0275template(51, PurchaseComponent_tr_51_Template, 25, 13, "tr", 20);
+        \u0275\u0275elementStart(49, "tbody");
+        \u0275\u0275template(50, PurchaseComponent_tr_50_Template, 23, 14, "tr", 20);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(52, PurchaseComponent_app_pagination_52_Template, 1, 4, "app-pagination", 21);
+        \u0275\u0275template(51, PurchaseComponent_app_pagination_51_Template, 1, 4, "app-pagination", 21);
         \u0275\u0275elementEnd()();
-        \u0275\u0275template(53, PurchaseComponent_app_sale_modal_53_Template, 1, 1, "app-sale-modal", 22);
+        \u0275\u0275template(52, PurchaseComponent_app_sale_modal_52_Template, 1, 1, "app-sale-modal", 22);
       }
       if (rf & 2) {
         \u0275\u0275advance();
@@ -71089,12 +71724,14 @@ var PurchaseComponent = class _PurchaseComponent {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(6);
-        \u0275\u0275property("options", ctx.products)("defaultOption", \u0275\u0275pureFunction0(10, _c06))("searchPlaceholder", "Search products...");
+        \u0275\u0275property("options", ctx.products)("defaultOption", \u0275\u0275pureFunction0(11, _c06))("searchPlaceholder", "Search products...");
         \u0275\u0275advance();
         \u0275\u0275property("disabled", ctx.isLoadingProducts);
         \u0275\u0275advance();
         \u0275\u0275property("ngClass", ctx.isLoadingProducts ? "fa-spinner fa-spin" : "fa-sync-alt");
-        \u0275\u0275advance(38);
+        \u0275\u0275advance(8);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_PURCHASE");
+        \u0275\u0275advance(29);
         \u0275\u0275property("ngForOf", ctx.purchases);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.totalPages > 0);
@@ -71121,12 +71758,13 @@ var PurchaseComponent = class _PurchaseComponent {
       SaleModalComponent,
       LoaderComponent,
       SearchableSelectComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n.purchase-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  position: relative;\n  min-height: 200px;\n  background-color: var(--background);\n}\n.purchase-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 0;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.purchase-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 1rem;\n  align-items: flex-start;\n}\n@media (max-width: 768px) {\n  .purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin: 0;\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  width: 42px;\n  padding: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1px solid var(--border-color);\n  border-radius: var(--border-radius);\n  background: var(--primary);\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background: var(--primary);\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:disabled {\n  opacity: 0.6;\n  cursor: not-allowed;\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n}\n@media (max-width: 768px) {\n  .purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    grid-column: 1/-1;\n  }\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n  flex: 1;\n  height: 42px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.5rem;\n}\n.purchase-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   button[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1rem;\n}\n.purchase-container[_ngcontent-%COMP%]   .purchases-list[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.purchase-container[_ngcontent-%COMP%]   .purchases-list[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  white-space: nowrap;\n}\n.purchase-container[_ngcontent-%COMP%]   .purchases-list[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  vertical-align: middle;\n}\n.purchase-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1rem;\n}\n.purchase-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.purchase-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  white-space: nowrap;\n}\n.purchase-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n  width: auto;\n  min-width: 80px;\n  padding: 0.5rem;\n  margin-bottom: 0;\n}\n@media (max-width: 768px) {\n  .purchase-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .purchase-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n  }\n  .purchase-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .purchase-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n@media (max-width: 576px) {\n  .table-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n    align-items: flex-start;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n    flex: 1;\n  }\n}\n.actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  justify-content: flex-start;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  padding: 8px;\n  cursor: pointer;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.sale[_ngcontent-%COMP%] {\n  color: var(--primary);\n  background-color: rgba(253, 120, 35, 0.1);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.sale[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.sale[_ngcontent-%COMP%]:disabled {\n  color: var(--text-secondary);\n  background-color: rgba(0, 0, 0, 0.05);\n  cursor: not-allowed;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%] {\n  color: #dc3545;\n  background-color: rgba(220, 53, 69, 0.1);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%]:hover {\n  background-color: #dc3545;\n  color: white;\n  transform: translateY(-1px);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 16px;\n}\n@media (max-width: 768px) {\n  .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n    padding: 6px;\n  }\n  .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n    font-size: 14px;\n  }\n}\n  .custom-snackbar.success {\n  background-color: var(--accent2);\n}\n  .custom-snackbar.error {\n  background-color: #dc3545;\n}\n  .custom-snackbar .snackbar-message {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  color: white;\n}\n  .custom-snackbar .snackbar-message i {\n  font-size: 1.2rem;\n}\n.loading-overlay[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  background: rgba(255, 255, 255, 0.8);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 1000;\n}\n.loading-overlay[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 2rem;\n  color: var(--primary);\n}\n.product-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  color: white;\n  width: 42px;\n  height: 35px;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n/*# sourceMappingURL=purchase.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PurchaseComponent, { className: "PurchaseComponent", filePath: "src\\app\\components\\purchase\\purchase.component.ts", lineNumber: 36 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PurchaseComponent, { className: "PurchaseComponent", filePath: "src\\app\\components\\purchase\\purchase.component.ts", lineNumber: 38 });
 })();
 
 // src/app/components/add-purchase/add-purchase.component.ts
@@ -71544,9 +72182,30 @@ var AddPurchaseComponent = class _AddPurchaseComponent {
 })();
 
 // src/app/components/sale/sale.component.ts
-function SaleComponent_tr_58_Template(rf, ctx) {
+function SaleComponent_button_27_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 24);
+    \u0275\u0275element(1, "i", 25);
+    \u0275\u0275text(2, " Create Combined Sale ");
+    \u0275\u0275elementEnd();
+  }
+}
+function SaleComponent_tr_56_button_21_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 28);
+    \u0275\u0275listener("click", function SaleComponent_tr_56_button_21_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const sale_r2 = \u0275\u0275nextContext().$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.deleteSale(sale_r2.id));
+    });
+    \u0275\u0275element(1, "i", 29);
+    \u0275\u0275elementEnd();
+  }
+}
+function SaleComponent_tr_56_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -71575,14 +72234,9 @@ function SaleComponent_tr_58_Template(rf, ctx) {
     \u0275\u0275text(18);
     \u0275\u0275pipe(19, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "td", 25)(21, "button", 26);
-    \u0275\u0275listener("click", function SaleComponent_tr_58_Template_button_click_21_listener() {
-      const sale_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.deleteSale(sale_r2.id));
-    });
-    \u0275\u0275element(22, "i", 27);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(20, "td", 26);
+    \u0275\u0275template(21, SaleComponent_tr_56_button_21_Template, 2, 0, "button", 27);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const sale_r2 = ctx.$implicit;
@@ -71605,18 +72259,20 @@ function SaleComponent_tr_58_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(sale_r2.totalAmount);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 9, sale_r2.saleDate, "medium"));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 10, sale_r2.saleDate, "medium"));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_SALE");
   }
 }
-function SaleComponent_app_pagination_59_Template(rf, ctx) {
+function SaleComponent_app_pagination_57_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 28);
-    \u0275\u0275listener("pageChange", function SaleComponent_app_pagination_59_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275elementStart(0, "app-pagination", 30);
+    \u0275\u0275listener("pageChange", function SaleComponent_app_pagination_57_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r5);
       const ctx_r2 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r2.onPageChange($event));
-    })("pageSizeChange", function SaleComponent_app_pagination_59_Template_app_pagination_pageSizeChange_0_listener($event) {
+    })("pageSizeChange", function SaleComponent_app_pagination_57_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r5);
       const ctx_r2 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
@@ -71745,7 +72401,7 @@ var SaleComponent = class _SaleComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SaleComponent, selectors: [["app-sale"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 60, vars: 3, consts: [[1, "sale-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-wrapper"], [1, "search-controls"], [1, "form-group"], ["for", "search"], ["type", "text", "id", "search", "formControlName", "search", "placeholder", "Search by invoice number...", 1, "form-control"], ["for", "startDate"], ["type", "date", "id", "startDate", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["for", "endDate"], ["type", "date", "id", "endDate", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/combined-purchase-sale", 1, "btn", "btn-primary"], [1, "fas", "fa-cart-plus"], [1, "sales-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "actions"], ["title", "Delete Sale", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function SaleComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SaleComponent, selectors: [["app-sale"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 58, vars: 4, consts: [[1, "sale-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-wrapper"], [1, "search-controls"], [1, "form-group"], ["for", "search"], ["type", "text", "id", "search", "formControlName", "search", "placeholder", "Search by invoice number...", 1, "form-control"], ["for", "startDate"], ["type", "date", "id", "startDate", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["for", "endDate"], ["type", "date", "id", "endDate", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/combined-purchase-sale", "class", "btn btn-primary", 4, "appCanAccess"], [1, "sales-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["routerLink", "/combined-purchase-sale", 1, "btn", "btn-primary"], [1, "fas", "fa-cart-plus"], [1, "actions"], ["class", "btn-icon delete", "title", "Delete Sale", 3, "click", 4, "appCanAccess"], ["title", "Delete Sale", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function SaleComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
         \u0275\u0275text(3, "Search Sales");
@@ -71780,53 +72436,54 @@ var SaleComponent = class _SaleComponent {
         \u0275\u0275element(24, "i", 16);
         \u0275\u0275text(25, " Reset ");
         \u0275\u0275elementEnd()()()()()();
-        \u0275\u0275elementStart(26, "div", 17)(27, "button", 18);
-        \u0275\u0275element(28, "i", 19);
-        \u0275\u0275text(29, " Create Combined Sale ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(30, "div", 20)(31, "h2");
-        \u0275\u0275text(32, "Sales");
+        \u0275\u0275elementStart(26, "div", 17);
+        \u0275\u0275template(27, SaleComponent_button_27_Template, 3, 0, "button", 18);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(33, "div", 21)(34, "table", 22)(35, "thead")(36, "tr")(37, "th");
-        \u0275\u0275text(38, "#");
+        \u0275\u0275elementStart(28, "div", 19)(29, "h2");
+        \u0275\u0275text(30, "Sales");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(31, "div", 20)(32, "table", 21)(33, "thead")(34, "tr")(35, "th");
+        \u0275\u0275text(36, "#");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(37, "th");
+        \u0275\u0275text(38, "Invoice No.");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(39, "th");
-        \u0275\u0275text(40, "Invoice No.");
+        \u0275\u0275text(40, "Product");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(41, "th");
-        \u0275\u0275text(42, "Product");
+        \u0275\u0275text(42, "Category");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(43, "th");
-        \u0275\u0275text(44, "Category");
+        \u0275\u0275text(44, "Quantity");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(45, "th");
-        \u0275\u0275text(46, "Quantity");
+        \u0275\u0275text(46, "Unit Price");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(47, "th");
-        \u0275\u0275text(48, "Unit Price");
+        \u0275\u0275text(48, "Other Expenses");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(49, "th");
-        \u0275\u0275text(50, "Other Expenses");
+        \u0275\u0275text(50, "Total Amount");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(51, "th");
-        \u0275\u0275text(52, "Total Amount");
+        \u0275\u0275text(52, "Sale Date");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(53, "th");
-        \u0275\u0275text(54, "Sale Date");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(55, "th");
-        \u0275\u0275text(56, "Actions");
+        \u0275\u0275text(54, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(57, "tbody");
-        \u0275\u0275template(58, SaleComponent_tr_58_Template, 23, 12, "tr", 23);
+        \u0275\u0275elementStart(55, "tbody");
+        \u0275\u0275template(56, SaleComponent_tr_56_Template, 22, 13, "tr", 22);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(59, SaleComponent_app_pagination_59_Template, 1, 4, "app-pagination", 24);
+        \u0275\u0275template(57, SaleComponent_app_pagination_57_Template, 1, 4, "app-pagination", 23);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
-        \u0275\u0275advance(54);
+        \u0275\u0275advance(23);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_SALE");
+        \u0275\u0275advance(29);
         \u0275\u0275property("ngForOf", ctx.sales);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.totalPages > 0);
@@ -71846,12 +72503,13 @@ var SaleComponent = class _SaleComponent {
       FormsModule,
       RouterModule,
       RouterLink,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n.sale-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  margin: 0 auto;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n  padding: 1.5rem;\n  background: white;\n  border-radius: var(--border-radius);\n  box-shadow: var(--card-shadow);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 1.5rem;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   form[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 1.5rem;\n  background: white;\n  padding: 1.5rem;\n  border-radius: var(--border-radius);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n  gap: 1rem;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 0.5rem;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.9rem;\n  font-weight: 500;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   input[_ngcontent-%COMP%] {\n  padding: 0.5rem 1rem;\n  border: 1px solid var(--primary);\n  border-radius: var(--border-radius);\n  background: var(--input-bg);\n  color: var(--text-primary);\n  transition: all 0.3s ease;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   input[_ngcontent-%COMP%]:focus {\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n  padding: 0.5rem 1rem;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  height: 38px;\n  font-weight: 500;\n  transition: all 0.3s ease;\n  border-radius: var(--border-radius);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .btn.btn-primary[_ngcontent-%COMP%] {\n  background: var(--primary);\n  border: none;\n  color: white;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .btn.btn-primary[_ngcontent-%COMP%]:hover {\n  transform: translateY(-1px);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .btn.btn-secondary[_ngcontent-%COMP%] {\n  background: var(--background);\n  border: 1px solid var(--supporting);\n  color: var(--text-primary);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .btn.btn-secondary[_ngcontent-%COMP%]:hover {\n  background: #fbe9d5;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  margin-top: 1rem;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.75rem 1.5rem;\n  font-weight: 500;\n  transition: all 0.3s ease;\n  border-radius: var(--border-radius);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1rem;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn.btn-primary[_ngcontent-%COMP%] {\n  background: var(--primary);\n  border: none;\n  color: white;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn.btn-primary[_ngcontent-%COMP%]:hover {\n  transform: translateY(-1px);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn.btn-secondary[_ngcontent-%COMP%] {\n  background: var(--secondary);\n  border: none;\n  color: white;\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn.btn-secondary[_ngcontent-%COMP%]:hover {\n  transform: translateY(-1px);\n}\n.sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  white-space: nowrap;\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  vertical-align: middle;\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%] {\n  white-space: nowrap;\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  cursor: pointer;\n  padding: 0.5rem;\n  border-radius: 4px;\n  transition: all 0.3s ease;\n  color: var(--text-primary);\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:hover {\n  background-color: rgba(0, 0, 0, 0.1);\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%] {\n  color: var(--danger);\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%]:hover {\n  background-color: rgba(220, 53, 69, 0.1);\n}\n.sale-container[_ngcontent-%COMP%]   .sales-list[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1rem;\n}\n.sale-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1rem;\n}\n.sale-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%] {\n  margin: 1rem 0;\n  display: flex;\n  gap: 1rem;\n}\n.sale-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.5rem 1rem;\n  font-size: 1rem;\n}\n.sale-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1.1em;\n}\n@media (max-width: 768px) {\n  .sale-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   form[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    flex-direction: column;\n    width: 100%;\n  }\n  .sale-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: center;\n  }\n}\n@media (max-width: 576px) {\n  .table-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n    align-items: flex-start;\n  }\n  .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n    padding: 0.4rem;\n  }\n  .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n    font-size: 0.9rem;\n  }\n}\n/*# sourceMappingURL=sale.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SaleComponent, { className: "SaleComponent", filePath: "src\\app\\components\\sale\\sale.component.ts", lineNumber: 25 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SaleComponent, { className: "SaleComponent", filePath: "src\\app\\components\\sale\\sale.component.ts", lineNumber: 27 });
 })();
 
 // src/app/services/profit.service.ts
@@ -72186,8 +72844,12 @@ var CustomerService = class _CustomerService {
   createCustomer(customer) {
     return this.http.post(`${this.apiUrl}`, customer);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateCustomer(id, customer) {
-    return this.http.put(`${this.apiUrl}/${id}`, customer);
+    return this.http.post(`${this.apiUrl}/update`, __spreadProps(__spreadValues({}, customer), { id }));
+  }
+  deleteCustomer(id) {
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   getCustomers(params) {
     if (params.status === "A") {
@@ -72577,16 +73239,43 @@ var CustomerModalComponent = class _CustomerModalComponent {
 
 // src/app/components/customer/customer.component.ts
 var _c09 = (a0, a1) => ({ "active": a0, "inactive": a1 });
-function CustomerComponent_div_26_Template(rf, ctx) {
+function CustomerComponent_button_19_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 24);
-    \u0275\u0275element(1, "i", 25);
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 23);
+    \u0275\u0275listener("click", function CustomerComponent_button_19_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.openCustomerModal());
+    });
+    \u0275\u0275element(1, "i", 24);
+    \u0275\u0275text(2, " Add Customer ");
     \u0275\u0275elementEnd();
   }
 }
-function CustomerComponent_tr_51_Template(rf, ctx) {
+function CustomerComponent_div_24_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 25);
+    \u0275\u0275element(1, "i", 26);
+    \u0275\u0275elementEnd();
+  }
+}
+function CustomerComponent_tr_49_button_23_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 30);
+    \u0275\u0275listener("click", function CustomerComponent_tr_49_button_23_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r3);
+      const customer_r4 = \u0275\u0275nextContext().$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.openCustomerModal(customer_r4));
+    });
+    \u0275\u0275element(1, "i", 31);
+    \u0275\u0275elementEnd();
+  }
+}
+function CustomerComponent_tr_49_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -72613,45 +73302,42 @@ function CustomerComponent_tr_51_Template(rf, ctx) {
     \u0275\u0275elementStart(17, "td");
     \u0275\u0275text(18);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(19, "td")(20, "span", 26);
+    \u0275\u0275elementStart(19, "td")(20, "span", 27);
     \u0275\u0275text(21);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(22, "td", 27)(23, "button", 28);
-    \u0275\u0275listener("click", function CustomerComponent_tr_51_Template_button_click_23_listener() {
-      const customer_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.openCustomerModal(customer_r2));
-    });
-    \u0275\u0275element(24, "i", 29);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(22, "td", 28);
+    \u0275\u0275template(23, CustomerComponent_tr_49_button_23_Template, 2, 0, "button", 29);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const customer_r2 = ctx.$implicit;
+    const customer_r4 = ctx.$implicit;
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(customer_r2.name);
+    \u0275\u0275textInterpolate(customer_r4.name);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(customer_r2.mobile);
+    \u0275\u0275textInterpolate(customer_r4.mobile);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(customer_r2.email);
+    \u0275\u0275textInterpolate(customer_r4.email);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(customer_r2.gst);
+    \u0275\u0275textInterpolate(customer_r4.gst);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(customer_r2.address);
+    \u0275\u0275textInterpolate(customer_r4.address);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(13, 10, customer_r2.remainingPaymentAmount, "1.2-2"), "");
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(13, 11, customer_r4.remainingPaymentAmount, "1.2-2"), "");
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(16, 13, customer_r2.nextActionDate, "medium"));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(16, 14, customer_r4.nextActionDate, "medium"));
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(customer_r2.remarks);
+    \u0275\u0275textInterpolate(customer_r4.remarks);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(16, _c09, customer_r2.status === "A", customer_r2.status !== "A"));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(17, _c09, customer_r4.status === "A", customer_r4.status !== "A"));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", customer_r2.status === "A" ? "Active" : "Inactive", " ");
+    \u0275\u0275textInterpolate1(" ", customer_r4.status === "A" ? "Active" : "Inactive", " ");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PARTY_PAYMENT");
   }
 }
-function CustomerComponent_tr_52_Template(rf, ctx) {
+function CustomerComponent_tr_50_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 30);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 32);
     \u0275\u0275text(2, "No customers found");
     \u0275\u0275elementEnd()();
   }
@@ -72757,7 +73443,7 @@ var CustomerComponent = class _CustomerComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CustomerComponent, selectors: [["app-customer"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 56, vars: 8, consts: [[1, "customer-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search customers...", 1, "form-control"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "btn", "btn-primary", "add-customer-btn", 3, "click"], [1, "fas", "fa-plus"], [1, "customers-list", "card"], [1, "table-responsive"], ["class", "loading-overlay", 4, "ngIf"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"], [3, "customerSaved"], [1, "loading-overlay"], [1, "fas", "fa-spinner", "fa-spin"], [1, "status-badge", 3, "ngClass"], [1, "actions"], [1, "btn-icon", "edit", 3, "click"], [1, "fas", "fa-edit"], ["colspan", "9", 1, "text-center"]], template: function CustomerComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CustomerComponent, selectors: [["app-customer"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 54, vars: 9, consts: [[1, "customer-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search customers...", 1, "form-control"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], ["class", "btn btn-primary add-customer-btn", 3, "click", 4, "appCanAccess"], [1, "customers-list", "card"], [1, "table-responsive"], ["class", "loading-overlay", 4, "ngIf"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"], [3, "customerSaved"], [1, "btn", "btn-primary", "add-customer-btn", 3, "click"], [1, "fas", "fa-plus"], [1, "loading-overlay"], [1, "fas", "fa-spinner", "fa-spin"], [1, "status-badge", 3, "ngClass"], [1, "actions"], ["class", "btn-icon edit", 3, "click", 4, "appCanAccess"], [1, "btn-icon", "edit", 3, "click"], [1, "fas", "fa-edit"], ["colspan", "9", 1, "text-center"]], template: function CustomerComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
         \u0275\u0275text(3, "Search Customers");
@@ -72786,60 +73472,54 @@ var CustomerComponent = class _CustomerComponent {
         \u0275\u0275element(17, "i", 12);
         \u0275\u0275text(18, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(19, "button", 13);
-        \u0275\u0275listener("click", function CustomerComponent_Template_button_click_19_listener() {
-          return ctx.openCustomerModal();
-        });
-        \u0275\u0275element(20, "i", 14);
-        \u0275\u0275text(21, " Add Customer ");
+        \u0275\u0275template(19, CustomerComponent_button_19_Template, 3, 0, "button", 13);
+        \u0275\u0275elementStart(20, "div", 14)(21, "h2");
+        \u0275\u0275text(22, "Customers");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(22, "div", 15)(23, "h2");
-        \u0275\u0275text(24, "Customers");
+        \u0275\u0275elementStart(23, "div", 15);
+        \u0275\u0275template(24, CustomerComponent_div_24_Template, 2, 0, "div", 16);
+        \u0275\u0275elementStart(25, "table", 17)(26, "thead")(27, "tr")(28, "th");
+        \u0275\u0275text(29, "Name");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(25, "div", 16);
-        \u0275\u0275template(26, CustomerComponent_div_26_Template, 2, 0, "div", 17);
-        \u0275\u0275elementStart(27, "table", 18)(28, "thead")(29, "tr")(30, "th");
-        \u0275\u0275text(31, "Name");
+        \u0275\u0275elementStart(30, "th");
+        \u0275\u0275text(31, "Mobile");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(32, "th");
-        \u0275\u0275text(33, "Mobile");
+        \u0275\u0275text(33, "Email");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(34, "th");
-        \u0275\u0275text(35, "Email");
+        \u0275\u0275text(35, "GST");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(36, "th");
-        \u0275\u0275text(37, "GST");
+        \u0275\u0275text(37, "Address");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(38, "th");
-        \u0275\u0275text(39, "Address");
+        \u0275\u0275text(39, "Remaining Payment");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(40, "th");
-        \u0275\u0275text(41, "Remaining Payment");
+        \u0275\u0275text(41, "Next Action Date");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(42, "th");
-        \u0275\u0275text(43, "Next Action Date");
+        \u0275\u0275text(43, "Remarks");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(44, "th");
-        \u0275\u0275text(45, "Remarks");
+        \u0275\u0275text(45, "Status");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(46, "th");
-        \u0275\u0275text(47, "Status");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(48, "th");
-        \u0275\u0275text(49, "Actions");
+        \u0275\u0275text(47, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(50, "tbody");
-        \u0275\u0275template(51, CustomerComponent_tr_51_Template, 25, 19, "tr", 19)(52, CustomerComponent_tr_52_Template, 3, 0, "tr", 20);
+        \u0275\u0275elementStart(48, "tbody");
+        \u0275\u0275template(49, CustomerComponent_tr_49_Template, 24, 20, "tr", 18)(50, CustomerComponent_tr_50_Template, 3, 0, "tr", 19);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(53, "div", 21)(54, "app-pagination", 22);
-        \u0275\u0275listener("pageChange", function CustomerComponent_Template_app_pagination_pageChange_54_listener($event) {
+        \u0275\u0275elementStart(51, "div", 20)(52, "app-pagination", 21);
+        \u0275\u0275listener("pageChange", function CustomerComponent_Template_app_pagination_pageChange_52_listener($event) {
           return ctx.onPageChange($event);
-        })("pageSizeChange", function CustomerComponent_Template_app_pagination_pageSizeChange_54_listener($event) {
+        })("pageSizeChange", function CustomerComponent_Template_app_pagination_pageSizeChange_52_listener($event) {
           return ctx.onPageSizeChange($event);
         });
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(55, "app-customer-modal", 23);
-        \u0275\u0275listener("customerSaved", function CustomerComponent_Template_app_customer_modal_customerSaved_55_listener() {
+        \u0275\u0275elementStart(53, "app-customer-modal", 22);
+        \u0275\u0275listener("customerSaved", function CustomerComponent_Template_app_customer_modal_customerSaved_53_listener() {
           return ctx.loadCustomers();
         });
         \u0275\u0275elementEnd();
@@ -72847,7 +73527,9 @@ var CustomerComponent = class _CustomerComponent {
       if (rf & 2) {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
-        \u0275\u0275advance(22);
+        \u0275\u0275advance(15);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_PARTY_PAYMENT");
+        \u0275\u0275advance(5);
         \u0275\u0275property("ngIf", ctx.isLoading);
         \u0275\u0275advance(25);
         \u0275\u0275property("ngForOf", ctx.customers);
@@ -72873,12 +73555,13 @@ var CustomerComponent = class _CustomerComponent {
       FormsModule,
       RouterModule,
       CustomerModalComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.search-header[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1.5rem;\n}\n.search-header[_ngcontent-%COMP%]   .search-container[_ngcontent-%COMP%] {\n  flex: 1;\n  max-width: 300px;\n}\n.search-header[_ngcontent-%COMP%]   .search-container[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  border-radius: 20px;\n  padding: 10px 20px;\n  border: 2px solid var(--supporting);\n  transition: all 0.3s ease;\n}\n.search-header[_ngcontent-%COMP%]   .search-container[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%]:focus {\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.table-responsive[_ngcontent-%COMP%] {\n  margin: 0 -20px;\n  padding: 0 20px;\n  overflow-x: auto;\n  position: relative;\n  min-height: 200px;\n}\n.table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar {\n  height: 8px;\n}\n.table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n  border-radius: 4px;\n}\n.table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 4px;\n}\n.table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-thumb:hover {\n  background: #8eafbc;\n}\n.table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  padding: 15px 12px;\n  font-weight: 600;\n  font-size: 0.9rem;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n}\n.table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 12px;\n  vertical-align: middle;\n  font-size: 0.95rem;\n}\n.status-badge[_ngcontent-%COMP%] {\n  padding: 6px 12px;\n  border-radius: 20px;\n  font-size: 0.85rem;\n  font-weight: 500;\n}\n.status-badge.active[_ngcontent-%COMP%] {\n  background-color: rgba(90, 158, 111, 0.1);\n  color: var(--accent2);\n}\n.status-badge.inactive[_ngcontent-%COMP%] {\n  background-color: rgba(118, 118, 118, 0.1);\n  color: var(--text-secondary);\n}\n@media (max-width: 768px) {\n  .search-header[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n  }\n  .search-header[_ngcontent-%COMP%]   .search-container[_ngcontent-%COMP%] {\n    max-width: 100%;\n  }\n  .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%], .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n    font-size: 0.85rem;\n    padding: 10px 8px;\n  }\n}\n.customer-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.customer-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.customer-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.customer-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  align-items: center;\n}\n.customer-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.customer-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 20px;\n}\n.customer-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.customer-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  margin-bottom: 0;\n  color: var(--text-secondary);\n}\n.customer-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select[_ngcontent-%COMP%] {\n  width: 80px;\n  padding: 5px;\n  border-radius: 4px;\n  border: 1px solid var(--supporting);\n  background-color: white;\n  color: var(--text-primary);\n}\n.customer-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%] {\n  width: 100%;\n  border-collapse: collapse;\n  margin-bottom: 20px;\n}\n.customer-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .customer-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 12px;\n  text-align: left;\n  border-bottom: 1px solid var(--supporting);\n}\n.customer-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  background-color: var(--secondary);\n  color: white;\n  font-weight: 600;\n}\n.customer-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   tbody[_ngcontent-%COMP%]   tr[_ngcontent-%COMP%]:hover {\n  background-color: rgba(174, 198, 207, 0.1);\n}\n.customer-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   .status-badge[_ngcontent-%COMP%] {\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.customer-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   .status-badge.active[_ngcontent-%COMP%] {\n  background-color: var(--accent2);\n  color: white;\n}\n.customer-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   .status-badge.inactive[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  color: white;\n}\n@media (max-width: 768px) {\n  .customer-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .customer-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n    padding: 15px;\n  }\n  .customer-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 10px;\n  }\n  .customer-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: flex-end;\n  }\n  .customer-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    overflow-x: auto;\n  }\n}\n.actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  align-items: center;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  padding: 6px;\n  cursor: pointer;\n  border-radius: 4px;\n  transition: all 0.2s ease;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.edit[_ngcontent-%COMP%] {\n  color: var(--secondary);\n  background-color: rgba(var(--secondary-rgb), 0.1);\n  padding: 8px;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.edit[_ngcontent-%COMP%]:hover {\n  background-color: var(--secondary);\n  color: white;\n  transform: translateY(-1px);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.edit[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.edit[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 16px;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 16px;\n}\n@media (max-width: 768px) {\n  .actions[_ngcontent-%COMP%] {\n    display: flex;\n    flex-direction: row;\n    gap: 8px;\n    justify-content: flex-start;\n  }\n  .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n    padding: 6px;\n  }\n  .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n    font-size: 14px;\n  }\n}\n.loading-overlay[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  background: rgba(255, 255, 255, 0.8);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 1;\n}\n.loading-overlay[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 2rem;\n  color: var(--primary);\n}\n.search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 1rem;\n}\n.search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-end;\n}\n@media (max-width: 768px) {\n  .search-controls[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n  .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    flex-direction: column;\n    width: 100%;\n  }\n  .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n/*# sourceMappingURL=customer.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CustomerComponent, { className: "CustomerComponent", filePath: "src\\app\\components\\customer\\customer.component.ts", lineNumber: 21 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CustomerComponent, { className: "CustomerComponent", filePath: "src\\app\\components\\customer\\customer.component.ts", lineNumber: 22 });
 })();
 
 // src/app/services/combined-purchase-sale.service.ts
@@ -73378,11 +74061,12 @@ var PowderCoatingService = class _PowderCoatingService {
   createProcess(data) {
     return this.http.post(this.apiUrl, data);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateProcess(id, data) {
-    return this.http.put(`${this.apiUrl}/${id}`, data);
+    return this.http.post(`${this.apiUrl}/update`, __spreadProps(__spreadValues({}, data), { id }));
   }
   deleteProcess(id) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   getProcess(id) {
     return this.http.post(`${this.apiUrl}/getProcess`, { id });
@@ -73610,11 +74294,19 @@ var ReturnModalComponent = class _ReturnModalComponent {
 var _c011 = () => ({ label: "All Customers", value: "" });
 var _c14 = () => ({ label: "All Products", value: "" });
 var _c23 = (a0) => ["/powder-coating-process/edit", a0];
-function PowderCoatingProcessComponent_div_30_Template(rf, ctx) {
+function PowderCoatingProcessComponent_button_24_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 33);
+    \u0275\u0275element(1, "i", 34);
+    \u0275\u0275text(2, " Add New Process ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PowderCoatingProcessComponent_div_28_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 34)(1, "button", 35);
-    \u0275\u0275listener("click", function PowderCoatingProcessComponent_div_30_Template_button_click_1_listener() {
+    \u0275\u0275elementStart(0, "div", 35)(1, "button", 36);
+    \u0275\u0275listener("click", function PowderCoatingProcessComponent_div_28_Template_button_click_1_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.generatePdf());
@@ -73633,7 +74325,7 @@ function PowderCoatingProcessComponent_div_30_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r1.isGeneratingPdf ? "Generating..." : "Generate PDF", " ");
   }
 }
-function PowderCoatingProcessComponent_tr_65_div_11_Template(rf, ctx) {
+function PowderCoatingProcessComponent_tr_63_div_11_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 43)(1, "small");
     \u0275\u0275text(2);
@@ -73646,25 +74338,45 @@ function PowderCoatingProcessComponent_tr_65_div_11_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.getItemNames(process_r4));
   }
 }
-function PowderCoatingProcessComponent_tr_65_Conditional_34_Template(rf, ctx) {
+function PowderCoatingProcessComponent_tr_63_button_32_Template(rf, ctx) {
   if (rf & 1) {
-    const _r5 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "button", 44);
-    \u0275\u0275listener("click", function PowderCoatingProcessComponent_tr_65_Conditional_34_Template_button_click_0_listener() {
-      \u0275\u0275restoreView(_r5);
-      const process_r4 = \u0275\u0275nextContext().$implicit;
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.deleteProcess(process_r4.id));
-    });
     \u0275\u0275element(1, "i", 45);
     \u0275\u0275elementEnd();
   }
+  if (rf & 2) {
+    const process_r4 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c23, ctx_r1.encId(process_r4.id)));
+  }
 }
-function PowderCoatingProcessComponent_tr_65_Template(rf, ctx) {
+function PowderCoatingProcessComponent_tr_63_Conditional_33_button_0_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 47);
+    \u0275\u0275listener("click", function PowderCoatingProcessComponent_tr_63_Conditional_33_button_0_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r5);
+      const process_r4 = \u0275\u0275nextContext(2).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.deleteProcess(process_r4.id));
+    });
+    \u0275\u0275element(1, "i", 48);
+    \u0275\u0275elementEnd();
+  }
+}
+function PowderCoatingProcessComponent_tr_63_Conditional_33_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275template(0, PowderCoatingProcessComponent_tr_63_Conditional_33_button_0_Template, 2, 0, "button", 46);
+  }
+  if (rf & 2) {
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_COATING");
+  }
+}
+function PowderCoatingProcessComponent_tr_63_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "tr")(1, "td", 25)(2, "div", 26)(3, "input", 36);
-    \u0275\u0275listener("click", function PowderCoatingProcessComponent_tr_65_Template_input_click_3_listener($event) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 24)(2, "div", 25)(3, "input", 37);
+    \u0275\u0275listener("click", function PowderCoatingProcessComponent_tr_63_Template_input_click_3_listener($event) {
       const process_r4 = \u0275\u0275restoreView(_r3).$implicit;
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.toggleProcessSelection(process_r4, $event));
@@ -73673,11 +74385,11 @@ function PowderCoatingProcessComponent_tr_65_Template(rf, ctx) {
     \u0275\u0275elementStart(4, "td");
     \u0275\u0275text(5);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "td")(7, "div", 37)(8, "strong");
+    \u0275\u0275elementStart(6, "td")(7, "div", 38)(8, "strong");
     \u0275\u0275text(9);
     \u0275\u0275elementEnd();
     \u0275\u0275text(10, " item(s) ");
-    \u0275\u0275template(11, PowderCoatingProcessComponent_tr_65_div_11_Template, 3, 1, "div", 38);
+    \u0275\u0275template(11, PowderCoatingProcessComponent_tr_63_div_11_Template, 3, 1, "div", 39);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(12, "td")(13, "strong");
     \u0275\u0275text(14);
@@ -73699,10 +74411,8 @@ function PowderCoatingProcessComponent_tr_65_Template(rf, ctx) {
     \u0275\u0275text(29);
     \u0275\u0275pipe(30, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(31, "td", 39)(32, "button", 40);
-    \u0275\u0275element(33, "i", 41);
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(34, PowderCoatingProcessComponent_tr_65_Conditional_34_Template, 2, 0, "button", 42);
+    \u0275\u0275elementStart(31, "td", 40);
+    \u0275\u0275template(32, PowderCoatingProcessComponent_tr_63_button_32_Template, 2, 3, "button", 41)(33, PowderCoatingProcessComponent_tr_63_Conditional_33_Template, 1, 1, "button", 42);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -73731,22 +74441,22 @@ function PowderCoatingProcessComponent_tr_65_Template(rf, ctx) {
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", ctx_r1.isProcessCompleted(process_r4) ? "Completed" : "Active", " ");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(30, 19, process_r4.createdAt, "medium"));
+    \u0275\u0275textInterpolate(process_r4.coatingDate ? \u0275\u0275pipeBind2(30, 19, process_r4.coatingDate, "dd-MM-yyyy") : "-");
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(22, _c23, process_r4.id));
-    \u0275\u0275advance(2);
-    \u0275\u0275conditional(34, ctx_r1.isProcessCompleted(process_r4) ? 34 : -1);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_COATING");
+    \u0275\u0275advance();
+    \u0275\u0275conditional(33, ctx_r1.isProcessCompleted(process_r4) ? 33 : -1);
   }
 }
-function PowderCoatingProcessComponent_app_pagination_67_Template(rf, ctx) {
+function PowderCoatingProcessComponent_app_pagination_65_Template(rf, ctx) {
   if (rf & 1) {
     const _r7 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 46);
-    \u0275\u0275listener("pageChange", function PowderCoatingProcessComponent_app_pagination_67_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275elementStart(0, "app-pagination", 49);
+    \u0275\u0275listener("pageChange", function PowderCoatingProcessComponent_app_pagination_65_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r7);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.onPageChange($event));
-    })("pageSizeChange", function PowderCoatingProcessComponent_app_pagination_67_Template_app_pagination_pageSizeChange_0_listener($event) {
+    })("pageSizeChange", function PowderCoatingProcessComponent_app_pagination_65_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r7);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.onPageSizeChange($event));
@@ -73759,7 +74469,7 @@ function PowderCoatingProcessComponent_app_pagination_67_Template(rf, ctx) {
   }
 }
 var PowderCoatingProcessComponent = class _PowderCoatingProcessComponent {
-  constructor(powderCoatingService, productService, categoryService, fb, snackbar, customerService, modalService) {
+  constructor(powderCoatingService, productService, categoryService, fb, snackbar, customerService, modalService, encryptionService) {
     this.powderCoatingService = powderCoatingService;
     this.productService = productService;
     this.categoryService = categoryService;
@@ -73767,6 +74477,7 @@ var PowderCoatingProcessComponent = class _PowderCoatingProcessComponent {
     this.snackbar = snackbar;
     this.customerService = customerService;
     this.modalService = modalService;
+    this.encryptionService = encryptionService;
     this.processes = [];
     this.products = [];
     this.isLoading = false;
@@ -73783,6 +74494,10 @@ var PowderCoatingProcessComponent = class _PowderCoatingProcessComponent {
     this.startIndex = 0;
     this.endIndex = 0;
     this.initializeForm();
+  }
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
   }
   ngOnInit() {
     this.loadProducts();
@@ -74044,7 +74759,7 @@ var PowderCoatingProcessComponent = class _PowderCoatingProcessComponent {
   }
   static {
     this.\u0275fac = function PowderCoatingProcessComponent_Factory(t) {
-      return new (t || _PowderCoatingProcessComponent)(\u0275\u0275directiveInject(PowderCoatingService), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CategoryService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(ModalService));
+      return new (t || _PowderCoatingProcessComponent)(\u0275\u0275directiveInject(PowderCoatingService), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CategoryService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(ModalService), \u0275\u0275directiveInject(EncryptionService));
     };
   }
   static {
@@ -74056,7 +74771,7 @@ var PowderCoatingProcessComponent = class _PowderCoatingProcessComponent {
         let _t;
         \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.returnModal = _t.first);
       }
-    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 69, vars: 17, consts: [[1, "process-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group", "search-input"], ["type", "text", "formControlName", "search", "placeholder", "Search processes...", 1, "form-control"], [1, "form-group", "customer-select"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "form-group", "product-select"], ["formControlName", "productId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "add-process-btn"], ["routerLink", "/powder-coating-process/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "processes-list", "card"], ["class", "table-actions", 4, "ngIf"], [1, "table-responsive"], [1, "table"], [1, "select-column"], [1, "checkbox-wrapper"], ["type", "checkbox", "disabled", ""], ["scope", "col"], ["scope", "col", 1, "actions-cell"], [4, "ngFor", "ngForOf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "returnCreated"], [1, "table-actions"], [1, "btn", "btn-primary", 3, "click", "disabled"], ["type", "checkbox", 3, "click", "checked", "disabled"], [1, "items-info"], ["class", "item-names", 4, "ngIf"], [1, "actions-cell"], ["title", "Edit Process", "aria-label", "Edit Process", 1, "btn", "btn-icon", "btn-primary", 3, "routerLink"], ["aria-hidden", "true", 1, "fas", "fa-edit"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger"], [1, "item-names"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger", 3, "click"], ["aria-hidden", "true", 1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PowderCoatingProcessComponent_Template(rf, ctx) {
+    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 67, vars: 18, consts: [[1, "process-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group", "search-input"], ["type", "text", "formControlName", "search", "placeholder", "Search processes...", 1, "form-control"], [1, "form-group", "customer-select"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "form-group", "product-select"], ["formControlName", "productId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "add-process-btn"], ["class", "btn btn-primary", "routerLink", "/powder-coating-process/create", 4, "appCanAccess"], [1, "processes-list", "card"], ["class", "table-actions", 4, "ngIf"], [1, "table-responsive"], [1, "table"], [1, "select-column"], [1, "checkbox-wrapper"], ["type", "checkbox", "disabled", ""], ["scope", "col"], ["scope", "col", 1, "actions-cell"], [4, "ngFor", "ngForOf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "returnCreated"], ["routerLink", "/powder-coating-process/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "table-actions"], [1, "btn", "btn-primary", 3, "click", "disabled"], ["type", "checkbox", 3, "click", "checked", "disabled"], [1, "items-info"], ["class", "item-names", 4, "ngIf"], [1, "actions-cell"], ["class", "btn btn-icon btn-primary", "title", "Edit Process", "aria-label", "Edit Process", 3, "routerLink", 4, "appCanAccess"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger"], [1, "item-names"], ["title", "Edit Process", "aria-label", "Edit Process", 1, "btn", "btn-icon", "btn-primary", 3, "routerLink"], ["aria-hidden", "true", 1, "fas", "fa-edit"], ["class", "btn btn-icon btn-danger", "title", "Delete Process", "aria-label", "Delete Process", 3, "click", 4, "appCanAccess"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger", 3, "click"], ["aria-hidden", "true", 1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PowderCoatingProcessComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -74097,52 +74812,51 @@ var PowderCoatingProcessComponent = class _PowderCoatingProcessComponent {
         \u0275\u0275element(21, "i", 17);
         \u0275\u0275text(22, " Reset ");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(23, "div", 18)(24, "button", 19);
-        \u0275\u0275element(25, "i", 20);
-        \u0275\u0275text(26, " Add New Process ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(27, "div", 21)(28, "h2");
-        \u0275\u0275text(29, "Powder Coating Processes");
+        \u0275\u0275elementStart(23, "div", 18);
+        \u0275\u0275template(24, PowderCoatingProcessComponent_button_24_Template, 3, 0, "button", 19);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(30, PowderCoatingProcessComponent_div_30_Template, 4, 3, "div", 22);
-        \u0275\u0275elementStart(31, "div", 23)(32, "table", 24)(33, "thead")(34, "tr")(35, "th", 25)(36, "div", 26);
-        \u0275\u0275element(37, "input", 27);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(38, "th", 28);
-        \u0275\u0275text(39, "#");
+        \u0275\u0275elementStart(25, "div", 20)(26, "h2");
+        \u0275\u0275text(27, "Powder Coating Processes");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(40, "th", 28)(41, "strong");
-        \u0275\u0275text(42, "Items");
+        \u0275\u0275template(28, PowderCoatingProcessComponent_div_28_Template, 4, 3, "div", 21);
+        \u0275\u0275elementStart(29, "div", 22)(30, "table", 23)(31, "thead")(32, "tr")(33, "th", 24)(34, "div", 25);
+        \u0275\u0275element(35, "input", 26);
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(43, "th", 28)(44, "strong");
-        \u0275\u0275text(45, "Customer");
+        \u0275\u0275elementStart(36, "th", 27);
+        \u0275\u0275text(37, "#");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(38, "th", 27)(39, "strong");
+        \u0275\u0275text(40, "Items");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(46, "th", 28)(47, "strong");
-        \u0275\u0275text(48, "Total Quantity");
+        \u0275\u0275elementStart(41, "th", 27)(42, "strong");
+        \u0275\u0275text(43, "Customer");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(49, "th", 28)(50, "strong");
-        \u0275\u0275text(51, "Total Bags");
+        \u0275\u0275elementStart(44, "th", 27)(45, "strong");
+        \u0275\u0275text(46, "Total Quantity");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(52, "th", 28)(53, "strong");
-        \u0275\u0275text(54, "Total Amount");
+        \u0275\u0275elementStart(47, "th", 27)(48, "strong");
+        \u0275\u0275text(49, "Total Bags");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(55, "th", 28)(56, "strong");
-        \u0275\u0275text(57, "Status");
+        \u0275\u0275elementStart(50, "th", 27)(51, "strong");
+        \u0275\u0275text(52, "Total Amount");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(58, "th", 28)(59, "strong");
-        \u0275\u0275text(60, "Created At");
+        \u0275\u0275elementStart(53, "th", 27)(54, "strong");
+        \u0275\u0275text(55, "Status");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(61, "th", 29)(62, "strong");
-        \u0275\u0275text(63, "Actions");
+        \u0275\u0275elementStart(56, "th", 27)(57, "strong");
+        \u0275\u0275text(58, "Coating Date");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(59, "th", 28)(60, "strong");
+        \u0275\u0275text(61, "Actions");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(64, "tbody");
-        \u0275\u0275template(65, PowderCoatingProcessComponent_tr_65_Template, 35, 24, "tr", 30);
+        \u0275\u0275elementStart(62, "tbody");
+        \u0275\u0275template(63, PowderCoatingProcessComponent_tr_63_Template, 34, 22, "tr", 29);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(66, "div", 31);
-        \u0275\u0275template(67, PowderCoatingProcessComponent_app_pagination_67_Template, 1, 4, "app-pagination", 32);
+        \u0275\u0275elementStart(64, "div", 30);
+        \u0275\u0275template(65, PowderCoatingProcessComponent_app_pagination_65_Template, 1, 4, "app-pagination", 31);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(68, "app-return-modal", 33);
-        \u0275\u0275listener("returnCreated", function PowderCoatingProcessComponent_Template_app_return_modal_returnCreated_68_listener() {
+        \u0275\u0275elementStart(66, "app-return-modal", 32);
+        \u0275\u0275listener("returnCreated", function PowderCoatingProcessComponent_Template_app_return_modal_returnCreated_66_listener() {
           return ctx.loadProcesses();
         });
         \u0275\u0275elementEnd();
@@ -74153,18 +74867,20 @@ var PowderCoatingProcessComponent = class _PowderCoatingProcessComponent {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(5);
-        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(15, _c011))("searchPlaceholder", "Search customers...");
+        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(16, _c011))("searchPlaceholder", "Search customers...");
         \u0275\u0275advance();
         \u0275\u0275property("disabled", ctx.isLoadingCustomers);
         \u0275\u0275advance();
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance(2);
-        \u0275\u0275property("options", ctx.products)("defaultOption", \u0275\u0275pureFunction0(16, _c14))("searchPlaceholder", "Search products...");
+        \u0275\u0275property("options", ctx.products)("defaultOption", \u0275\u0275pureFunction0(17, _c14))("searchPlaceholder", "Search products...");
         \u0275\u0275advance();
         \u0275\u0275property("disabled", ctx.isLoadingProducts);
         \u0275\u0275advance();
         \u0275\u0275property("ngClass", ctx.isLoadingProducts ? "fa-spinner fa-spin" : "fa-sync-alt");
-        \u0275\u0275advance(14);
+        \u0275\u0275advance(8);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_COATING");
+        \u0275\u0275advance(4);
         \u0275\u0275property("ngIf", ctx.selectedProcesses.size > 0);
         \u0275\u0275advance(35);
         \u0275\u0275property("ngForOf", ctx.processes);
@@ -74190,18 +74906,19 @@ var PowderCoatingProcessComponent = class _PowderCoatingProcessComponent {
       FormsModule,
       RouterLink,
       ReturnModalComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ['\n\n.process-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  position: relative;\n  min-height: 200px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n  background: white;\n  border-radius: var(--border-radius);\n  box-shadow: var(--card-shadow);\n  padding: 1.5rem;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 1.5rem;\n  color: var(--text-primary);\n  font-size: 1.25rem;\n  font-weight: 500;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  flex-wrap: wrap;\n  align-items: flex-start;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 200px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.search-input[_ngcontent-%COMP%] {\n  max-width: 300px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  padding: 8px;\n  cursor: pointer;\n  border-radius: 6px;\n  color: var(--secondary);\n  background-color: rgba(var(--secondary-rgb), 0.1);\n  transition: all 0.2s ease;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled), .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--secondary);\n  color: white;\n  transform: translateY(-1px);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active:not(:disabled), .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active:not(:disabled) {\n  transform: translateY(0);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled, .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.5;\n  cursor: not-allowed;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 16px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%] {\n  height: 30px;\n  padding: 0 1.5rem;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  white-space: nowrap;\n  background: var(--primary);\n  color: white;\n  border: none;\n  border-radius: var(--border-radius);\n  transition: all 0.2s ease;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%]:hover {\n  transform: scale(1.02);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%] {\n  min-width: 1200px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  min-width: 120px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th.select-column[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td.select-column[_ngcontent-%COMP%] {\n  width: 40px;\n  min-width: 40px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th.actions-cell[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td.actions-cell[_ngcontent-%COMP%] {\n  width: 120px;\n  min-width: 120px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%] {\n  white-space: normal;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%]   .item-names[_ngcontent-%COMP%] {\n  margin-top: 0.25rem;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%]   .item-names[_ngcontent-%COMP%]   small[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.875rem;\n  display: block;\n}\n@media (max-width: 768px) {\n  .process-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n    min-width: unset;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.search-input[_ngcontent-%COMP%] {\n    max-width: unset;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n    padding: 6px;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n    font-size: 14px;\n  }\n}\n.product-select-group[_ngcontent-%COMP%] {\n  gap: 0.5rem;\n  align-items: stretch;\n}\n.product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  color: var(--primary);\n  width: 30px;\n  height: 30px;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.form-control[_ngcontent-%COMP%] {\n  width: 90%;\n  padding: 0.5rem 1rem;\n  border-radius: 4px;\n  background: white;\n  color: var(--text-primary);\n  transition: border-color 0.2s ease;\n}\n.form-control[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);\n}\n.form-control[_ngcontent-%COMP%]::placeholder {\n  color: var(--text-secondary);\n}\n.actions-cell[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  width: 100px;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  width: 32px;\n  height: 32px;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin: 0 0.25rem;\n  border-radius: var(--border-radius);\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-primary[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  border-color: var(--primary);\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-danger[_ngcontent-%COMP%] {\n  background-color: #dc3545;\n  border-color: #dc3545;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-danger[_ngcontent-%COMP%]:hover {\n  background-color: #c82333;\n  border-color: #bd2130;\n}\n.table-actions[_ngcontent-%COMP%] {\n  margin: 1rem 0;\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.5rem;\n}\n.table-actions[_ngcontent-%COMP%]   .btn-primary[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.5rem 1rem;\n}\n.table-actions[_ngcontent-%COMP%]   .btn-primary[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1rem;\n}\n.select-column[_ngcontent-%COMP%] {\n  width: 40px;\n  text-align: center;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  width: 18px;\n  height: 18px;\n  cursor: pointer;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  cursor: not-allowed;\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  appearance: none;\n  -webkit-appearance: none;\n  width: 18px;\n  height: 18px;\n  border: 2px solid var(--primary);\n  border-radius: 4px;\n  cursor: pointer;\n  position: relative;\n  margin: 0;\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:checked {\n  background-color: var(--primary);\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:checked::after {\n  content: "";\n  position: absolute;\n  left: 5px;\n  top: 2px;\n  width: 5px;\n  height: 10px;\n  border: solid white;\n  border-width: 0 2px 2px 0;\n  transform: rotate(45deg);\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  border-color: var(--border-color);\n  background-color: var(--background-light);\n  cursor: not-allowed;\n  opacity: 0.5;\n}\n/*# sourceMappingURL=powder-coating-process.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PowderCoatingProcessComponent, { className: "PowderCoatingProcessComponent", filePath: "src\\app\\components\\powder-coating\\powder-coating-process\\powder-coating-process.component.ts", lineNumber: 33 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PowderCoatingProcessComponent, { className: "PowderCoatingProcessComponent", filePath: "src\\app\\components\\powder-coating\\powder-coating-process\\powder-coating-process.component.ts", lineNumber: 36 });
 })();
 
 // src/app/components/powder-coating/add-powder-coating-process/add-powder-coating-process.component.ts
 function AddPowderCoatingProcessComponent_div_28_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -74211,9 +74928,21 @@ function AddPowderCoatingProcessComponent_div_28_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.processForm.get("customerId"), "customer"), " ");
   }
 }
-function AddPowderCoatingProcessComponent_tr_64_div_7_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_37_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.processForm.get("coatingDate"), "coating date"), " ");
+  }
+}
+function AddPowderCoatingProcessComponent_tr_73_div_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -74224,9 +74953,9 @@ function AddPowderCoatingProcessComponent_tr_64_div_7_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r3).get("productId"), "product"), " ");
   }
 }
-function AddPowderCoatingProcessComponent_tr_64_div_10_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_tr_73_div_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -74237,9 +74966,9 @@ function AddPowderCoatingProcessComponent_tr_64_div_10_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r3).get("quantity"), "quantity"), " ");
   }
 }
-function AddPowderCoatingProcessComponent_tr_64_div_13_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_tr_73_div_13_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -74250,9 +74979,9 @@ function AddPowderCoatingProcessComponent_tr_64_div_13_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r3).get("totalBags"), "total bags"), " ");
   }
 }
-function AddPowderCoatingProcessComponent_tr_64_div_16_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_tr_73_div_16_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -74263,13 +74992,13 @@ function AddPowderCoatingProcessComponent_tr_64_div_16_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r3).get("unitPrice"), "unit price"), " ");
   }
 }
-function AddPowderCoatingProcessComponent_tr_64_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_tr_73_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "tr", 38)(1, "td")(2, "div", 39)(3, "div", 16);
-    \u0275\u0275element(4, "app-searchable-select", 40);
-    \u0275\u0275elementStart(5, "button", 41);
-    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_tr_64_Template_button_click_5_listener($event) {
+    \u0275\u0275elementStart(0, "tr", 41)(1, "td")(2, "div", 42)(3, "div", 16);
+    \u0275\u0275element(4, "app-searchable-select", 43);
+    \u0275\u0275elementStart(5, "button", 44);
+    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_tr_73_Template_button_click_5_listener($event) {
       \u0275\u0275restoreView(_r2);
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.refreshProducts();
@@ -74278,35 +75007,35 @@ function AddPowderCoatingProcessComponent_tr_64_Template(rf, ctx) {
     });
     \u0275\u0275element(6, "i", 19);
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(7, AddPowderCoatingProcessComponent_tr_64_div_7_Template, 2, 1, "div", 20);
+    \u0275\u0275template(7, AddPowderCoatingProcessComponent_tr_73_div_7_Template, 2, 1, "div", 20);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(8, "td");
-    \u0275\u0275element(9, "input", 42);
-    \u0275\u0275template(10, AddPowderCoatingProcessComponent_tr_64_div_10_Template, 2, 1, "div", 20);
+    \u0275\u0275element(9, "input", 45);
+    \u0275\u0275template(10, AddPowderCoatingProcessComponent_tr_73_div_10_Template, 2, 1, "div", 20);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(11, "td");
-    \u0275\u0275element(12, "input", 43);
-    \u0275\u0275template(13, AddPowderCoatingProcessComponent_tr_64_div_13_Template, 2, 1, "div", 20);
+    \u0275\u0275element(12, "input", 46);
+    \u0275\u0275template(13, AddPowderCoatingProcessComponent_tr_73_div_13_Template, 2, 1, "div", 20);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(14, "td");
-    \u0275\u0275element(15, "input", 44);
-    \u0275\u0275template(16, AddPowderCoatingProcessComponent_tr_64_div_16_Template, 2, 1, "div", 20);
+    \u0275\u0275element(15, "input", 47);
+    \u0275\u0275template(16, AddPowderCoatingProcessComponent_tr_73_div_16_Template, 2, 1, "div", 20);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(17, "td");
-    \u0275\u0275element(18, "input", 45);
+    \u0275\u0275element(18, "input", 48);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(19, "td");
-    \u0275\u0275element(20, "input", 46);
+    \u0275\u0275element(20, "input", 49);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(21, "td")(22, "button", 47);
-    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_tr_64_Template_button_click_22_listener($event) {
+    \u0275\u0275elementStart(21, "td")(22, "button", 50);
+    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_tr_73_Template_button_click_22_listener($event) {
       const i_r3 = \u0275\u0275restoreView(_r2).index;
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.removeItem(i_r3);
       $event.preventDefault();
       return \u0275\u0275resetView($event.stopPropagation());
     });
-    \u0275\u0275element(23, "i", 48);
+    \u0275\u0275element(23, "i", 51);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -74347,23 +75076,23 @@ function AddPowderCoatingProcessComponent_tr_64_Template(rf, ctx) {
     \u0275\u0275attribute("aria-label", "Remove item " + (i_r3 + 1));
   }
 }
-function AddPowderCoatingProcessComponent_tr_65_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_tr_74_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 49);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 52);
     \u0275\u0275text(2, 'No items added. Click "Add Item" to get started.');
     \u0275\u0275elementEnd()();
   }
 }
-function AddPowderCoatingProcessComponent_tfoot_66_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_tfoot_75_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 50)(3, "strong");
+    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 53)(3, "strong");
     \u0275\u0275text(4, "Grand Total:");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(5, "td")(6, "strong");
     \u0275\u0275text(7);
     \u0275\u0275pipe(8, "number");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(9, "td", 51);
+    \u0275\u0275element(9, "td", 54);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -74372,7 +75101,7 @@ function AddPowderCoatingProcessComponent_tfoot_66_Template(rf, ctx) {
     \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(8, 1, ctx_r0.getGrandTotal(), "1.2-2"));
   }
 }
-function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_span_5_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_span_5_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1);
@@ -74386,7 +75115,7 @@ function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_spa
     \u0275\u0275textInterpolate1(" - ", ctx_r0.getProductName((tmp_7_0 = itemControl_r6.get("productId")) == null ? null : tmp_7_0.value), " ");
   }
 }
-function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div_9_tr_16_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_div_9_tr_16_Template(rf, ctx) {
   if (rf & 1) {
     const _r7 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr")(1, "td");
@@ -74399,15 +75128,15 @@ function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div
     \u0275\u0275text(7);
     \u0275\u0275pipe(8, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "td", 65)(10, "button", 66);
-    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div_9_tr_16_Template_button_click_10_listener() {
+    \u0275\u0275elementStart(9, "td", 68)(10, "button", 69);
+    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_div_9_tr_16_Template_button_click_10_listener() {
       let tmp_11_0;
       const returnItem_r8 = \u0275\u0275restoreView(_r7).$implicit;
       const itemControl_r6 = \u0275\u0275nextContext(3).$implicit;
       const ctx_r0 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r0.deleteReturn(returnItem_r8.id, (tmp_11_0 = itemControl_r6.get("id")) == null ? null : tmp_11_0.value));
     });
-    \u0275\u0275element(11, "i", 48);
+    \u0275\u0275element(11, "i", 51);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -74426,27 +75155,27 @@ function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div
     \u0275\u0275attribute("aria-label", "Delete return " + (returnIndex_r9 + 1) + " for item " + (itemIndex_r10 + 1));
   }
 }
-function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div_9_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_div_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 26)(1, "table", 62)(2, "thead")(3, "tr")(4, "th", 28);
+    \u0275\u0275elementStart(0, "div", 29)(1, "table", 65)(2, "thead")(3, "tr")(4, "th", 31);
     \u0275\u0275text(5, "#");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "th", 28)(7, "strong");
+    \u0275\u0275elementStart(6, "th", 31)(7, "strong");
     \u0275\u0275text(8, "Return Quantity");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "th", 28)(10, "strong");
+    \u0275\u0275elementStart(9, "th", 31)(10, "strong");
     \u0275\u0275text(11, "Return Date");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "th", 28)(13, "strong");
+    \u0275\u0275elementStart(12, "th", 31)(13, "strong");
     \u0275\u0275text(14, "Actions");
     \u0275\u0275elementEnd()()()();
     \u0275\u0275elementStart(15, "tbody");
-    \u0275\u0275template(16, AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div_9_tr_16_Template, 12, 8, "tr", 63);
+    \u0275\u0275template(16, AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_div_9_tr_16_Template, 12, 8, "tr", 66);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(17, "tfoot")(18, "tr")(19, "td")(20, "strong");
     \u0275\u0275text(21, "Total Returns");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(22, "td", 64)(23, "strong");
+    \u0275\u0275elementStart(22, "td", 67)(23, "strong");
     \u0275\u0275text(24);
     \u0275\u0275elementEnd()()()()()();
   }
@@ -74461,34 +75190,34 @@ function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div
     \u0275\u0275textInterpolate(ctx_r0.getTotalReturnsForItem((tmp_8_0 = itemControl_r6.get("id")) == null ? null : tmp_8_0.value));
   }
 }
-function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div_10_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_div_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 67);
+    \u0275\u0275elementStart(0, "div", 70);
     \u0275\u0275text(1, " No returns found for this item. ");
     \u0275\u0275elementEnd();
   }
 }
-function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 58)(2, "h3")(3, "strong");
+    \u0275\u0275elementStart(1, "div", 61)(2, "h3")(3, "strong");
     \u0275\u0275text(4);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_span_5_Template, 2, 1, "span", 30);
+    \u0275\u0275template(5, AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_span_5_Template, 2, 1, "span", 33);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "button", 59);
-    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_Template_button_click_6_listener() {
+    \u0275\u0275elementStart(6, "button", 62);
+    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_Template_button_click_6_listener() {
       let tmp_7_0;
       \u0275\u0275restoreView(_r5);
       const itemControl_r6 = \u0275\u0275nextContext().$implicit;
       const ctx_r0 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r0.openReturnModal((tmp_7_0 = itemControl_r6.get("id")) == null ? null : tmp_7_0.value));
     });
-    \u0275\u0275element(7, "i", 25);
+    \u0275\u0275element(7, "i", 28);
     \u0275\u0275text(8, " Add Return ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(9, AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div_9_Template, 25, 2, "div", 60)(10, AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_div_10_Template, 2, 0, "div", 61);
+    \u0275\u0275template(9, AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_div_9_Template, 25, 2, "div", 63)(10, AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_div_10_Template, 2, 0, "div", 64);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
@@ -74512,10 +75241,10 @@ function AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_Tem
     \u0275\u0275property("ngIf", ctx_r0.loadItemReturns((tmp_11_0 = itemControl_r6.get("id")) == null ? null : tmp_11_0.value).length === 0);
   }
 }
-function AddPowderCoatingProcessComponent_div_74_div_10_div_1_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_83_div_10_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 57);
-    \u0275\u0275template(1, AddPowderCoatingProcessComponent_div_74_div_10_div_1_ng_container_1_Template, 11, 6, "ng-container", 30);
+    \u0275\u0275elementStart(0, "div", 60);
+    \u0275\u0275template(1, AddPowderCoatingProcessComponent_div_83_div_10_div_1_ng_container_1_Template, 11, 6, "ng-container", 33);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -74525,10 +75254,10 @@ function AddPowderCoatingProcessComponent_div_74_div_10_div_1_Template(rf, ctx) 
     \u0275\u0275property("ngIf", (tmp_5_0 = itemControl_r6.get("id")) == null ? null : tmp_5_0.value);
   }
 }
-function AddPowderCoatingProcessComponent_div_74_div_10_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_83_div_10_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div");
-    \u0275\u0275template(1, AddPowderCoatingProcessComponent_div_74_div_10_div_1_Template, 2, 1, "div", 56);
+    \u0275\u0275template(1, AddPowderCoatingProcessComponent_div_83_div_10_div_1_Template, 2, 1, "div", 59);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -74537,34 +75266,34 @@ function AddPowderCoatingProcessComponent_div_74_div_10_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r0.itemsFormArray.controls);
   }
 }
-function AddPowderCoatingProcessComponent_div_74_Template(rf, ctx) {
+function AddPowderCoatingProcessComponent_div_83_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 52)(1, "div", 53);
-    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_div_74_Template_div_click_1_listener() {
+    \u0275\u0275elementStart(0, "div", 55)(1, "div", 56);
+    \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_div_83_Template_div_click_1_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.toggleReturns());
-    })("keydown.enter", function AddPowderCoatingProcessComponent_div_74_Template_div_keydown_enter_1_listener() {
+    })("keydown.enter", function AddPowderCoatingProcessComponent_div_83_Template_div_keydown_enter_1_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.toggleReturns());
-    })("keydown.space", function AddPowderCoatingProcessComponent_div_74_Template_div_keydown_space_1_listener($event) {
+    })("keydown.space", function AddPowderCoatingProcessComponent_div_83_Template_div_keydown_space_1_listener($event) {
       \u0275\u0275restoreView(_r4);
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.toggleReturns();
       return \u0275\u0275resetView($event.preventDefault());
     });
-    \u0275\u0275elementStart(2, "div", 54);
-    \u0275\u0275element(3, "i", 33);
+    \u0275\u0275elementStart(2, "div", 57);
+    \u0275\u0275element(3, "i", 36);
     \u0275\u0275elementStart(4, "h2")(5, "strong");
     \u0275\u0275text(6, "Process Returns");
     \u0275\u0275elementEnd()()();
     \u0275\u0275element(7, "i", 19);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "div", 55);
+    \u0275\u0275elementStart(8, "div", 58);
     \u0275\u0275element(9, "app-loader", 8);
-    \u0275\u0275template(10, AddPowderCoatingProcessComponent_div_74_div_10_Template, 2, 1, "div", 30);
+    \u0275\u0275template(10, AddPowderCoatingProcessComponent_div_83_div_10_Template, 2, 1, "div", 33);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -74585,7 +75314,7 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
   get itemsFormArray() {
     return this.processForm.get("items");
   }
-  constructor(fb, router, route, productService, customerService, powderCoatingService, snackbar, modalService) {
+  constructor(fb, router, route, productService, customerService, powderCoatingService, snackbar, modalService, encryptionService) {
     this.fb = fb;
     this.router = router;
     this.route = route;
@@ -74594,6 +75323,7 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
     this.powderCoatingService = powderCoatingService;
     this.snackbar = snackbar;
     this.modalService = modalService;
+    this.encryptionService = encryptionService;
     this.products = [];
     this.customers = [];
     this.loading = false;
@@ -74605,14 +75335,25 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
     this.itemReturns = /* @__PURE__ */ new Map();
     this.destroy$ = new Subject();
     this.initializeForm();
-    this.processId = this.route.snapshot.params["id"];
-    this.isEditMode = !!this.processId;
+  }
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
   }
   ngOnInit() {
     this.loadProducts();
     this.loadCustomers();
     this.setupCustomerChange();
-    if (this.isEditMode) {
+    const rawId = this.route.snapshot.paramMap.get("id") ?? this.route.snapshot.params["id"];
+    const decrypted = rawId ? Number(this.encryptionService.decrypt(rawId)) : NaN;
+    if (rawId && !decrypted) {
+      this.snackbar.error("Invalid link");
+      this.router.navigate(["/powder-coating-process"]);
+      return;
+    }
+    if (decrypted) {
+      this.processId = decrypted;
+      this.isEditMode = true;
       this.loadProcess();
     } else {
       this.addItem();
@@ -74625,6 +75366,8 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
   initializeForm() {
     this.processForm = this.fb.group({
       customerId: ["", [Validators.required]],
+      // TRANSPORT_COATING_DATE: business date, defaults to today, editable.
+      coatingDate: [formatDate(/* @__PURE__ */ new Date(), "yyyy-MM-dd", "en"), Validators.required],
       status: ["A"],
       items: this.fb.array([])
     });
@@ -74771,6 +75514,7 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
           }
           this.processForm.patchValue({
             customerId: data.customerId,
+            coatingDate: data.coatingDate ? formatDate(data.coatingDate, "yyyy-MM-dd", "en") : formatDate(/* @__PURE__ */ new Date(), "yyyy-MM-dd", "en"),
             status: data.status || "A"
           });
           if (data.items && data.items.length > 0) {
@@ -74812,6 +75556,7 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
       const formValue = this.processForm.getRawValue();
       const requestData = {
         customerId: formValue.customerId,
+        coatingDate: formValue.coatingDate || null,
         status: formValue.status,
         items: this.itemsFormArray.controls.map((control) => {
           const itemGroup = control;
@@ -74983,7 +75728,7 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
   }
   static {
     this.\u0275fac = function AddPowderCoatingProcessComponent_Factory(t) {
-      return new (t || _AddPowderCoatingProcessComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(PowderCoatingService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(ModalService));
+      return new (t || _AddPowderCoatingProcessComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(PowderCoatingService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(ModalService), \u0275\u0275directiveInject(EncryptionService));
     };
   }
   static {
@@ -74995,7 +75740,7 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
         let _t;
         \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.returnModal = _t.first);
       }
-    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 76, vars: 21, consts: [[1, "add-process-container"], ["routerLink", "/powder-coating-process", "type", "button", 1, "btn", "btn-secondary", "back-btn"], ["aria-hidden", "true", 1, "fas", "fa-arrow-left"], [1, "form-card"], [1, "card-header"], [1, "form-title"], ["aria-hidden", "true", 1, "fas", "fa-spray-can"], [1, "form-content"], [3, "show"], ["novalidate", "", 1, "process-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], ["for", "customerId"], ["aria-hidden", "true", 1, "fas", "fa-user"], ["aria-label", "required", 1, "required"], [1, "select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", "id", "customerId", "aria-required", "true", 3, "options", "placeholder"], ["type", "button", "title", "Refresh Customers", "aria-label", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], ["aria-hidden", "true", 1, "fas", "fa-boxes"], ["type", "button", "aria-label", "Add Item", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-plus"], [1, "table-responsive"], ["role", "table", "aria-label", "Process Items", 1, "table", "items-table"], ["scope", "col"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "form-actions"], ["type", "button", "aria-label", "Reset Form", 1, "btn", "btn-secondary", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-undo"], ["type", "submit", "aria-label", "Save Process", 1, "btn", "btn-primary", 3, "disabled"], ["class", "returns-section card", 4, "ngIf"], [3, "returnCreated"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "form-field-container"], ["aria-required", "true", 3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", "aria-label", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "unitPrice", "min", "0", "step", "0.01", "aria-required", "true", 1, "form-control"], ["type", "text", "formControlName", "totalAmount", "readonly", "", 1, "form-control"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled", "title"], ["aria-hidden", "true", 1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"], ["colspan", "4", 1, "text-end"], ["colspan", "2"], [1, "returns-section", "card"], ["role", "button", "tabindex", "0", 1, "returns-header", 3, "click", "keydown.enter", "keydown.space"], [1, "header-content"], [1, "returns-content"], ["class", "item-returns-section", 4, "ngFor", "ngForOf"], [1, "item-returns-section"], [1, "item-returns-header"], ["type", "button", 1, "btn", "btn-primary", "btn-sm", "add-return-btn", 3, "click", "disabled"], ["class", "table-responsive", 4, "ngIf"], ["class", "no-returns-message", 4, "ngIf"], [1, "table", "returns-table"], [4, "ngFor", "ngForOf"], ["colspan", "3"], [1, "actions-cell"], ["type", "button", "title", "Delete Return", 1, "btn", "btn-icon", "btn-danger", 3, "click", "disabled"], [1, "no-returns-message"]], template: function AddPowderCoatingProcessComponent_Template(rf, ctx) {
+    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 85, vars: 24, consts: [[1, "add-process-container"], ["routerLink", "/powder-coating-process", "type", "button", 1, "btn", "btn-secondary", "back-btn"], ["aria-hidden", "true", 1, "fas", "fa-arrow-left"], [1, "form-card"], [1, "card-header"], [1, "form-title"], ["aria-hidden", "true", 1, "fas", "fa-spray-can"], [1, "form-content"], [3, "show"], ["novalidate", "", 1, "process-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], ["for", "customerId"], ["aria-hidden", "true", 1, "fas", "fa-user"], ["aria-label", "required", 1, "required"], [1, "select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", "id", "customerId", "aria-required", "true", 3, "options", "placeholder"], ["type", "button", "title", "Refresh Customers", "aria-label", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], ["for", "coatingDate"], ["aria-hidden", "true", 1, "fas", "fa-calendar-alt"], ["type", "date", "id", "coatingDate", "formControlName", "coatingDate", 1, "form-control", 3, "touchstart"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], ["aria-hidden", "true", 1, "fas", "fa-boxes"], ["type", "button", "aria-label", "Add Item", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-plus"], [1, "table-responsive"], ["role", "table", "aria-label", "Process Items", 1, "table", "items-table"], ["scope", "col"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "form-actions"], ["type", "button", "aria-label", "Reset Form", 1, "btn", "btn-secondary", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-undo"], ["type", "submit", "aria-label", "Save Process", 1, "btn", "btn-primary", 3, "disabled"], ["class", "returns-section card", 4, "ngIf"], [3, "returnCreated"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "form-field-container"], ["aria-required", "true", 3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", "aria-label", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "unitPrice", "min", "0", "step", "0.01", "aria-required", "true", 1, "form-control"], ["type", "text", "formControlName", "totalAmount", "readonly", "", 1, "form-control"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled", "title"], ["aria-hidden", "true", 1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"], ["colspan", "4", 1, "text-end"], ["colspan", "2"], [1, "returns-section", "card"], ["role", "button", "tabindex", "0", 1, "returns-header", 3, "click", "keydown.enter", "keydown.space"], [1, "header-content"], [1, "returns-content"], ["class", "item-returns-section", 4, "ngFor", "ngForOf"], [1, "item-returns-section"], [1, "item-returns-header"], ["type", "button", 1, "btn", "btn-primary", "btn-sm", "add-return-btn", 3, "click", "disabled"], ["class", "table-responsive", 4, "ngIf"], ["class", "no-returns-message", 4, "ngIf"], [1, "table", "returns-table"], [4, "ngFor", "ngForOf"], ["colspan", "3"], [1, "actions-cell"], ["type", "button", "title", "Delete Return", 1, "btn", "btn-icon", "btn-danger", 3, "click", "disabled"], [1, "no-returns-message"]], template: function AddPowderCoatingProcessComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "button", 1);
         \u0275\u0275element(2, "i", 2);
@@ -75031,59 +75776,74 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
         \u0275\u0275element(27, "i", 19);
         \u0275\u0275elementEnd()();
         \u0275\u0275template(28, AddPowderCoatingProcessComponent_div_28_Template, 2, 1, "div", 20);
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(29, "div", 21)(30, "div", 22)(31, "h2");
-        \u0275\u0275element(32, "i", 23);
-        \u0275\u0275elementStart(33, "strong");
-        \u0275\u0275text(34, "Process Items");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(29, "div", 12)(30, "label", 21);
+        \u0275\u0275element(31, "i", 22);
+        \u0275\u0275elementStart(32, "strong");
+        \u0275\u0275text(33, "Coating Date");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(34, "span", 15);
+        \u0275\u0275text(35, "*");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(35, "button", 24);
-        \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_Template_button_click_35_listener() {
+        \u0275\u0275elementStart(36, "input", 23);
+        \u0275\u0275listener("touchstart", function AddPowderCoatingProcessComponent_Template_input_touchstart_36_listener($event) {
+          return $event.stopPropagation();
+        });
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(37, AddPowderCoatingProcessComponent_div_37_Template, 2, 1, "div", 20);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(38, "div", 24)(39, "div", 25)(40, "h2");
+        \u0275\u0275element(41, "i", 26);
+        \u0275\u0275elementStart(42, "strong");
+        \u0275\u0275text(43, "Process Items");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(44, "button", 27);
+        \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_Template_button_click_44_listener() {
           return ctx.addItem();
         });
-        \u0275\u0275element(36, "i", 25);
-        \u0275\u0275text(37, " Add Item ");
+        \u0275\u0275element(45, "i", 28);
+        \u0275\u0275text(46, " Add Item ");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(38, "div", 26)(39, "table", 27)(40, "thead")(41, "tr")(42, "th", 28)(43, "strong");
-        \u0275\u0275text(44, "Product");
+        \u0275\u0275elementStart(47, "div", 29)(48, "table", 30)(49, "thead")(50, "tr")(51, "th", 31)(52, "strong");
+        \u0275\u0275text(53, "Product");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(45, "th", 28)(46, "strong");
-        \u0275\u0275text(47, "Quantity");
+        \u0275\u0275elementStart(54, "th", 31)(55, "strong");
+        \u0275\u0275text(56, "Quantity");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(48, "th", 28)(49, "strong");
-        \u0275\u0275text(50, "Total Bags");
+        \u0275\u0275elementStart(57, "th", 31)(58, "strong");
+        \u0275\u0275text(59, "Total Bags");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(51, "th", 28)(52, "strong");
-        \u0275\u0275text(53, "Unit Price");
+        \u0275\u0275elementStart(60, "th", 31)(61, "strong");
+        \u0275\u0275text(62, "Unit Price");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(54, "th", 28)(55, "strong");
-        \u0275\u0275text(56, "Total Amount");
+        \u0275\u0275elementStart(63, "th", 31)(64, "strong");
+        \u0275\u0275text(65, "Total Amount");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(57, "th", 28)(58, "strong");
-        \u0275\u0275text(59, "Remarks");
+        \u0275\u0275elementStart(66, "th", 31)(67, "strong");
+        \u0275\u0275text(68, "Remarks");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(60, "th", 28)(61, "strong");
-        \u0275\u0275text(62, "Actions");
+        \u0275\u0275elementStart(69, "th", 31)(70, "strong");
+        \u0275\u0275text(71, "Actions");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(63, "tbody");
-        \u0275\u0275template(64, AddPowderCoatingProcessComponent_tr_64_Template, 24, 35, "tr", 29)(65, AddPowderCoatingProcessComponent_tr_65_Template, 3, 0, "tr", 30);
+        \u0275\u0275elementStart(72, "tbody");
+        \u0275\u0275template(73, AddPowderCoatingProcessComponent_tr_73_Template, 24, 35, "tr", 32)(74, AddPowderCoatingProcessComponent_tr_74_Template, 3, 0, "tr", 33);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(66, AddPowderCoatingProcessComponent_tfoot_66_Template, 10, 4, "tfoot", 30);
+        \u0275\u0275template(75, AddPowderCoatingProcessComponent_tfoot_75_Template, 10, 4, "tfoot", 33);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(67, "div", 31)(68, "button", 32);
-        \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_Template_button_click_68_listener() {
+        \u0275\u0275elementStart(76, "div", 34)(77, "button", 35);
+        \u0275\u0275listener("click", function AddPowderCoatingProcessComponent_Template_button_click_77_listener() {
           return ctx.resetForm();
         });
-        \u0275\u0275element(69, "i", 33);
-        \u0275\u0275text(70, " Reset ");
+        \u0275\u0275element(78, "i", 36);
+        \u0275\u0275text(79, " Reset ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(71, "button", 34);
-        \u0275\u0275element(72, "i", 19);
-        \u0275\u0275text(73);
+        \u0275\u0275elementStart(80, "button", 37);
+        \u0275\u0275element(81, "i", 19);
+        \u0275\u0275text(82);
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275template(74, AddPowderCoatingProcessComponent_div_74_Template, 11, 7, "div", 35);
-        \u0275\u0275elementStart(75, "app-return-modal", 36);
-        \u0275\u0275listener("returnCreated", function AddPowderCoatingProcessComponent_Template_app_return_modal_returnCreated_75_listener() {
+        \u0275\u0275template(83, AddPowderCoatingProcessComponent_div_83_Template, 11, 7, "div", 38);
+        \u0275\u0275elementStart(84, "app-return-modal", 39);
+        \u0275\u0275listener("returnCreated", function AddPowderCoatingProcessComponent_Template_app_return_modal_returnCreated_84_listener() {
           return ctx.loadAllReturns();
         });
         \u0275\u0275elementEnd()();
@@ -75105,6 +75865,10 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.processForm.get("customerId")));
+        \u0275\u0275advance(8);
+        \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid(ctx.processForm.get("coatingDate")));
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.processForm.get("coatingDate")));
         \u0275\u0275advance(7);
         \u0275\u0275property("disabled", ctx.loading);
         \u0275\u0275advance(29);
@@ -75150,7 +75914,7 @@ var AddPowderCoatingProcessComponent = class _AddPowderCoatingProcessComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AddPowderCoatingProcessComponent, { className: "AddPowderCoatingProcessComponent", filePath: "src\\app\\components\\powder-coating\\add-powder-coating-process\\add-powder-coating-process.component.ts", lineNumber: 30 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AddPowderCoatingProcessComponent, { className: "AddPowderCoatingProcessComponent", filePath: "src\\app\\components\\powder-coating\\add-powder-coating-process\\add-powder-coating-process.component.ts", lineNumber: 31 });
 })();
 
 // src/app/shared/components/confirm-modal/confirm-modal.component.ts
@@ -75254,17 +76018,15 @@ var TransportService = class _TransportService {
   createTransport(data) {
     return this.http.post(`${this.apiUrl}/create`, data);
   }
+  // ENC_URL_POST_V1: POST with id in body; GET/PUT/DELETE with id in URL kept on backend for backward compat.
   getTransports(params) {
-    return this.http.get(`${this.apiUrl}/list`, { params });
+    return this.http.post(`${this.apiUrl}/search`, params);
   }
   getTransport(id) {
-    return this.http.get(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/detail`, { id });
   }
-  // updateTransport(id: number, data: any): Observable<any> {
-  //   return this.http.put(`${this.apiUrl}/${id}`, data);
-  // }
   deleteTransport(id) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   searchTransports(params) {
     return this.http.post(`${this.apiUrl}/search`, params);
@@ -75273,7 +76035,7 @@ var TransportService = class _TransportService {
     return this.http.post(`${this.apiUrl}/detail`, { id });
   }
   updateTransport(data) {
-    return this.http.put(`${this.apiUrl}/update`, data);
+    return this.http.post(`${this.apiUrl}/update`, data);
   }
   generatePdf(id) {
     return this.http.post(`${this.apiUrl}/generate-pdf`, { id }, {
@@ -75320,7 +76082,7 @@ var _c012 = () => ({ label: "Select Customer", value: "" });
 function TransportComponent_button_7_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 36);
+    \u0275\u0275elementStart(0, "button", 40);
     \u0275\u0275listener("click", function TransportComponent_button_7_Template_button_click_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -75341,55 +76103,91 @@ function TransportComponent_button_7_Template(rf, ctx) {
 }
 function TransportComponent_div_23_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1, " Please select a customer ");
     \u0275\u0275elementEnd();
   }
 }
 function TransportComponent_div_31_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 38)(1, "div", 39)(2, "div", 40)(3, "h3");
-    \u0275\u0275element(4, "i", 41);
+    \u0275\u0275elementStart(0, "div", 41);
+    \u0275\u0275text(1, " Transport date is required ");
+    \u0275\u0275elementEnd();
+  }
+}
+function TransportComponent_div_39_div_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 48)(1, "label");
+    \u0275\u0275text(2, "Total Purchase");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "span");
+    \u0275\u0275text(4);
+    \u0275\u0275pipe(5, "number");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(5, 1, ctx_r1.transportSummary.totalPurchaseAmount, "1.2-2"), "");
+  }
+}
+function TransportComponent_div_39_div_22_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 48)(1, "label");
+    \u0275\u0275text(2, "Total Sale");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "span");
+    \u0275\u0275text(4);
+    \u0275\u0275pipe(5, "number");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(5, 1, ctx_r1.transportSummary.totalSaleAmount, "1.2-2"), "");
+  }
+}
+function TransportComponent_div_39_div_23_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 51)(1, "label");
+    \u0275\u0275text(2, "Total Profit");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "span");
+    \u0275\u0275text(4);
+    \u0275\u0275pipe(5, "number");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(5, 1, ctx_r1.transportSummary.totalProfit, "1.2-2"), "");
+  }
+}
+function TransportComponent_div_39_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 42)(1, "div", 43)(2, "div", 44)(3, "h3");
+    \u0275\u0275element(4, "i", 45);
     \u0275\u0275text(5, " Transport Summary");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "span", 42);
+    \u0275\u0275elementStart(6, "span", 46);
     \u0275\u0275text(7);
     \u0275\u0275pipe(8, "date");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "div", 43)(10, "div", 44)(11, "label");
+    \u0275\u0275elementStart(9, "div", 47)(10, "div", 48)(11, "label");
     \u0275\u0275text(12, "Total Bags");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(13, "span");
     \u0275\u0275text(14);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(15, "div", 44)(16, "label");
+    \u0275\u0275elementStart(15, "div", 48)(16, "label");
     \u0275\u0275text(17, "Total Weight");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(18, "span");
     \u0275\u0275text(19);
     \u0275\u0275pipe(20, "number");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(21, "div", 44)(22, "label");
-    \u0275\u0275text(23, "Total Purchase");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(24, "span");
-    \u0275\u0275text(25);
-    \u0275\u0275pipe(26, "number");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(27, "div", 44)(28, "label");
-    \u0275\u0275text(29, "Total Sale");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(30, "span");
-    \u0275\u0275text(31);
-    \u0275\u0275pipe(32, "number");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(33, "div", 45)(34, "label");
-    \u0275\u0275text(35, "Total Profit");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(36, "span");
-    \u0275\u0275text(37);
-    \u0275\u0275pipe(38, "number");
-    \u0275\u0275elementEnd()()()()();
+    \u0275\u0275template(21, TransportComponent_div_39_div_21_Template, 6, 4, "div", 49)(22, TransportComponent_div_39_div_22_Template, 6, 4, "div", 49)(23, TransportComponent_div_39_div_23_Template, 6, 4, "div", 50);
+    \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
@@ -75399,24 +76197,24 @@ function TransportComponent_div_31_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.transportSummary.totalBags);
     \u0275\u0275advance(5);
     \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(20, 9, ctx_r1.transportSummary.totalWeight, "1.3-3"), " kg");
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(26, 12, ctx_r1.transportSummary.totalPurchaseAmount, "1.2-2"), "");
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(32, 15, ctx_r1.transportSummary.totalSaleAmount, "1.2-2"), "");
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(38, 18, ctx_r1.transportSummary.totalProfit, "1.2-2"), "");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
   }
 }
-function TransportComponent_div_33_div_1_div_30_div_11_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_div_30_div_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1, " Please select a product ");
     \u0275\u0275elementEnd();
   }
 }
-function TransportComponent_div_33_div_1_div_30_div_19_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_div_30_div_19_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 96);
+    \u0275\u0275elementStart(0, "div", 89);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -75427,165 +76225,198 @@ function TransportComponent_div_33_div_1_div_30_div_19_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" Total: ", (tmp_8_0 = item_r6.get("totalQuantity")) == null ? null : tmp_8_0.value, " ");
   }
 }
-function TransportComponent_div_33_div_1_div_30_div_20_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_div_30_div_20_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1, " Please enter a valid quantity ");
     \u0275\u0275elementEnd();
   }
 }
-function TransportComponent_div_33_div_1_div_30_div_36_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_div_30_div_25_div_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_8_0;
-    const item_r6 = \u0275\u0275nextContext().$implicit;
+    let tmp_9_0;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["required"]) ? "Unit price is required" : ((tmp_8_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
+    \u0275\u0275textInterpolate1(" ", ((tmp_9_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["required"]) ? "Unit price is required" : ((tmp_9_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
   }
 }
-function TransportComponent_div_33_div_1_div_30_div_41_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_div_30_div_25_div_16_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_8_0;
-    const item_r6 = \u0275\u0275nextContext().$implicit;
+    let tmp_9_0;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_8_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
+    \u0275\u0275textInterpolate1(" ", ((tmp_9_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_9_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
   }
 }
-function TransportComponent_div_33_div_1_div_30_div_61_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_div_30_div_25_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 90)(1, "h6", 91);
+    \u0275\u0275element(2, "i", 92);
+    \u0275\u0275text(3, " Purchase Details");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "div", 93)(5, "div", 21)(6, "label");
+    \u0275\u0275text(7, "Unit Price ");
+    \u0275\u0275elementStart(8, "span", 15);
+    \u0275\u0275text(9, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275element(10, "input", 94);
+    \u0275\u0275template(11, TransportComponent_div_41_div_1_div_30_div_25_div_11_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "div", 21)(13, "label");
+    \u0275\u0275text(14, "Discount %");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(15, "input", 95);
+    \u0275\u0275template(16, TransportComponent_div_41_div_1_div_30_div_25_div_16_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(17, "div", 21)(18, "label");
+    \u0275\u0275text(19, "Discount Amount");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(20, "input", 96);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(21, "div", 21)(22, "label");
+    \u0275\u0275text(23, "Final Price");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(24, "input", 97);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(10);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
+  }
+}
+function TransportComponent_div_41_div_1_div_30_div_26_div_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_8_0;
-    const item_r6 = \u0275\u0275nextContext().$implicit;
+    let tmp_9_0;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["required"]) ? "Unit price is required" : ((tmp_8_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
+    \u0275\u0275textInterpolate1(" ", ((tmp_9_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["required"]) ? "Unit price is required" : ((tmp_9_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
   }
 }
-function TransportComponent_div_33_div_1_div_30_div_66_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_div_30_div_26_div_16_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_8_0;
-    const item_r6 = \u0275\u0275nextContext().$implicit;
+    let tmp_9_0;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("saleDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_8_0 = item_r6.get("saleDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
+    \u0275\u0275textInterpolate1(" ", ((tmp_9_0 = item_r6.get("saleDiscount")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_9_0 = item_r6.get("saleDiscount")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
   }
 }
-function TransportComponent_div_33_div_1_div_30_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_div_30_div_26_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 98)(1, "h6", 91);
+    \u0275\u0275element(2, "i", 99);
+    \u0275\u0275text(3, " Sale Details");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "div", 93)(5, "div", 21)(6, "label");
+    \u0275\u0275text(7, "Unit Price ");
+    \u0275\u0275elementStart(8, "span", 15);
+    \u0275\u0275text(9, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275element(10, "input", 100);
+    \u0275\u0275template(11, TransportComponent_div_41_div_1_div_30_div_26_div_11_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "div", 21)(13, "label");
+    \u0275\u0275text(14, "Discount %");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(15, "input", 101);
+    \u0275\u0275template(16, TransportComponent_div_41_div_1_div_30_div_26_div_16_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(17, "div", 21)(18, "label");
+    \u0275\u0275text(19, "Discount Amount");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(20, "input", 102);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(21, "div", 21)(22, "label");
+    \u0275\u0275text(23, "Final Price");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(24, "input", 103);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(10);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
+  }
+}
+function TransportComponent_div_41_div_1_div_30_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 67)(1, "div", 68)(2, "div", 69)(3, "label");
+    \u0275\u0275elementStart(0, "div", 73)(1, "div", 74)(2, "div", 75)(3, "label");
     \u0275\u0275text(4, "Product ");
     \u0275\u0275elementStart(5, "span", 15);
     \u0275\u0275text(6, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(7, "div", 70);
-    \u0275\u0275element(8, "app-searchable-select", 71);
+    \u0275\u0275elementStart(7, "div", 76);
+    \u0275\u0275element(8, "app-searchable-select", 77);
     \u0275\u0275elementStart(9, "button", 18);
-    \u0275\u0275listener("click", function TransportComponent_div_33_div_1_div_30_Template_button_click_9_listener() {
+    \u0275\u0275listener("click", function TransportComponent_div_41_div_1_div_30_Template_button_click_9_listener() {
       \u0275\u0275restoreView(_r5);
       const ctx_r1 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r1.refreshProducts());
     });
-    \u0275\u0275element(10, "i", 72);
+    \u0275\u0275element(10, "i", 78);
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(11, TransportComponent_div_33_div_1_div_30_div_11_Template, 2, 0, "div", 20);
+    \u0275\u0275template(11, TransportComponent_div_41_div_1_div_30_div_11_Template, 2, 0, "div", 20);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "div", 73)(13, "label");
+    \u0275\u0275elementStart(12, "div", 79)(13, "label");
     \u0275\u0275text(14, "Quantity ");
     \u0275\u0275elementStart(15, "span", 15);
     \u0275\u0275text(16, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(17, "div", 74);
-    \u0275\u0275element(18, "input", 75);
-    \u0275\u0275template(19, TransportComponent_div_33_div_1_div_30_div_19_Template, 2, 1, "div", 76);
+    \u0275\u0275elementStart(17, "div", 80);
+    \u0275\u0275element(18, "input", 81);
+    \u0275\u0275template(19, TransportComponent_div_41_div_1_div_30_div_19_Template, 2, 1, "div", 82);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(20, TransportComponent_div_33_div_1_div_30_div_20_Template, 2, 0, "div", 20);
+    \u0275\u0275template(20, TransportComponent_div_41_div_1_div_30_div_20_Template, 2, 0, "div", 20);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(21, "div", 77)(22, "label");
+    \u0275\u0275elementStart(21, "div", 83)(22, "label");
     \u0275\u0275text(23, "Remarks");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(24, "input", 78);
+    \u0275\u0275element(24, "input", 84);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(25, "div", 79)(26, "h6", 80);
-    \u0275\u0275element(27, "i", 81);
-    \u0275\u0275text(28, " Purchase Details");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(29, "div", 82)(30, "div", 83)(31, "label");
-    \u0275\u0275text(32, "Unit Price ");
-    \u0275\u0275elementStart(33, "span", 15);
-    \u0275\u0275text(34, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275element(35, "input", 84);
-    \u0275\u0275template(36, TransportComponent_div_33_div_1_div_30_div_36_Template, 2, 1, "div", 20);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(37, "div", 83)(38, "label");
-    \u0275\u0275text(39, "Discount %");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(40, "input", 85);
-    \u0275\u0275template(41, TransportComponent_div_33_div_1_div_30_div_41_Template, 2, 1, "div", 20);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(42, "div", 83)(43, "label");
-    \u0275\u0275text(44, "Discount Amount");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(45, "input", 86);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(46, "div", 83)(47, "label");
-    \u0275\u0275text(48, "Final Price");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(49, "input", 87);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(50, "div", 88)(51, "h6", 80);
-    \u0275\u0275element(52, "i", 89);
-    \u0275\u0275text(53, " Sale Details");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(54, "div", 82)(55, "div", 83)(56, "label");
-    \u0275\u0275text(57, "Unit Price ");
-    \u0275\u0275elementStart(58, "span", 15);
-    \u0275\u0275text(59, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275element(60, "input", 90);
-    \u0275\u0275template(61, TransportComponent_div_33_div_1_div_30_div_61_Template, 2, 1, "div", 20);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(62, "div", 83)(63, "label");
-    \u0275\u0275text(64, "Discount %");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(65, "input", 91);
-    \u0275\u0275template(66, TransportComponent_div_33_div_1_div_30_div_66_Template, 2, 1, "div", 20);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(67, "div", 83)(68, "label");
-    \u0275\u0275text(69, "Discount Amount");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(70, "input", 92);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(71, "div", 83)(72, "label");
-    \u0275\u0275text(73, "Final Price");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(74, "input", 93);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(75, "button", 94);
-    \u0275\u0275listener("click", function TransportComponent_div_33_div_1_div_30_Template_button_click_75_listener() {
+    \u0275\u0275template(25, TransportComponent_div_41_div_1_div_30_div_25_Template, 25, 6, "div", 85)(26, TransportComponent_div_41_div_1_div_30_div_26_Template, 25, 6, "div", 86);
+    \u0275\u0275elementStart(27, "button", 87);
+    \u0275\u0275listener("click", function TransportComponent_div_41_div_1_div_30_Template_button_click_27_listener() {
       const itemIndex_r7 = \u0275\u0275restoreView(_r5).index;
       const bagIndex_r4 = \u0275\u0275nextContext().index;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.onDeleteItem(bagIndex_r4, itemIndex_r7));
     });
-    \u0275\u0275element(76, "i", 95);
+    \u0275\u0275element(28, "i", 88);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -75606,72 +76437,60 @@ function TransportComponent_div_33_div_1_div_30_Template(rf, ctx) {
     \u0275\u0275property("ngIf", ((tmp_12_0 = item_r6.get("totalQuantity")) == null ? null : tmp_12_0.value) !== ((tmp_12_0 = item_r6.get("quantity")) == null ? null : tmp_12_0.value));
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("quantity")));
-    \u0275\u0275advance(15);
-    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
+    \u0275\u0275advance(5);
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
-    \u0275\u0275advance(4);
-    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
-    \u0275\u0275advance(19);
-    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
-    \u0275\u0275advance(4);
-    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
-    \u0275\u0275advance(9);
     \u0275\u0275property("disabled", ctx_r1.getBagItems(bagIndex_r4).length === 1);
   }
 }
-function TransportComponent_div_33_div_1_Template(rf, ctx) {
+function TransportComponent_div_41_div_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 48)(1, "div", 49)(2, "h4");
+    \u0275\u0275elementStart(0, "div", 54)(1, "div", 55)(2, "h4");
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "div", 50)(5, "div", 51)(6, "label");
-    \u0275\u0275element(7, "i", 52);
+    \u0275\u0275elementStart(4, "div", 56)(5, "div", 57)(6, "label");
+    \u0275\u0275element(7, "i", 58);
     \u0275\u0275text(8, " Number of Bags ");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(9, "input", 53);
+    \u0275\u0275element(9, "input", 59);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "div", 54)(11, "label");
-    \u0275\u0275element(12, "i", 55);
+    \u0275\u0275elementStart(10, "div", 60)(11, "label");
+    \u0275\u0275element(12, "i", 61);
     \u0275\u0275text(13, " Bag Weight (kg) ");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(14, "input", 56);
+    \u0275\u0275element(14, "input", 62);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(15, "div", 57)(16, "label");
-    \u0275\u0275element(17, "i", 58);
+    \u0275\u0275elementStart(15, "div", 63)(16, "label");
+    \u0275\u0275element(17, "i", 64);
     \u0275\u0275text(18, " Total Bag Weight ");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(19, "input", 59);
+    \u0275\u0275element(19, "input", 65);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "button", 60);
-    \u0275\u0275listener("click", function TransportComponent_div_33_div_1_Template_button_click_20_listener() {
+    \u0275\u0275elementStart(20, "button", 66);
+    \u0275\u0275listener("click", function TransportComponent_div_41_div_1_Template_button_click_20_listener() {
       const bagIndex_r4 = \u0275\u0275restoreView(_r3).index;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.onDeleteBag(bagIndex_r4));
     });
-    \u0275\u0275element(21, "i", 61);
+    \u0275\u0275element(21, "i", 67);
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(22, "div", 62)(23, "div", 63)(24, "h5");
+    \u0275\u0275elementStart(22, "div", 68)(23, "div", 69)(24, "h5");
     \u0275\u0275text(25, "Items");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(26, "button", 64);
-    \u0275\u0275listener("click", function TransportComponent_div_33_div_1_Template_button_click_26_listener() {
+    \u0275\u0275elementStart(26, "button", 70);
+    \u0275\u0275listener("click", function TransportComponent_div_41_div_1_Template_button_click_26_listener() {
       const bagIndex_r4 = \u0275\u0275restoreView(_r3).index;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.addItem(bagIndex_r4));
     });
-    \u0275\u0275element(27, "i", 29);
+    \u0275\u0275element(27, "i", 33);
     \u0275\u0275text(28, " Add Item ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "div", 65);
-    \u0275\u0275template(30, TransportComponent_div_33_div_1_div_30_Template, 77, 22, "div", 66);
+    \u0275\u0275elementStart(29, "div", 71);
+    \u0275\u0275template(30, TransportComponent_div_41_div_1_div_30_Template, 29, 12, "div", 72);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -75693,10 +76512,10 @@ function TransportComponent_div_33_div_1_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r1.getBagItems(bagIndex_r4).controls);
   }
 }
-function TransportComponent_div_33_Template(rf, ctx) {
+function TransportComponent_div_41_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 46);
-    \u0275\u0275template(1, TransportComponent_div_33_div_1_Template, 31, 9, "div", 47);
+    \u0275\u0275elementStart(0, "div", 52);
+    \u0275\u0275template(1, TransportComponent_div_41_div_1_Template, 31, 9, "div", 53);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -75706,7 +76525,11 @@ function TransportComponent_div_33_Template(rf, ctx) {
   }
 }
 var TransportComponent = class _TransportComponent {
-  constructor(fb, route, router, productService, customerService, transportService, snackbar, priceService) {
+  /** Hide purchase/sale amounts on edit when role has HIDE_TRANSPORT_FINANCIALS. */
+  get hideTransportFinancials() {
+    return this.isEditMode && this.pageAccessService.shouldHideTransportFinancials();
+  }
+  constructor(fb, route, router, productService, customerService, transportService, snackbar, priceService, pageAccessService, encryptionService) {
     this.fb = fb;
     this.route = route;
     this.router = router;
@@ -75715,6 +76538,8 @@ var TransportComponent = class _TransportComponent {
     this.transportService = transportService;
     this.snackbar = snackbar;
     this.priceService = priceService;
+    this.pageAccessService = pageAccessService;
+    this.encryptionService = encryptionService;
     this.products = [];
     this.customers = [];
     this.loading = false;
@@ -75731,12 +76556,23 @@ var TransportComponent = class _TransportComponent {
     this.submitted = false;
     this.initializeForm();
     this.route.params.subscribe((params) => {
-      if (params["id"]) {
-        this.transportId = +params["id"];
+      const rawId = params["id"];
+      if (rawId) {
+        const id = Number(this.encryptionService.decrypt(rawId));
+        if (!id) {
+          this.snackbar.error("Invalid link");
+          this.router.navigate(["/transport"]);
+          return;
+        }
+        this.transportId = id;
         this.isEditMode = true;
         this.loadTransportDetail();
       }
     });
+  }
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
   }
   ngOnInit() {
     this.loadProducts();
@@ -75745,6 +76581,8 @@ var TransportComponent = class _TransportComponent {
   initializeForm() {
     this.transportForm = this.fb.group({
       customerId: ["", [Validators.required]],
+      // TRANSPORT_COATING_DATE: business date, defaults to today, editable.
+      transportDate: [formatDate(/* @__PURE__ */ new Date(), "yyyy-MM-dd", "en"), Validators.required],
       bags: this.fb.array([])
     });
   }
@@ -76006,6 +76844,7 @@ var TransportComponent = class _TransportComponent {
     const payload = {
       id: this.isEditMode ? this.transportId : void 0,
       customerId: formValue.customerId,
+      transportDate: formValue.transportDate || null,
       bags: formValue.bags.map((bag) => ({
         id: bag.id,
         weight: bag.weight,
@@ -76119,7 +76958,8 @@ var TransportComponent = class _TransportComponent {
       this.bags.removeAt(0);
     }
     this.transportForm.patchValue({
-      customerId: data.customerId
+      customerId: data.customerId,
+      transportDate: data.transportDate ? formatDate(data.transportDate, "yyyy-MM-dd", "en") : formatDate(/* @__PURE__ */ new Date(), "yyyy-MM-dd", "en")
     });
     data.bags.forEach((bag) => {
       const bagGroup = this.fb.group({
@@ -76320,11 +77160,11 @@ var TransportComponent = class _TransportComponent {
   }
   static {
     this.\u0275fac = function TransportComponent_Factory(t) {
-      return new (t || _TransportComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(TransportService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(PriceService));
+      return new (t || _TransportComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(TransportService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(PriceService), \u0275\u0275directiveInject(PageAccessService), \u0275\u0275directiveInject(EncryptionService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _TransportComponent, selectors: [["app-transport"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 28, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "productId", 3, "options"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], [1, "form-group"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"]], template: function TransportComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _TransportComponent, selectors: [["app-transport"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 57, vars: 31, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "form-group"], ["for", "transportDate"], [1, "fas", "fa-calendar-alt"], ["type", "date", "id", "transportDate", "formControlName", "transportDate", 1, "form-control", 3, "touchstart"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], ["class", "summary-item", 4, "ngIf"], ["class", "summary-item profit", 4, "ngIf"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "productId", 3, "options"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], ["class", "purchase-section", 4, "ngIf"], ["class", "sale-section", 4, "ngIf"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"]], template: function TransportComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "div", 3)(4, "h2", 4);
         \u0275\u0275element(5, "i", 5);
@@ -76354,49 +77194,62 @@ var TransportComponent = class _TransportComponent {
         \u0275\u0275elementEnd()();
         \u0275\u0275template(23, TransportComponent_div_23_Template, 2, 0, "div", 20);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(24, "div", 21)(25, "label");
-        \u0275\u0275element(26, "i", 22);
-        \u0275\u0275text(27, " Total Weight");
+        \u0275\u0275elementStart(24, "div", 21)(25, "label", 22);
+        \u0275\u0275element(26, "i", 23);
+        \u0275\u0275text(27, " Transport Date ");
+        \u0275\u0275elementStart(28, "span", 15);
+        \u0275\u0275text(29, "*");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(30, "input", 24);
+        \u0275\u0275listener("touchstart", function TransportComponent_Template_input_touchstart_30_listener($event) {
+          return $event.stopPropagation();
+        });
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(28, "div", 23);
-        \u0275\u0275text(29);
-        \u0275\u0275pipe(30, "number");
+        \u0275\u0275template(31, TransportComponent_div_31_Template, 2, 0, "div", 20);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(32, "div", 25)(33, "label");
+        \u0275\u0275element(34, "i", 26);
+        \u0275\u0275text(35, " Total Weight");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(36, "div", 27);
+        \u0275\u0275text(37);
+        \u0275\u0275pipe(38, "number");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275template(31, TransportComponent_div_31_Template, 39, 21, "div", 24);
-        \u0275\u0275elementStart(32, "div", 25);
-        \u0275\u0275template(33, TransportComponent_div_33_Template, 2, 1, "div", 26);
-        \u0275\u0275elementStart(34, "div", 27)(35, "h3");
-        \u0275\u0275text(36, "Bags");
+        \u0275\u0275template(39, TransportComponent_div_39_Template, 24, 12, "div", 28);
+        \u0275\u0275elementStart(40, "div", 29);
+        \u0275\u0275template(41, TransportComponent_div_41_Template, 2, 1, "div", 30);
+        \u0275\u0275elementStart(42, "div", 31)(43, "h3");
+        \u0275\u0275text(44, "Bags");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(37, "button", 28);
-        \u0275\u0275listener("click", function TransportComponent_Template_button_click_37_listener() {
+        \u0275\u0275elementStart(45, "button", 32);
+        \u0275\u0275listener("click", function TransportComponent_Template_button_click_45_listener() {
           return ctx.addBag();
         });
-        \u0275\u0275element(38, "i", 29);
-        \u0275\u0275text(39, " Add Bag ");
+        \u0275\u0275element(46, "i", 33);
+        \u0275\u0275text(47, " Add Bag ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(40, "div", 30)(41, "button", 31);
-        \u0275\u0275listener("click", function TransportComponent_Template_button_click_41_listener() {
+        \u0275\u0275elementStart(48, "div", 34)(49, "button", 35);
+        \u0275\u0275listener("click", function TransportComponent_Template_button_click_49_listener() {
           return ctx.resetForm();
         });
-        \u0275\u0275element(42, "i", 32);
-        \u0275\u0275text(43, " Reset ");
+        \u0275\u0275element(50, "i", 36);
+        \u0275\u0275text(51, " Reset ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(44, "button", 33);
-        \u0275\u0275element(45, "i", 19);
-        \u0275\u0275text(46);
+        \u0275\u0275elementStart(52, "button", 37);
+        \u0275\u0275element(53, "i", 19);
+        \u0275\u0275text(54);
         \u0275\u0275elementEnd()()()()()();
-        \u0275\u0275elementStart(47, "app-confirm-modal", 34);
-        \u0275\u0275listener("confirm", function TransportComponent_Template_app_confirm_modal_confirm_47_listener() {
+        \u0275\u0275elementStart(55, "app-confirm-modal", 38);
+        \u0275\u0275listener("confirm", function TransportComponent_Template_app_confirm_modal_confirm_55_listener() {
           return ctx.confirmDeleteBag();
-        })("cancel", function TransportComponent_Template_app_confirm_modal_cancel_47_listener() {
+        })("cancel", function TransportComponent_Template_app_confirm_modal_cancel_55_listener() {
           return ctx.cancelDelete();
         });
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(48, "app-confirm-modal", 35);
-        \u0275\u0275listener("confirm", function TransportComponent_Template_app_confirm_modal_confirm_48_listener() {
+        \u0275\u0275elementStart(56, "app-confirm-modal", 39);
+        \u0275\u0275listener("confirm", function TransportComponent_Template_app_confirm_modal_confirm_56_listener() {
           return ctx.confirmDeleteItem();
-        })("cancel", function TransportComponent_Template_app_confirm_modal_cancel_48_listener() {
+        })("cancel", function TransportComponent_Template_app_confirm_modal_cancel_56_listener() {
           return ctx.cancelDelete();
         });
         \u0275\u0275elementEnd();
@@ -76413,13 +77266,17 @@ var TransportComponent = class _TransportComponent {
         \u0275\u0275property("formGroup", ctx.transportForm);
         \u0275\u0275advance(10);
         \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid(ctx.transportForm.get("customerId")));
-        \u0275\u0275property("options", ctx.customers)("placeholder", "Select Customer")("defaultOption", \u0275\u0275pureFunction0(27, _c012))("searchPlaceholder", "Search customers...");
+        \u0275\u0275property("options", ctx.customers)("placeholder", "Select Customer")("defaultOption", \u0275\u0275pureFunction0(30, _c012))("searchPlaceholder", "Search customers...");
         \u0275\u0275advance(2);
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.transportForm.get("customerId")));
+        \u0275\u0275advance(7);
+        \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid(ctx.transportForm.get("transportDate")));
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.transportForm.get("transportDate")));
         \u0275\u0275advance(6);
-        \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(30, 24, ctx.calculateTotalWeight(), "1.3-3"), " kg");
+        \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(38, 27, ctx.calculateTotalWeight(), "1.3-3"), " kg");
         \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", ctx.isEditMode && ctx.transportSummary);
         \u0275\u0275advance(2);
@@ -76465,12 +77322,46 @@ var TransportComponent = class _TransportComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(TransportComponent, { className: "TransportComponent", filePath: "src\\app\\components\\Transports\\transport\\transport.component.ts", lineNumber: 40 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(TransportComponent, { className: "TransportComponent", filePath: "src\\app\\components\\Transports\\transport\\transport.component.ts", lineNumber: 42 });
 })();
 
 // src/app/components/Transports/transport-list/transport-list.component.ts
 var _c013 = (a0) => ["/transport/edit", a0];
-function TransportListComponent_tr_46_Template(rf, ctx) {
+function TransportListComponent_button_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 26);
+    \u0275\u0275element(1, "i", 27);
+    \u0275\u0275text(2, " Create Transport ");
+    \u0275\u0275elementEnd();
+  }
+}
+function TransportListComponent_tr_44_button_15_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 33);
+    \u0275\u0275element(1, "i", 34);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const transport_r2 = \u0275\u0275nextContext().$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c013, ctx_r2.encId(transport_r2.id)));
+  }
+}
+function TransportListComponent_tr_44_button_18_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 35);
+    \u0275\u0275listener("click", function TransportListComponent_tr_44_button_18_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r4);
+      const transport_r2 = \u0275\u0275nextContext().$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onDeleteTransport(transport_r2.id));
+    });
+    \u0275\u0275element(1, "i", 36);
+    \u0275\u0275elementEnd();
+  }
+}
+function TransportListComponent_tr_44_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr")(1, "td");
@@ -76489,62 +77380,58 @@ function TransportListComponent_tr_46_Template(rf, ctx) {
     \u0275\u0275elementStart(10, "td");
     \u0275\u0275text(11);
     \u0275\u0275pipe(12, "date");
+    \u0275\u0275pipe(13, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "td", 27)(14, "button", 28);
-    \u0275\u0275element(15, "i", 29);
-    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "td", 28);
+    \u0275\u0275template(15, TransportListComponent_tr_44_button_15_Template, 2, 3, "button", 29);
     \u0275\u0275elementStart(16, "button", 30);
-    \u0275\u0275listener("click", function TransportListComponent_tr_46_Template_button_click_16_listener() {
+    \u0275\u0275listener("click", function TransportListComponent_tr_44_Template_button_click_16_listener() {
       const transport_r2 = \u0275\u0275restoreView(_r1).$implicit;
       const ctx_r2 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r2.onPrintTransport(transport_r2.id));
     });
     \u0275\u0275element(17, "i", 31);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "button", 32);
-    \u0275\u0275listener("click", function TransportListComponent_tr_46_Template_button_click_18_listener() {
-      const transport_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.onDeleteTransport(transport_r2.id));
-    });
-    \u0275\u0275element(19, "i", 33);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275template(18, TransportListComponent_tr_44_button_18_Template, 2, 0, "button", 32);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const transport_r2 = ctx.$implicit;
-    const i_r4 = ctx.index;
+    const i_r5 = ctx.index;
     const ctx_r2 = \u0275\u0275nextContext();
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r2.startIndex + i_r4 + 1);
+    \u0275\u0275textInterpolate(ctx_r2.startIndex + i_r5 + 1);
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(transport_r2.customerName);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(7, 6, transport_r2.totalWeight, "1.3-3"), " kg");
+    \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(7, 7, transport_r2.totalWeight, "1.3-3"), " kg");
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(transport_r2.totalBags);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(12, 9, transport_r2.createdAt, "medium"));
+    \u0275\u0275textInterpolate(transport_r2.transportDate ? \u0275\u0275pipeBind2(12, 10, transport_r2.transportDate, "dd-MM-yyyy") : \u0275\u0275pipeBind2(13, 13, transport_r2.createdAt, "medium"));
+    \u0275\u0275advance(4);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_TRANSPORT");
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(12, _c013, transport_r2.id));
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_TRANSPORT");
   }
 }
-function TransportListComponent_tr_47_Template(rf, ctx) {
+function TransportListComponent_tr_45_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 34);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 37);
     \u0275\u0275text(2, "No transports found");
     \u0275\u0275elementEnd()();
   }
 }
-function TransportListComponent_app_pagination_49_Template(rf, ctx) {
+function TransportListComponent_app_pagination_47_Template(rf, ctx) {
   if (rf & 1) {
-    const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 35);
-    \u0275\u0275listener("pageChange", function TransportListComponent_app_pagination_49_Template_app_pagination_pageChange_0_listener($event) {
-      \u0275\u0275restoreView(_r5);
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 38);
+    \u0275\u0275listener("pageChange", function TransportListComponent_app_pagination_47_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r6);
       const ctx_r2 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r2.onPageChange($event));
-    })("pageSizeChange", function TransportListComponent_app_pagination_49_Template_app_pagination_pageSizeChange_0_listener($event) {
-      \u0275\u0275restoreView(_r5);
+    })("pageSizeChange", function TransportListComponent_app_pagination_47_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r6);
       const ctx_r2 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
     });
@@ -76556,10 +77443,11 @@ function TransportListComponent_app_pagination_49_Template(rf, ctx) {
   }
 }
 var TransportListComponent = class _TransportListComponent {
-  constructor(transportService, fb, snackbar) {
+  constructor(transportService, fb, snackbar, encryptionService) {
     this.transportService = transportService;
     this.fb = fb;
     this.snackbar = snackbar;
+    this.encryptionService = encryptionService;
     this.transports = [];
     this.isLoading = false;
     this.currentPage = 0;
@@ -76572,6 +77460,10 @@ var TransportListComponent = class _TransportListComponent {
     this.showDeleteModal = false;
     this.transportToDelete = null;
     this.initializeForm();
+  }
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
   }
   ngOnInit() {
     this.loadTransports();
@@ -76717,11 +77609,11 @@ var TransportListComponent = class _TransportListComponent {
   }
   static {
     this.\u0275fac = function TransportListComponent_Factory(t) {
-      return new (t || _TransportListComponent)(\u0275\u0275directiveInject(TransportService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService));
+      return new (t || _TransportListComponent)(\u0275\u0275directiveInject(TransportService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _TransportListComponent, selectors: [["app-transport-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 51, vars: 8, consts: [[1, "transport-list-container"], [1, "search-section", "card"], [1, "fas", "fa-truck"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by customer name...", 1, "form-control"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/transport/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "transports-list", "card"], [1, "table-container"], [3, "show"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["title", "Delete Transport", "message", "Are you sure you want to delete this transport? This action cannot be undone.", 3, "confirm", "cancel", "show"], [1, "actions"], ["title", "Edit Transport", 1, "btn-icon", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Print Transport", 1, "btn-icon", "print", 3, "click"], [1, "fas", "fa-print"], ["title", "Delete Transport", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "4", 1, "no-data"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function TransportListComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _TransportListComponent, selectors: [["app-transport-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 9, consts: [[1, "transport-list-container"], [1, "search-section", "card"], [1, "fas", "fa-truck"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by customer name...", 1, "form-control"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/transport/create", "class", "btn btn-primary", 4, "appCanAccess"], [1, "transports-list", "card"], [1, "table-container"], [3, "show"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["title", "Delete Transport", "message", "Are you sure you want to delete this transport? This action cannot be undone.", 3, "confirm", "cancel", "show"], ["routerLink", "/transport/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "actions"], ["class", "btn-icon", "title", "Edit Transport", 3, "routerLink", 4, "appCanAccess"], ["title", "Print Transport", 1, "btn-icon", "print", 3, "click"], [1, "fas", "fa-print"], ["class", "btn-icon delete", "title", "Delete Transport", 3, "click", 4, "appCanAccess"], ["title", "Edit Transport", 1, "btn-icon", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete Transport", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "4", 1, "no-data"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function TransportListComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
         \u0275\u0275element(3, "i", 2);
@@ -76751,43 +77643,42 @@ var TransportListComponent = class _TransportListComponent {
         \u0275\u0275element(18, "i", 13);
         \u0275\u0275text(19, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(20, "div", 14)(21, "button", 15);
-        \u0275\u0275element(22, "i", 16);
-        \u0275\u0275text(23, " Create Transport ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(24, "div", 17)(25, "h2");
-        \u0275\u0275text(26, "Transports");
+        \u0275\u0275elementStart(20, "div", 14);
+        \u0275\u0275template(21, TransportListComponent_button_21_Template, 3, 0, "button", 15);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(27, "div", 18);
-        \u0275\u0275element(28, "app-loader", 19);
-        \u0275\u0275elementStart(29, "div", 20)(30, "table", 21)(31, "thead")(32, "tr")(33, "th");
-        \u0275\u0275text(34, "No.");
+        \u0275\u0275elementStart(22, "div", 16)(23, "h2");
+        \u0275\u0275text(24, "Transports");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(25, "div", 17);
+        \u0275\u0275element(26, "app-loader", 18);
+        \u0275\u0275elementStart(27, "div", 19)(28, "table", 20)(29, "thead")(30, "tr")(31, "th");
+        \u0275\u0275text(32, "No.");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(33, "th");
+        \u0275\u0275text(34, "Customer Name");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(35, "th");
-        \u0275\u0275text(36, "Customer Name");
+        \u0275\u0275text(36, "Total Weight");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(37, "th");
-        \u0275\u0275text(38, "Total Weight");
+        \u0275\u0275text(38, "Total Bags");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(39, "th");
-        \u0275\u0275text(40, "Total Bags");
+        \u0275\u0275text(40, "Transport Date");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(41, "th");
-        \u0275\u0275text(42, "Created At");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(43, "th");
-        \u0275\u0275text(44, "Actions");
+        \u0275\u0275text(42, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(45, "tbody");
-        \u0275\u0275template(46, TransportListComponent_tr_46_Template, 20, 14, "tr", 22)(47, TransportListComponent_tr_47_Template, 3, 0, "tr", 23);
+        \u0275\u0275elementStart(43, "tbody");
+        \u0275\u0275template(44, TransportListComponent_tr_44_Template, 19, 16, "tr", 21)(45, TransportListComponent_tr_45_Template, 3, 0, "tr", 22);
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(48, "div", 24);
-        \u0275\u0275template(49, TransportListComponent_app_pagination_49_Template, 1, 4, "app-pagination", 25);
+        \u0275\u0275elementStart(46, "div", 23);
+        \u0275\u0275template(47, TransportListComponent_app_pagination_47_Template, 1, 4, "app-pagination", 24);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(50, "app-confirm-modal", 26);
-        \u0275\u0275listener("confirm", function TransportListComponent_Template_app_confirm_modal_confirm_50_listener() {
+        \u0275\u0275elementStart(48, "app-confirm-modal", 25);
+        \u0275\u0275listener("confirm", function TransportListComponent_Template_app_confirm_modal_confirm_48_listener() {
           return ctx.confirmDelete();
-        })("cancel", function TransportListComponent_Template_app_confirm_modal_cancel_50_listener() {
+        })("cancel", function TransportListComponent_Template_app_confirm_modal_cancel_48_listener() {
           return ctx.cancelDelete();
         });
         \u0275\u0275elementEnd();
@@ -76795,7 +77686,9 @@ var TransportListComponent = class _TransportListComponent {
       if (rf & 2) {
         \u0275\u0275advance(5);
         \u0275\u0275property("formGroup", ctx.searchForm);
-        \u0275\u0275advance(23);
+        \u0275\u0275advance(16);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_TRANSPORT");
+        \u0275\u0275advance(5);
         \u0275\u0275property("show", ctx.isLoading);
         \u0275\u0275advance();
         \u0275\u0275classProp("loading", ctx.isLoading);
@@ -76826,12 +77719,13 @@ var TransportListComponent = class _TransportListComponent {
       LoaderComponent,
       FormsModule,
       ConfirmModalComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n.transport-list-container[_ngcontent-%COMP%] {\n  padding: 20px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  padding: 20px;\n  margin-bottom: 20px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  margin-right: 10px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 15px;\n  flex-wrap: wrap;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 200px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  gap: 10px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: center;\n  margin-top: 1rem;\n}\n.transport-list-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   app-pagination[_ngcontent-%COMP%] {\n  width: 100%;\n}\n.table-container[_ngcontent-%COMP%] {\n  position: relative;\n  min-height: 200px;\n}\n.table-container[_ngcontent-%COMP%]   app-loader[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  z-index: 2;\n}\n.table-container[_ngcontent-%COMP%]   .table-responsive.loading[_ngcontent-%COMP%] {\n  opacity: 0.6;\n  pointer-events: none;\n}\n/*# sourceMappingURL=transport-list.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(TransportListComponent, { className: "TransportListComponent", filePath: "src\\app\\components\\Transports\\transport-list\\transport-list.component.ts", lineNumber: 26 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(TransportListComponent, { className: "TransportListComponent", filePath: "src\\app\\components\\Transports\\transport-list\\transport-list.component.ts", lineNumber: 29 });
 })();
 
 // src/app/services/plan-dispatch.service.ts
@@ -76886,9 +77780,17 @@ var PlanDispatchService = class _PlanDispatchService {
 
 // src/app/components/plan-dispatch/plan-dispatch-list/plan-dispatch-list.component.ts
 var _c014 = (a0) => ["/plan-dispatch/edit", a0];
-function PlanDispatchListComponent_tr_48_span_6_span_1_Template(rf, ctx) {
+function PlanDispatchListComponent_button_21_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 37);
+    \u0275\u0275elementStart(0, "button", 27);
+    \u0275\u0275element(1, "i", 28);
+    \u0275\u0275text(2, " Create Dispatch ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanDispatchListComponent_tr_46_span_6_span_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 36);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -76898,10 +77800,10 @@ function PlanDispatchListComponent_tr_48_span_6_span_1_Template(rf, ctx) {
     \u0275\u0275textInterpolate(pn_r2);
   }
 }
-function PlanDispatchListComponent_tr_48_span_6_Template(rf, ctx) {
+function PlanDispatchListComponent_tr_46_span_6_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
-    \u0275\u0275template(1, PlanDispatchListComponent_tr_48_span_6_span_1_Template, 2, 1, "span", 36);
+    \u0275\u0275template(1, PlanDispatchListComponent_tr_46_span_6_span_1_Template, 2, 1, "span", 35);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -76910,14 +77812,40 @@ function PlanDispatchListComponent_tr_48_span_6_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", dispatch_r3.planningNumbers);
   }
 }
-function PlanDispatchListComponent_tr_48_ng_template_7_Template(rf, ctx) {
+function PlanDispatchListComponent_tr_46_ng_template_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 38);
+    \u0275\u0275elementStart(0, "span", 37);
     \u0275\u0275text(1, "Existing");
     \u0275\u0275elementEnd();
   }
 }
-function PlanDispatchListComponent_tr_48_Template(rf, ctx) {
+function PlanDispatchListComponent_tr_46_button_18_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 38);
+    \u0275\u0275element(1, "i", 39);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const dispatch_r3 = \u0275\u0275nextContext().$implicit;
+    const ctx_r3 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c014, ctx_r3.encId(dispatch_r3.id)));
+  }
+}
+function PlanDispatchListComponent_tr_46_button_21_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 40);
+    \u0275\u0275listener("click", function PlanDispatchListComponent_tr_46_button_21_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r5);
+      const dispatch_r3 = \u0275\u0275nextContext().$implicit;
+      const ctx_r3 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r3.onDeleteDispatch(dispatch_r3.id));
+    });
+    \u0275\u0275element(1, "i", 41);
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanDispatchListComponent_tr_46_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr")(1, "td");
@@ -76927,7 +77855,7 @@ function PlanDispatchListComponent_tr_48_Template(rf, ctx) {
     \u0275\u0275text(4);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "td");
-    \u0275\u0275template(6, PlanDispatchListComponent_tr_48_span_6_Template, 2, 1, "span", 28)(7, PlanDispatchListComponent_tr_48_ng_template_7_Template, 2, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+    \u0275\u0275template(6, PlanDispatchListComponent_tr_46_span_6_Template, 2, 1, "span", 29)(7, PlanDispatchListComponent_tr_46_ng_template_7_Template, 2, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(9, "td");
     \u0275\u0275text(10);
@@ -76940,64 +77868,59 @@ function PlanDispatchListComponent_tr_48_Template(rf, ctx) {
     \u0275\u0275text(15);
     \u0275\u0275pipe(16, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "td", 29)(18, "button", 30);
-    \u0275\u0275element(19, "i", 31);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "button", 32);
-    \u0275\u0275listener("click", function PlanDispatchListComponent_tr_48_Template_button_click_20_listener() {
+    \u0275\u0275elementStart(17, "td", 30);
+    \u0275\u0275template(18, PlanDispatchListComponent_tr_46_button_18_Template, 2, 3, "button", 31);
+    \u0275\u0275elementStart(19, "button", 32);
+    \u0275\u0275listener("click", function PlanDispatchListComponent_tr_46_Template_button_click_19_listener() {
       const dispatch_r3 = \u0275\u0275restoreView(_r1).$implicit;
       const ctx_r3 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r3.onPrintDispatch(dispatch_r3.id));
     });
-    \u0275\u0275element(21, "i", 33);
+    \u0275\u0275element(20, "i", 33);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "button", 34);
-    \u0275\u0275listener("click", function PlanDispatchListComponent_tr_48_Template_button_click_22_listener() {
-      const dispatch_r3 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onDeleteDispatch(dispatch_r3.id));
-    });
-    \u0275\u0275element(23, "i", 35);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275template(21, PlanDispatchListComponent_tr_46_button_21_Template, 2, 0, "button", 34);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const dispatch_r3 = ctx.$implicit;
-    const i_r5 = ctx.index;
-    const existingRow_r6 = \u0275\u0275reference(8);
+    const i_r6 = ctx.index;
+    const existingRow_r7 = \u0275\u0275reference(8);
     const ctx_r3 = \u0275\u0275nextContext();
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r3.startIndex + i_r5 + 1);
+    \u0275\u0275textInterpolate(ctx_r3.startIndex + i_r6 + 1);
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(dispatch_r3.customerName);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", dispatch_r3.planningNumbers == null ? null : dispatch_r3.planningNumbers.length)("ngIfElse", existingRow_r6);
+    \u0275\u0275property("ngIf", dispatch_r3.planningNumbers == null ? null : dispatch_r3.planningNumbers.length)("ngIfElse", existingRow_r7);
     \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(11, 8, dispatch_r3.totalWeight, "1.3-3"), " kg");
+    \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(11, 9, dispatch_r3.totalWeight, "1.3-3"), " kg");
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(dispatch_r3.totalBags);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(16, 11, dispatch_r3.createdAt, "medium"));
+    \u0275\u0275textInterpolate(dispatch_r3.transportDate ? \u0275\u0275pipeBind2(16, 12, dispatch_r3.transportDate, "dd-MM-yyyy") : "-");
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(14, _c014, ctx_r3.encId(dispatch_r3.id)));
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_DISPATCH");
+    \u0275\u0275advance(3);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_DISPATCH");
   }
 }
-function PlanDispatchListComponent_tr_49_Template(rf, ctx) {
+function PlanDispatchListComponent_tr_47_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 39);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 42);
     \u0275\u0275text(2, "No dispatches found");
     \u0275\u0275elementEnd()();
   }
 }
-function PlanDispatchListComponent_app_pagination_51_Template(rf, ctx) {
+function PlanDispatchListComponent_app_pagination_49_Template(rf, ctx) {
   if (rf & 1) {
-    const _r7 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 40);
-    \u0275\u0275listener("pageChange", function PlanDispatchListComponent_app_pagination_51_Template_app_pagination_pageChange_0_listener($event) {
-      \u0275\u0275restoreView(_r7);
+    const _r8 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 43);
+    \u0275\u0275listener("pageChange", function PlanDispatchListComponent_app_pagination_49_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r8);
       const ctx_r3 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r3.onPageChange($event));
-    })("pageSizeChange", function PlanDispatchListComponent_app_pagination_51_Template_app_pagination_pageSizeChange_0_listener($event) {
-      \u0275\u0275restoreView(_r7);
+    })("pageSizeChange", function PlanDispatchListComponent_app_pagination_49_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r8);
       const ctx_r3 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r3.onPageSizeChange($event));
     });
@@ -77154,7 +78077,7 @@ var PlanDispatchListComponent = class _PlanDispatchListComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchListComponent, selectors: [["app-plan-dispatch-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 53, vars: 8, consts: [["existingRow", ""], [1, "transport-list-container"], [1, "search-section", "card"], [1, "fas", "fa-truck"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by customer or planning no...", 1, "form-control"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/plan-dispatch/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "transports-list", "card"], [1, "table-container"], [3, "show"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["title", "Delete Dispatch", "message", "Are you sure? Linked dispatch progress and stock will be reversed. This action cannot be undone.", 3, "confirm", "cancel", "show"], [4, "ngIf", "ngIfElse"], [1, "actions"], ["title", "Edit Dispatch", 1, "btn-icon", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Print Dispatch", 1, "btn-icon", "print", 3, "click"], [1, "fas", "fa-print"], ["title", "Delete Dispatch (linked progress reversed)", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["class", "plan-badge", 4, "ngFor", "ngForOf"], [1, "plan-badge"], [1, "existing-badge"], ["colspan", "7", 1, "no-data"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PlanDispatchListComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchListComponent, selectors: [["app-plan-dispatch-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 51, vars: 9, consts: [["existingRow", ""], [1, "transport-list-container"], [1, "search-section", "card"], [1, "fas", "fa-truck"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by customer or planning no...", 1, "form-control"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/plan-dispatch/create", "class", "btn btn-primary", 4, "appCanAccess"], [1, "transports-list", "card"], [1, "table-container"], [3, "show"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["title", "Delete Dispatch", "message", "Are you sure? Linked dispatch progress and stock will be reversed. This action cannot be undone.", 3, "confirm", "cancel", "show"], ["routerLink", "/plan-dispatch/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [4, "ngIf", "ngIfElse"], [1, "actions"], ["class", "btn-icon", "title", "Edit Dispatch", 3, "routerLink", 4, "appCanAccess"], ["title", "Print Dispatch", 1, "btn-icon", "print", 3, "click"], [1, "fas", "fa-print"], ["class", "btn-icon delete", "title", "Delete Dispatch (linked progress reversed)", 3, "click", 4, "appCanAccess"], ["class", "plan-badge", 4, "ngFor", "ngForOf"], [1, "plan-badge"], [1, "existing-badge"], ["title", "Edit Dispatch", 1, "btn-icon", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete Dispatch (linked progress reversed)", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "no-data"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PlanDispatchListComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 1)(1, "div", 2)(2, "h2");
         \u0275\u0275element(3, "i", 3);
@@ -77184,46 +78107,45 @@ var PlanDispatchListComponent = class _PlanDispatchListComponent {
         \u0275\u0275element(18, "i", 14);
         \u0275\u0275text(19, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(20, "div", 15)(21, "button", 16);
-        \u0275\u0275element(22, "i", 17);
-        \u0275\u0275text(23, " Create Dispatch ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(24, "div", 18)(25, "h2");
-        \u0275\u0275text(26, "Dispatches");
+        \u0275\u0275elementStart(20, "div", 15);
+        \u0275\u0275template(21, PlanDispatchListComponent_button_21_Template, 3, 0, "button", 16);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(27, "div", 19);
-        \u0275\u0275element(28, "app-loader", 20);
-        \u0275\u0275elementStart(29, "div", 21)(30, "table", 22)(31, "thead")(32, "tr")(33, "th");
-        \u0275\u0275text(34, "No.");
+        \u0275\u0275elementStart(22, "div", 17)(23, "h2");
+        \u0275\u0275text(24, "Dispatches");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(25, "div", 18);
+        \u0275\u0275element(26, "app-loader", 19);
+        \u0275\u0275elementStart(27, "div", 20)(28, "table", 21)(29, "thead")(30, "tr")(31, "th");
+        \u0275\u0275text(32, "No.");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(33, "th");
+        \u0275\u0275text(34, "Customer Name");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(35, "th");
-        \u0275\u0275text(36, "Customer Name");
+        \u0275\u0275text(36, "Planning");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(37, "th");
-        \u0275\u0275text(38, "Planning");
+        \u0275\u0275text(38, "Total Weight");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(39, "th");
-        \u0275\u0275text(40, "Total Weight");
+        \u0275\u0275text(40, "Total Bags");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(41, "th");
-        \u0275\u0275text(42, "Total Bags");
+        \u0275\u0275text(42, "Transport Date");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(43, "th");
-        \u0275\u0275text(44, "Created At");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(45, "th");
-        \u0275\u0275text(46, "Actions");
+        \u0275\u0275text(44, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(47, "tbody");
-        \u0275\u0275template(48, PlanDispatchListComponent_tr_48_Template, 24, 16, "tr", 23)(49, PlanDispatchListComponent_tr_49_Template, 3, 0, "tr", 24);
+        \u0275\u0275elementStart(45, "tbody");
+        \u0275\u0275template(46, PlanDispatchListComponent_tr_46_Template, 22, 15, "tr", 22)(47, PlanDispatchListComponent_tr_47_Template, 3, 0, "tr", 23);
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(50, "div", 25);
-        \u0275\u0275template(51, PlanDispatchListComponent_app_pagination_51_Template, 1, 4, "app-pagination", 26);
+        \u0275\u0275elementStart(48, "div", 24);
+        \u0275\u0275template(49, PlanDispatchListComponent_app_pagination_49_Template, 1, 4, "app-pagination", 25);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(52, "app-confirm-modal", 27);
-        \u0275\u0275listener("confirm", function PlanDispatchListComponent_Template_app_confirm_modal_confirm_52_listener() {
+        \u0275\u0275elementStart(50, "app-confirm-modal", 26);
+        \u0275\u0275listener("confirm", function PlanDispatchListComponent_Template_app_confirm_modal_confirm_50_listener() {
           return ctx.confirmDelete();
-        })("cancel", function PlanDispatchListComponent_Template_app_confirm_modal_cancel_52_listener() {
+        })("cancel", function PlanDispatchListComponent_Template_app_confirm_modal_cancel_50_listener() {
           return ctx.cancelDelete();
         });
         \u0275\u0275elementEnd();
@@ -77231,7 +78153,9 @@ var PlanDispatchListComponent = class _PlanDispatchListComponent {
       if (rf & 2) {
         \u0275\u0275advance(5);
         \u0275\u0275property("formGroup", ctx.searchForm);
-        \u0275\u0275advance(23);
+        \u0275\u0275advance(16);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_DISPATCH");
+        \u0275\u0275advance(5);
         \u0275\u0275property("show", ctx.isLoading);
         \u0275\u0275advance();
         \u0275\u0275classProp("loading", ctx.isLoading);
@@ -77262,12 +78186,13 @@ var PlanDispatchListComponent = class _PlanDispatchListComponent {
       LoaderComponent,
       FormsModule,
       ConfirmModalComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n.transport-list-container[_ngcontent-%COMP%] {\n  padding: 20px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  padding: 20px;\n  margin-bottom: 20px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  margin-right: 10px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 15px;\n  flex-wrap: wrap;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 200px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  gap: 10px;\n}\n.transport-list-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: center;\n  margin-top: 1rem;\n}\n.transport-list-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   app-pagination[_ngcontent-%COMP%] {\n  width: 100%;\n}\n.table-container[_ngcontent-%COMP%] {\n  position: relative;\n  min-height: 200px;\n}\n.table-container[_ngcontent-%COMP%]   app-loader[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  z-index: 2;\n}\n.table-container[_ngcontent-%COMP%]   .table-responsive.loading[_ngcontent-%COMP%] {\n  opacity: 0.6;\n  pointer-events: none;\n}\n.plan-badge[_ngcontent-%COMP%] {\n  color: var(--secondary);\n  background-color: rgba(0, 153, 156, 0.12);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n  white-space: nowrap;\n  margin-right: 4px;\n}\n.existing-badge[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  background-color: rgba(0, 0, 0, 0.06);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n/*# sourceMappingURL=plan-dispatch-list.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchListComponent, { className: "PlanDispatchListComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-list\\plan-dispatch-list.component.ts", lineNumber: 31 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchListComponent, { className: "PlanDispatchListComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-list\\plan-dispatch-list.component.ts", lineNumber: 33 });
 })();
 
 // src/app/services/planning.service.ts
@@ -77645,22 +78570,6 @@ var PlanSelectComponent = class _PlanSelectComponent {
   }
   adjustDropDirection() {
     this.dropUp = false;
-    setTimeout(() => {
-      if (!this.isOpen || window.innerWidth <= 768) {
-        return;
-      }
-      const host = this.el.nativeElement;
-      const dd = host.querySelector(".plan-select-dropdown");
-      if (!dd) {
-        return;
-      }
-      const rect = host.getBoundingClientRect();
-      const need = Math.min(dd.offsetHeight || 260, 320);
-      const spaceBelow = window.innerHeight - rect.bottom;
-      if (spaceBelow < need && rect.top > need) {
-        this.dropUp = true;
-      }
-    }, 0);
   }
   static {
     this.\u0275fac = function PlanSelectComponent_Factory(t) {
@@ -77723,7 +78632,7 @@ var PlanSelectComponent = class _PlanSelectComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.isOpen);
       }
-    }, dependencies: [CommonModule, NgForOf, NgIf, DatePipe, FormsModule, DefaultValueAccessor, NgControlStatus, NgModel], styles: ["\n\n.plan-select[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%] {\n  position: relative;\n  display: flex;\n  align-items: center;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 8px 56px 8px 12px;\n  border: 1px solid var(--supporting);\n  border-radius: 4px;\n  font-size: 0.9rem;\n  transition: all 0.3s ease;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  position: absolute;\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.toggle-icon[_ngcontent-%COMP%] {\n  right: 12px;\n  pointer-events: auto;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%] {\n  right: 36px;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%]:hover {\n  color: var(--primary);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n  position: absolute;\n  top: calc(100% + 4px);\n  left: 0;\n  right: auto;\n  min-width: 100%;\n  width: max-content;\n  max-width: min(92vw, 620px);\n  max-height: 320px;\n  background: white;\n  border-radius: 4px;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n  z-index: 1000;\n  border: 1px solid var(--supporting);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown.drop-up[_ngcontent-%COMP%] {\n  top: auto;\n  bottom: calc(100% + 4px);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-height: 0;\n  box-sizing: border-box;\n  overflow-y: auto;\n  overflow-x: hidden;\n  -webkit-overflow-scrolling: touch;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar {\n  width: 6px;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 3px;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  font-size: 0.9rem;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: baseline;\n  gap: 8px;\n  min-width: 0;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .option-label[_ngcontent-%COMP%] {\n  display: block;\n  min-width: 0;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  font-weight: 600;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .option-sub[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.78rem;\n  white-space: nowrap;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%] {\n  background-color: rgba(var(--primary-rgb), 0.1);\n  color: var(--primary);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.highlighted[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .loading-more[_ngcontent-%COMP%], .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .no-results[_ngcontent-%COMP%] {\n  padding: 12px;\n  text-align: center;\n  color: var(--text-secondary);\n  font-style: italic;\n  font-size: 0.9rem;\n}\n@media (max-width: 768px) {\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n    font-size: 1rem;\n    min-height: 44px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%], .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .clear-icon[_ngcontent-%COMP%] {\n    min-width: 44px;\n    min-height: 44px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%] {\n    right: 4px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .clear-icon[_ngcontent-%COMP%] {\n    right: 48px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n    position: fixed;\n    left: 16px;\n    right: 16px;\n    width: auto;\n    max-width: none;\n    top: auto;\n    bottom: 16px;\n    max-height: 50vh;\n    margin: 0;\n    border-radius: 12px;\n    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.25);\n    z-index: 2000;\n    touch-action: pan-y;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n    max-height: calc(50vh - 20px);\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n    padding: 12px;\n    min-height: 44px;\n    display: flex;\n    align-items: center;\n  }\n}\n/*# sourceMappingURL=plan-select.component.css.map */"] });
+    }, dependencies: [CommonModule, NgForOf, NgIf, DatePipe, FormsModule, DefaultValueAccessor, NgControlStatus, NgModel], styles: ["\n\n.plan-select[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%] {\n  position: relative;\n  display: flex;\n  align-items: center;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 8px 56px 8px 12px;\n  border: 1px solid var(--supporting);\n  border-radius: 4px;\n  font-size: 0.9rem;\n  transition: all 0.3s ease;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(253, 120, 35, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  position: absolute;\n  color: var(--text-secondary);\n  font-size: 0.8rem;\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.toggle-icon[_ngcontent-%COMP%] {\n  right: 12px;\n  pointer-events: auto;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%] {\n  right: 36px;\n  cursor: pointer;\n  padding: 6px;\n  margin: -6px;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);\n}\n.plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   i.clear-icon[_ngcontent-%COMP%]:hover {\n  color: var(--primary);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n  position: absolute;\n  top: calc(100% + 4px);\n  left: 0;\n  right: auto;\n  min-width: 100%;\n  width: max-content;\n  max-width: min(94vw, 760px);\n  max-height: 320px;\n  background: white;\n  border-radius: 4px;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n  z-index: 3000;\n  border: 1px solid var(--supporting);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown.drop-up[_ngcontent-%COMP%] {\n  top: auto;\n  bottom: calc(100% + 4px);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  min-height: 0;\n  box-sizing: border-box;\n  overflow-y: auto;\n  overflow-x: hidden;\n  -webkit-overflow-scrolling: touch;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar {\n  width: 6px;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 3px;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  cursor: pointer;\n  transition: all 0.2s ease;\n  font-size: 0.9rem;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: baseline;\n  gap: 8px;\n  min-width: 0;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .option-label[_ngcontent-%COMP%] {\n  display: block;\n  min-width: 0;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  font-weight: 600;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]   .option-content[_ngcontent-%COMP%]   .option-sub[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.78rem;\n  white-space: nowrap;\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%]:hover {\n  background-color: var(--background);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.selected[_ngcontent-%COMP%] {\n  background-color: rgba(var(--primary-rgb), 0.1);\n  color: var(--primary);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .option.highlighted[_ngcontent-%COMP%] {\n  background-color: var(--background);\n}\n.plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .loading-more[_ngcontent-%COMP%], .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%]   .no-results[_ngcontent-%COMP%] {\n  padding: 12px;\n  text-align: center;\n  color: var(--text-secondary);\n  font-style: italic;\n  font-size: 0.9rem;\n}\n@media (max-width: 768px) {\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .search-input[_ngcontent-%COMP%] {\n    font-size: 1rem;\n    min-height: 44px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%], .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .clear-icon[_ngcontent-%COMP%] {\n    min-width: 44px;\n    min-height: 44px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .toggle-icon[_ngcontent-%COMP%] {\n    right: 4px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-input[_ngcontent-%COMP%]   .clear-icon[_ngcontent-%COMP%] {\n    right: 48px;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%] {\n    position: fixed;\n    left: 16px;\n    right: 16px;\n    width: auto;\n    max-width: none;\n    top: auto;\n    bottom: 16px;\n    max-height: 50vh;\n    margin: 0;\n    border-radius: 12px;\n    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.25);\n    z-index: 3000;\n    touch-action: pan-y;\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .options-container[_ngcontent-%COMP%] {\n    max-height: calc(50vh - 20px);\n  }\n  .plan-select[_ngcontent-%COMP%]   .select-dropdown[_ngcontent-%COMP%]   .option[_ngcontent-%COMP%] {\n    padding: 12px;\n    min-height: 44px;\n    display: flex;\n    align-items: center;\n  }\n}\n/*# sourceMappingURL=plan-select.component.css.map */"] });
   }
 };
 (() => {
@@ -77735,7 +78644,7 @@ var _c015 = () => ({ label: "Select Customer", value: "" });
 function PlanDispatchFormComponent_button_7_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 36);
+    \u0275\u0275elementStart(0, "button", 40);
     \u0275\u0275listener("click", function PlanDispatchFormComponent_button_7_Template_button_click_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -77756,55 +78665,91 @@ function PlanDispatchFormComponent_button_7_Template(rf, ctx) {
 }
 function PlanDispatchFormComponent_div_23_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1, " Please select a customer ");
     \u0275\u0275elementEnd();
   }
 }
 function PlanDispatchFormComponent_div_31_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 38)(1, "div", 39)(2, "div", 40)(3, "h3");
-    \u0275\u0275element(4, "i", 41);
+    \u0275\u0275elementStart(0, "div", 41);
+    \u0275\u0275text(1, " Transport date is required ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanDispatchFormComponent_div_39_div_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 48)(1, "label");
+    \u0275\u0275text(2, "Total Purchase");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "span");
+    \u0275\u0275text(4);
+    \u0275\u0275pipe(5, "number");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(5, 1, ctx_r1.transportSummary.totalPurchaseAmount, "1.2-2"), "");
+  }
+}
+function PlanDispatchFormComponent_div_39_div_22_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 48)(1, "label");
+    \u0275\u0275text(2, "Total Sale");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "span");
+    \u0275\u0275text(4);
+    \u0275\u0275pipe(5, "number");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(5, 1, ctx_r1.transportSummary.totalSaleAmount, "1.2-2"), "");
+  }
+}
+function PlanDispatchFormComponent_div_39_div_23_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 51)(1, "label");
+    \u0275\u0275text(2, "Total Profit");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "span");
+    \u0275\u0275text(4);
+    \u0275\u0275pipe(5, "number");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(5, 1, ctx_r1.transportSummary.totalProfit, "1.2-2"), "");
+  }
+}
+function PlanDispatchFormComponent_div_39_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 42)(1, "div", 43)(2, "div", 44)(3, "h3");
+    \u0275\u0275element(4, "i", 45);
     \u0275\u0275text(5, " Transport Summary");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "span", 42);
+    \u0275\u0275elementStart(6, "span", 46);
     \u0275\u0275text(7);
     \u0275\u0275pipe(8, "date");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "div", 43)(10, "div", 44)(11, "label");
+    \u0275\u0275elementStart(9, "div", 47)(10, "div", 48)(11, "label");
     \u0275\u0275text(12, "Total Bags");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(13, "span");
     \u0275\u0275text(14);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(15, "div", 44)(16, "label");
+    \u0275\u0275elementStart(15, "div", 48)(16, "label");
     \u0275\u0275text(17, "Total Weight");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(18, "span");
     \u0275\u0275text(19);
     \u0275\u0275pipe(20, "number");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(21, "div", 44)(22, "label");
-    \u0275\u0275text(23, "Total Purchase");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(24, "span");
-    \u0275\u0275text(25);
-    \u0275\u0275pipe(26, "number");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(27, "div", 44)(28, "label");
-    \u0275\u0275text(29, "Total Sale");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(30, "span");
-    \u0275\u0275text(31);
-    \u0275\u0275pipe(32, "number");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(33, "div", 45)(34, "label");
-    \u0275\u0275text(35, "Total Profit");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(36, "span");
-    \u0275\u0275text(37);
-    \u0275\u0275pipe(38, "number");
-    \u0275\u0275elementEnd()()()()();
+    \u0275\u0275template(21, PlanDispatchFormComponent_div_39_div_21_Template, 6, 4, "div", 49)(22, PlanDispatchFormComponent_div_39_div_22_Template, 6, 4, "div", 49)(23, PlanDispatchFormComponent_div_39_div_23_Template, 6, 4, "div", 50);
+    \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
@@ -77814,29 +78759,29 @@ function PlanDispatchFormComponent_div_31_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.transportSummary.totalBags);
     \u0275\u0275advance(5);
     \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(20, 9, ctx_r1.transportSummary.totalWeight, "1.3-3"), " kg");
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(26, 12, ctx_r1.transportSummary.totalPurchaseAmount, "1.2-2"), "");
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(32, 15, ctx_r1.transportSummary.totalSaleAmount, "1.2-2"), "");
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate1("\u20B9", \u0275\u0275pipeBind2(38, 18, ctx_r1.transportSummary.totalProfit, "1.2-2"), "");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_small_7_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_small_7_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "small");
     \u0275\u0275text(1, "Linked: progress + stock auto-updated.");
     \u0275\u0275elementEnd();
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_div_17_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_17_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1, " Please select a product ");
     \u0275\u0275elementEnd();
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_small_18_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_small_18_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "small");
     \u0275\u0275text(1);
@@ -77849,9 +78794,9 @@ function PlanDispatchFormComponent_div_33_div_1_div_30_small_18_Template(rf, ctx
     \u0275\u0275textInterpolate(ctx_r1.balanceForRow(item_r6));
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_div_26_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_26_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 98);
+    \u0275\u0275elementStart(0, "div", 91);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -77862,173 +78807,206 @@ function PlanDispatchFormComponent_div_33_div_1_div_30_div_26_Template(rf, ctx) 
     \u0275\u0275textInterpolate1(" Total: ", (tmp_8_0 = item_r6.get("totalQuantity")) == null ? null : tmp_8_0.value, " ");
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_div_27_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_27_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1, " Please enter a valid quantity ");
     \u0275\u0275elementEnd();
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_div_43_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_32_div_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_8_0;
-    const item_r6 = \u0275\u0275nextContext().$implicit;
+    let tmp_9_0;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["required"]) ? "Unit price is required" : ((tmp_8_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
+    \u0275\u0275textInterpolate1(" ", ((tmp_9_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["required"]) ? "Unit price is required" : ((tmp_9_0 = item_r6.get("purchaseUnitPrice")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_div_48_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_32_div_16_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_8_0;
-    const item_r6 = \u0275\u0275nextContext().$implicit;
+    let tmp_9_0;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_8_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
+    \u0275\u0275textInterpolate1(" ", ((tmp_9_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_9_0 = item_r6.get("purchaseDiscount")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_div_68_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_32_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 92)(1, "h6", 93);
+    \u0275\u0275element(2, "i", 94);
+    \u0275\u0275text(3, " Purchase Details");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "div", 95)(5, "div", 21)(6, "label");
+    \u0275\u0275text(7, "Unit Price ");
+    \u0275\u0275elementStart(8, "span", 15);
+    \u0275\u0275text(9, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275element(10, "input", 96);
+    \u0275\u0275template(11, PlanDispatchFormComponent_div_41_div_1_div_30_div_32_div_11_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "div", 21)(13, "label");
+    \u0275\u0275text(14, "Discount %");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(15, "input", 97);
+    \u0275\u0275template(16, PlanDispatchFormComponent_div_41_div_1_div_30_div_32_div_16_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(17, "div", 21)(18, "label");
+    \u0275\u0275text(19, "Discount Amount");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(20, "input", 98);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(21, "div", 21)(22, "label");
+    \u0275\u0275text(23, "Final Price");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(24, "input", 99);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(10);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
+  }
+}
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_33_div_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_8_0;
-    const item_r6 = \u0275\u0275nextContext().$implicit;
+    let tmp_9_0;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["required"]) ? "Unit price is required" : ((tmp_8_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
+    \u0275\u0275textInterpolate1(" ", ((tmp_9_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["required"]) ? "Unit price is required" : ((tmp_9_0 = item_r6.get("saleUnitPrice")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["min"]) ? "Unit price must be greater than 0" : "", " ");
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_div_73_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_33_div_16_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 41);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_8_0;
-    const item_r6 = \u0275\u0275nextContext().$implicit;
+    let tmp_9_0;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ((tmp_8_0 = item_r6.get("saleDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_8_0 = item_r6.get("saleDiscount")) == null ? null : tmp_8_0.errors == null ? null : tmp_8_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
+    \u0275\u0275textInterpolate1(" ", ((tmp_9_0 = item_r6.get("saleDiscount")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["min"]) ? "Discount must be greater than 0" : ((tmp_9_0 = item_r6.get("saleDiscount")) == null ? null : tmp_9_0.errors == null ? null : tmp_9_0.errors["max"]) ? "Discount must be less than 100" : "", " ");
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_div_30_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_div_30_div_33_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 100)(1, "h6", 93);
+    \u0275\u0275element(2, "i", 101);
+    \u0275\u0275text(3, " Sale Details");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "div", 95)(5, "div", 21)(6, "label");
+    \u0275\u0275text(7, "Unit Price ");
+    \u0275\u0275elementStart(8, "span", 15);
+    \u0275\u0275text(9, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275element(10, "input", 102);
+    \u0275\u0275template(11, PlanDispatchFormComponent_div_41_div_1_div_30_div_33_div_11_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "div", 21)(13, "label");
+    \u0275\u0275text(14, "Discount %");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(15, "input", 103);
+    \u0275\u0275template(16, PlanDispatchFormComponent_div_41_div_1_div_30_div_33_div_16_Template, 2, 1, "div", 20);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(17, "div", 21)(18, "label");
+    \u0275\u0275text(19, "Discount Amount");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(20, "input", 104);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(21, "div", 21)(22, "label");
+    \u0275\u0275text(23, "Final Price");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(24, "input", 105);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(10);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
+    \u0275\u0275advance(4);
+    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
+  }
+}
+function PlanDispatchFormComponent_div_41_div_1_div_30_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 67)(1, "div", 68)(2, "div", 69)(3, "label");
+    \u0275\u0275elementStart(0, "div", 73)(1, "div", 74)(2, "div", 75)(3, "label");
     \u0275\u0275text(4, "Plan (optional)");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "div", 70);
-    \u0275\u0275element(6, "app-plan-select", 71);
+    \u0275\u0275elementStart(5, "div", 76);
+    \u0275\u0275element(6, "app-plan-select", 77);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(7, PlanDispatchFormComponent_div_33_div_1_div_30_small_7_Template, 2, 0, "small", 72);
+    \u0275\u0275template(7, PlanDispatchFormComponent_div_41_div_1_div_30_small_7_Template, 2, 0, "small", 78);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "div", 69)(9, "label");
+    \u0275\u0275elementStart(8, "div", 75)(9, "label");
     \u0275\u0275text(10, "Product ");
     \u0275\u0275elementStart(11, "span", 15);
     \u0275\u0275text(12, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(13, "div", 70);
-    \u0275\u0275element(14, "app-searchable-select", 73);
+    \u0275\u0275elementStart(13, "div", 76);
+    \u0275\u0275element(14, "app-searchable-select", 79);
     \u0275\u0275elementStart(15, "button", 18);
-    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_33_div_1_div_30_Template_button_click_15_listener() {
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_41_div_1_div_30_Template_button_click_15_listener() {
       \u0275\u0275restoreView(_r5);
       const ctx_r1 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r1.refreshProducts());
     });
-    \u0275\u0275element(16, "i", 74);
+    \u0275\u0275element(16, "i", 80);
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(17, PlanDispatchFormComponent_div_33_div_1_div_30_div_17_Template, 2, 0, "div", 20)(18, PlanDispatchFormComponent_div_33_div_1_div_30_small_18_Template, 2, 1, "small", 72);
+    \u0275\u0275template(17, PlanDispatchFormComponent_div_41_div_1_div_30_div_17_Template, 2, 0, "div", 20)(18, PlanDispatchFormComponent_div_41_div_1_div_30_small_18_Template, 2, 1, "small", 78);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(19, "div", 75)(20, "label");
+    \u0275\u0275elementStart(19, "div", 81)(20, "label");
     \u0275\u0275text(21, "Quantity ");
     \u0275\u0275elementStart(22, "span", 15);
     \u0275\u0275text(23, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(24, "div", 76);
-    \u0275\u0275element(25, "input", 77);
-    \u0275\u0275template(26, PlanDispatchFormComponent_div_33_div_1_div_30_div_26_Template, 2, 1, "div", 78);
+    \u0275\u0275elementStart(24, "div", 82);
+    \u0275\u0275element(25, "input", 83);
+    \u0275\u0275template(26, PlanDispatchFormComponent_div_41_div_1_div_30_div_26_Template, 2, 1, "div", 84);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(27, PlanDispatchFormComponent_div_33_div_1_div_30_div_27_Template, 2, 0, "div", 20);
+    \u0275\u0275template(27, PlanDispatchFormComponent_div_41_div_1_div_30_div_27_Template, 2, 0, "div", 20);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(28, "div", 79)(29, "label");
+    \u0275\u0275elementStart(28, "div", 85)(29, "label");
     \u0275\u0275text(30, "Remarks");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(31, "input", 80);
+    \u0275\u0275element(31, "input", 86);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(32, "div", 81)(33, "h6", 82);
-    \u0275\u0275element(34, "i", 83);
-    \u0275\u0275text(35, " Purchase Details");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(36, "div", 84)(37, "div", 85)(38, "label");
-    \u0275\u0275text(39, "Unit Price ");
-    \u0275\u0275elementStart(40, "span", 15);
-    \u0275\u0275text(41, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275element(42, "input", 86);
-    \u0275\u0275template(43, PlanDispatchFormComponent_div_33_div_1_div_30_div_43_Template, 2, 1, "div", 20);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(44, "div", 85)(45, "label");
-    \u0275\u0275text(46, "Discount %");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(47, "input", 87);
-    \u0275\u0275template(48, PlanDispatchFormComponent_div_33_div_1_div_30_div_48_Template, 2, 1, "div", 20);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(49, "div", 85)(50, "label");
-    \u0275\u0275text(51, "Discount Amount");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(52, "input", 88);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(53, "div", 85)(54, "label");
-    \u0275\u0275text(55, "Final Price");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(56, "input", 89);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(57, "div", 90)(58, "h6", 82);
-    \u0275\u0275element(59, "i", 91);
-    \u0275\u0275text(60, " Sale Details");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(61, "div", 84)(62, "div", 85)(63, "label");
-    \u0275\u0275text(64, "Unit Price ");
-    \u0275\u0275elementStart(65, "span", 15);
-    \u0275\u0275text(66, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275element(67, "input", 92);
-    \u0275\u0275template(68, PlanDispatchFormComponent_div_33_div_1_div_30_div_68_Template, 2, 1, "div", 20);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(69, "div", 85)(70, "label");
-    \u0275\u0275text(71, "Discount %");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(72, "input", 93);
-    \u0275\u0275template(73, PlanDispatchFormComponent_div_33_div_1_div_30_div_73_Template, 2, 1, "div", 20);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(74, "div", 85)(75, "label");
-    \u0275\u0275text(76, "Discount Amount");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(77, "input", 94);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(78, "div", 85)(79, "label");
-    \u0275\u0275text(80, "Final Price");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(81, "input", 95);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(82, "button", 96);
-    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_33_div_1_div_30_Template_button_click_82_listener() {
+    \u0275\u0275template(32, PlanDispatchFormComponent_div_41_div_1_div_30_div_32_Template, 25, 6, "div", 87)(33, PlanDispatchFormComponent_div_41_div_1_div_30_div_33_Template, 25, 6, "div", 88);
+    \u0275\u0275elementStart(34, "button", 89);
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_41_div_1_div_30_Template_button_click_34_listener() {
       const itemIndex_r7 = \u0275\u0275restoreView(_r5).index;
       const bagIndex_r4 = \u0275\u0275nextContext().index;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.onDeleteItem(bagIndex_r4, itemIndex_r7));
     });
-    \u0275\u0275element(83, "i", 97);
+    \u0275\u0275element(35, "i", 90);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -78055,72 +79033,60 @@ function PlanDispatchFormComponent_div_33_div_1_div_30_Template(rf, ctx) {
     \u0275\u0275property("ngIf", ((tmp_17_0 = item_r6.get("totalQuantity")) == null ? null : tmp_17_0.value) !== ((tmp_17_0 = item_r6.get("quantity")) == null ? null : tmp_17_0.value));
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("quantity")));
-    \u0275\u0275advance(15);
-    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
+    \u0275\u0275advance(5);
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseUnitPrice")));
-    \u0275\u0275advance(4);
-    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
+    \u0275\u0275property("ngIf", !ctx_r1.hideTransportFinancials);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("purchaseDiscount")));
-    \u0275\u0275advance(19);
-    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleUnitPrice")));
-    \u0275\u0275advance(4);
-    \u0275\u0275classProp("is-invalid", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.isFieldInvalid(item_r6.get("saleDiscount")));
-    \u0275\u0275advance(9);
     \u0275\u0275property("disabled", ctx_r1.getBagItems(bagIndex_r4).length === 1);
   }
 }
-function PlanDispatchFormComponent_div_33_div_1_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_div_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 48)(1, "div", 49)(2, "h4");
+    \u0275\u0275elementStart(0, "div", 54)(1, "div", 55)(2, "h4");
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "div", 50)(5, "div", 51)(6, "label");
-    \u0275\u0275element(7, "i", 52);
+    \u0275\u0275elementStart(4, "div", 56)(5, "div", 57)(6, "label");
+    \u0275\u0275element(7, "i", 58);
     \u0275\u0275text(8, " Number of Bags ");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(9, "input", 53);
+    \u0275\u0275element(9, "input", 59);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "div", 54)(11, "label");
-    \u0275\u0275element(12, "i", 55);
+    \u0275\u0275elementStart(10, "div", 60)(11, "label");
+    \u0275\u0275element(12, "i", 61);
     \u0275\u0275text(13, " Bag Weight (kg) ");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(14, "input", 56);
+    \u0275\u0275element(14, "input", 62);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(15, "div", 57)(16, "label");
-    \u0275\u0275element(17, "i", 58);
+    \u0275\u0275elementStart(15, "div", 63)(16, "label");
+    \u0275\u0275element(17, "i", 64);
     \u0275\u0275text(18, " Total Bag Weight ");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(19, "input", 59);
+    \u0275\u0275element(19, "input", 65);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "button", 60);
-    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_33_div_1_Template_button_click_20_listener() {
+    \u0275\u0275elementStart(20, "button", 66);
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_41_div_1_Template_button_click_20_listener() {
       const bagIndex_r4 = \u0275\u0275restoreView(_r3).index;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.onDeleteBag(bagIndex_r4));
     });
-    \u0275\u0275element(21, "i", 61);
+    \u0275\u0275element(21, "i", 67);
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(22, "div", 62)(23, "div", 63)(24, "h5");
+    \u0275\u0275elementStart(22, "div", 68)(23, "div", 69)(24, "h5");
     \u0275\u0275text(25, "Items");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(26, "button", 64);
-    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_33_div_1_Template_button_click_26_listener() {
+    \u0275\u0275elementStart(26, "button", 70);
+    \u0275\u0275listener("click", function PlanDispatchFormComponent_div_41_div_1_Template_button_click_26_listener() {
       const bagIndex_r4 = \u0275\u0275restoreView(_r3).index;
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.addItem(bagIndex_r4));
     });
-    \u0275\u0275element(27, "i", 29);
+    \u0275\u0275element(27, "i", 33);
     \u0275\u0275text(28, " Add Item ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "div", 65);
-    \u0275\u0275template(30, PlanDispatchFormComponent_div_33_div_1_div_30_Template, 84, 27, "div", 66);
+    \u0275\u0275elementStart(29, "div", 71);
+    \u0275\u0275template(30, PlanDispatchFormComponent_div_41_div_1_div_30_Template, 36, 17, "div", 72);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -78142,10 +79108,10 @@ function PlanDispatchFormComponent_div_33_div_1_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r1.getBagItems(bagIndex_r4).controls);
   }
 }
-function PlanDispatchFormComponent_div_33_Template(rf, ctx) {
+function PlanDispatchFormComponent_div_41_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 46);
-    \u0275\u0275template(1, PlanDispatchFormComponent_div_33_div_1_Template, 31, 9, "div", 47);
+    \u0275\u0275elementStart(0, "div", 52);
+    \u0275\u0275template(1, PlanDispatchFormComponent_div_41_div_1_Template, 31, 9, "div", 53);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -78155,7 +79121,11 @@ function PlanDispatchFormComponent_div_33_Template(rf, ctx) {
   }
 }
 var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
-  constructor(fb, route, router, productService, customerService, planDispatchService, snackbar, encryptionService, priceService) {
+  /** Hide purchase/sale amounts on edit when role has HIDE_TRANSPORT_FINANCIALS. */
+  get hideTransportFinancials() {
+    return this.isEditMode && this.pageAccessService.shouldHideTransportFinancials();
+  }
+  constructor(fb, route, router, productService, customerService, planDispatchService, snackbar, encryptionService, priceService, pageAccessService) {
     this.fb = fb;
     this.route = route;
     this.router = router;
@@ -78165,6 +79135,7 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
     this.snackbar = snackbar;
     this.encryptionService = encryptionService;
     this.priceService = priceService;
+    this.pageAccessService = pageAccessService;
     this.products = [];
     this.customers = [];
     this.planItemsCache = /* @__PURE__ */ new Map();
@@ -78225,6 +79196,8 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
   initializeForm() {
     this.transportForm = this.fb.group({
       customerId: ["", [Validators.required]],
+      // TRANSPORT_COATING_DATE: business date, defaults to today, editable.
+      transportDate: [formatDate(/* @__PURE__ */ new Date(), "yyyy-MM-dd", "en"), Validators.required],
       bags: this.fb.array([])
     });
   }
@@ -78324,6 +79297,7 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
             productId: Number(list[0].productId),
             planningItemId: Number(list[0].planningItemId ?? list[0].id)
           }, { emitEvent: false });
+          this.autofillQuantityFromBalance(itemGroup);
           return;
         }
       }
@@ -78334,6 +79308,7 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
         this.snackbar.error("Row product is not in the selected plan and was cleared");
       } else {
         itemGroup.patchValue({ planningItemId: match2 ? Number(match2.planningItemId ?? match2.id) : null }, { emitEvent: false });
+        this.autofillQuantityFromBalance(itemGroup);
       }
     });
   }
@@ -78346,6 +79321,29 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
     const prodId = Number(itemGroup.get("productId")?.value);
     const match2 = prodId ? (this.planItemsCache.get(pid) || []).find((p) => Number(p.productId) === prodId) : null;
     itemGroup.patchValue({ planningItemId: match2 ? Number(match2.planningItemId ?? match2.id) : null }, { emitEvent: false });
+    this.autofillQuantityFromBalance(itemGroup);
+  }
+  /**
+   * AUTOFILL_BALANCE_QTY: places the "Can dispatch" balance directly inside
+   * Quantity (still editable). Only fills empty inputs — typed or stored
+   * values are never overwritten. Emits so per-bag totals recalculate exactly
+   * like a keystroke.
+   */
+  autofillQuantityFromBalance(itemGroup) {
+    const qtyCtrl = itemGroup.get("quantity");
+    if (!qtyCtrl || qtyCtrl.value !== null && qtyCtrl.value !== "" && Number(qtyCtrl.value) !== 0) {
+      return;
+    }
+    const pid = this.rowPlanningId(itemGroup);
+    const piId = itemGroup.get("planningItemId")?.value;
+    if (!pid || !piId) {
+      return;
+    }
+    const pi = (this.planItemsCache.get(pid) || []).find((p) => Number(p.planningItemId ?? p.id) === Number(piId));
+    const balance = pi ? Number(pi.dispatchable ?? 0) : 0;
+    if (balance > 0) {
+      qtyCtrl.patchValue(balance);
+    }
   }
   addBag() {
     const bagGroup = this.createBagFormGroup();
@@ -78398,6 +79396,7 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
               productId: Number(list[0].productId),
               planningItemId: Number(list[0].planningItemId ?? list[0].id)
             }, { emitEvent: false });
+            this.autofillQuantityFromBalance(newItem);
           }
         }
       });
@@ -78642,6 +79641,7 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
     const payload = {
       id: this.isEditMode ? this.transportId : void 0,
       customerId: formValue.customerId,
+      transportDate: formValue.transportDate || null,
       bags: formValue.bags.map((bag) => ({
         id: bag.id,
         weight: bag.weight,
@@ -78788,7 +79788,8 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
       this.bags.removeAt(0);
     }
     this.transportForm.patchValue({
-      customerId: data.customerId
+      customerId: data.customerId,
+      transportDate: data.transportDate ? formatDate(data.transportDate, "yyyy-MM-dd", "en") : formatDate(/* @__PURE__ */ new Date(), "yyyy-MM-dd", "en")
     });
     data.bags.forEach((bag) => {
       const bagGroup = this.fb.group({
@@ -78998,11 +79999,11 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
   }
   static {
     this.\u0275fac = function PlanDispatchFormComponent_Factory(t) {
-      return new (t || _PlanDispatchFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(PlanDispatchService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(PriceService));
+      return new (t || _PlanDispatchFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(CustomerService), \u0275\u0275directiveInject(PlanDispatchService), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService), \u0275\u0275directiveInject(PriceService), \u0275\u0275directiveInject(PageAccessService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchFormComponent, selectors: [["app-plan-dispatch-form"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 28, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "planningId", 3, "placeholder"], [4, "ngIf"], ["formControlName", "productId", 3, "options", "focusWidthPx", "maxHeight"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], [1, "form-group"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"]], template: function PlanDispatchFormComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanDispatchFormComponent, selectors: [["app-plan-dispatch-form"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 57, vars: 31, consts: [[1, "transport-container"], [1, "form-card"], [1, "card-header"], [1, "header-content"], [1, "form-title"], [1, "fas", "fa-truck"], ["class", "btn btn-primary print-btn", 3, "disabled", "click", 4, "ngIf"], [1, "form-content"], [3, "show"], [1, "transport-form", 3, "ngSubmit", "formGroup"], [1, "customer-section"], [1, "customer-weight-row"], [1, "form-group", "customer-select"], ["for", "customerId"], [1, "fas", "fa-user"], [1, "required"], [1, "customer-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "defaultOption", "searchPlaceholder"], ["type", "button", 1, "btn-icon", "refresh", 3, "click"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "form-group"], ["for", "transportDate"], [1, "fas", "fa-calendar-alt"], ["type", "date", "id", "transportDate", "formControlName", "transportDate", 1, "form-control", 3, "touchstart"], [1, "total-weight"], [1, "fas", "fa-weight-hanging"], [1, "weight-value"], ["class", "transport-summary", 4, "ngIf"], ["formArrayName", "bags", 1, "bags-section"], ["class", "bags-list", 4, "ngIf"], [1, "bags-header"], ["type", "button", 1, "btn", "btn-primary", "add-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "form-actions"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", "fa-undo"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], ["title", "Delete Bag", "message", "Are you sure you want to delete this bag and all its items?", 3, "confirm", "cancel", "show"], ["title", "Delete Item", "message", "Are you sure you want to delete this item?", 3, "confirm", "cancel", "show"], [1, "btn", "btn-primary", "print-btn", 3, "click", "disabled"], [1, "invalid-feedback"], [1, "transport-summary"], [1, "summary-card"], [1, "summary-header"], [1, "fas", "fa-chart-pie"], [1, "created-at"], [1, "summary-content"], [1, "summary-item"], ["class", "summary-item", 4, "ngIf"], ["class", "summary-item profit", 4, "ngIf"], [1, "summary-item", "profit"], [1, "bags-list"], ["class", "bag-card", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "bag-card", 3, "formGroupName"], [1, "bag-header"], [1, "bag-controls"], [1, "form-group", "number-of-bags"], [1, "fas", "fa-shopping-bag"], ["type", "number", "formControlName", "numberOfBags", "min", "1", 1, "form-control"], [1, "form-group", "bag-weight"], [1, "fas", "fa-weight"], ["type", "number", "formControlName", "weight", "min", "0.01", "step", "0.01", 1, "form-control"], [1, "form-group", "total-bag-weight"], [1, "fas", "fa-balance-scale"], ["type", "number", "readonly", "", 1, "form-control", 3, "value"], ["type", "button", 1, "btn", "btn-danger", "remove-bag-btn", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["formArrayName", "items", 1, "items-section"], [1, "items-header"], ["type", "button", 1, "btn", "btn-secondary", "add-item-btn", 3, "click"], [1, "items-list"], ["class", "item-row", 3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "item-row", 3, "formGroupName"], [1, "basic-info-row"], [1, "form-group", "product-select"], [1, "product-select-group"], ["formControlName", "planningId", 3, "placeholder"], [4, "ngIf"], ["formControlName", "productId", 3, "options", "focusWidthPx", "maxHeight"], [1, "fas", "fa-sync-alt"], [1, "form-group", "quantity-input"], [1, "quantity-group"], ["type", "number", "formControlName", "quantity", "min", "1", 1, "form-control"], ["class", "total-quantity", 4, "ngIf"], [1, "form-group", "remarks-input"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], ["class", "purchase-section", 4, "ngIf"], ["class", "sale-section", 4, "ngIf"], ["type", "button", 1, "btn", "btn-danger", "remove-item-btn", 3, "click", "disabled"], [1, "fas", "fa-times"], [1, "total-quantity"], [1, "purchase-section"], [1, "section-title"], [1, "fas", "fa-shopping-cart"], [1, "price-details"], ["type", "number", "formControlName", "purchaseUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "purchaseDiscountPrice", "readonly", "", 1, "form-control"], [1, "sale-section"], [1, "fas", "fa-cash-register"], ["type", "number", "formControlName", "saleUnitPrice", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscount", "min", "0", "max", "100", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountAmount", "min", "0", "step", "0.01", 1, "form-control"], ["type", "number", "formControlName", "saleDiscountPrice", "readonly", "", 1, "form-control"]], template: function PlanDispatchFormComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "div", 3)(4, "h2", 4);
         \u0275\u0275element(5, "i", 5);
@@ -79032,49 +80033,62 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
         \u0275\u0275elementEnd()();
         \u0275\u0275template(23, PlanDispatchFormComponent_div_23_Template, 2, 0, "div", 20);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(24, "div", 21)(25, "label");
-        \u0275\u0275element(26, "i", 22);
-        \u0275\u0275text(27, " Total Weight");
+        \u0275\u0275elementStart(24, "div", 21)(25, "label", 22);
+        \u0275\u0275element(26, "i", 23);
+        \u0275\u0275text(27, " Transport Date ");
+        \u0275\u0275elementStart(28, "span", 15);
+        \u0275\u0275text(29, "*");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(30, "input", 24);
+        \u0275\u0275listener("touchstart", function PlanDispatchFormComponent_Template_input_touchstart_30_listener($event) {
+          return $event.stopPropagation();
+        });
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(28, "div", 23);
-        \u0275\u0275text(29);
-        \u0275\u0275pipe(30, "number");
+        \u0275\u0275template(31, PlanDispatchFormComponent_div_31_Template, 2, 0, "div", 20);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(32, "div", 25)(33, "label");
+        \u0275\u0275element(34, "i", 26);
+        \u0275\u0275text(35, " Total Weight");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(36, "div", 27);
+        \u0275\u0275text(37);
+        \u0275\u0275pipe(38, "number");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275template(31, PlanDispatchFormComponent_div_31_Template, 39, 21, "div", 24);
-        \u0275\u0275elementStart(32, "div", 25);
-        \u0275\u0275template(33, PlanDispatchFormComponent_div_33_Template, 2, 1, "div", 26);
-        \u0275\u0275elementStart(34, "div", 27)(35, "h3");
-        \u0275\u0275text(36, "Bags");
+        \u0275\u0275template(39, PlanDispatchFormComponent_div_39_Template, 24, 12, "div", 28);
+        \u0275\u0275elementStart(40, "div", 29);
+        \u0275\u0275template(41, PlanDispatchFormComponent_div_41_Template, 2, 1, "div", 30);
+        \u0275\u0275elementStart(42, "div", 31)(43, "h3");
+        \u0275\u0275text(44, "Bags");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(37, "button", 28);
-        \u0275\u0275listener("click", function PlanDispatchFormComponent_Template_button_click_37_listener() {
+        \u0275\u0275elementStart(45, "button", 32);
+        \u0275\u0275listener("click", function PlanDispatchFormComponent_Template_button_click_45_listener() {
           return ctx.addBag();
         });
-        \u0275\u0275element(38, "i", 29);
-        \u0275\u0275text(39, " Add Bag ");
+        \u0275\u0275element(46, "i", 33);
+        \u0275\u0275text(47, " Add Bag ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(40, "div", 30)(41, "button", 31);
-        \u0275\u0275listener("click", function PlanDispatchFormComponent_Template_button_click_41_listener() {
+        \u0275\u0275elementStart(48, "div", 34)(49, "button", 35);
+        \u0275\u0275listener("click", function PlanDispatchFormComponent_Template_button_click_49_listener() {
           return ctx.resetForm();
         });
-        \u0275\u0275element(42, "i", 32);
-        \u0275\u0275text(43, " Reset ");
+        \u0275\u0275element(50, "i", 36);
+        \u0275\u0275text(51, " Reset ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(44, "button", 33);
-        \u0275\u0275element(45, "i", 19);
-        \u0275\u0275text(46);
+        \u0275\u0275elementStart(52, "button", 37);
+        \u0275\u0275element(53, "i", 19);
+        \u0275\u0275text(54);
         \u0275\u0275elementEnd()()()()()();
-        \u0275\u0275elementStart(47, "app-confirm-modal", 34);
-        \u0275\u0275listener("confirm", function PlanDispatchFormComponent_Template_app_confirm_modal_confirm_47_listener() {
+        \u0275\u0275elementStart(55, "app-confirm-modal", 38);
+        \u0275\u0275listener("confirm", function PlanDispatchFormComponent_Template_app_confirm_modal_confirm_55_listener() {
           return ctx.confirmDeleteBag();
-        })("cancel", function PlanDispatchFormComponent_Template_app_confirm_modal_cancel_47_listener() {
+        })("cancel", function PlanDispatchFormComponent_Template_app_confirm_modal_cancel_55_listener() {
           return ctx.cancelDelete();
         });
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(48, "app-confirm-modal", 35);
-        \u0275\u0275listener("confirm", function PlanDispatchFormComponent_Template_app_confirm_modal_confirm_48_listener() {
+        \u0275\u0275elementStart(56, "app-confirm-modal", 39);
+        \u0275\u0275listener("confirm", function PlanDispatchFormComponent_Template_app_confirm_modal_confirm_56_listener() {
           return ctx.confirmDeleteItem();
-        })("cancel", function PlanDispatchFormComponent_Template_app_confirm_modal_cancel_48_listener() {
+        })("cancel", function PlanDispatchFormComponent_Template_app_confirm_modal_cancel_56_listener() {
           return ctx.cancelDelete();
         });
         \u0275\u0275elementEnd();
@@ -79091,13 +80105,17 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
         \u0275\u0275property("formGroup", ctx.transportForm);
         \u0275\u0275advance(10);
         \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid(ctx.transportForm.get("customerId")));
-        \u0275\u0275property("options", ctx.customers)("placeholder", "Select Customer")("defaultOption", \u0275\u0275pureFunction0(27, _c015))("searchPlaceholder", "Search customers...");
+        \u0275\u0275property("options", ctx.customers)("placeholder", "Select Customer")("defaultOption", \u0275\u0275pureFunction0(30, _c015))("searchPlaceholder", "Search customers...");
         \u0275\u0275advance(2);
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.transportForm.get("customerId")));
+        \u0275\u0275advance(7);
+        \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid(ctx.transportForm.get("transportDate")));
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.transportForm.get("transportDate")));
         \u0275\u0275advance(6);
-        \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(30, 24, ctx.calculateTotalWeight(), "1.3-3"), " kg");
+        \u0275\u0275textInterpolate1("", \u0275\u0275pipeBind2(38, 27, ctx.calculateTotalWeight(), "1.3-3"), " kg");
         \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", ctx.isEditMode && ctx.transportSummary);
         \u0275\u0275advance(2);
@@ -79144,7 +80162,7 @@ var PlanDispatchFormComponent = class _PlanDispatchFormComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchFormComponent, { className: "PlanDispatchFormComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-form\\plan-dispatch-form.component.ts", lineNumber: 50 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanDispatchFormComponent, { className: "PlanDispatchFormComponent", filePath: "src\\app\\components\\plan-dispatch\\plan-dispatch-form\\plan-dispatch-form.component.ts", lineNumber: 51 });
 })();
 
 // src/app/services/plan-coating.service.ts
@@ -79184,11 +80202,19 @@ var PlanCoatingService = class _PlanCoatingService {
 // src/app/components/plan-coating/plan-coating-list/plan-coating-list.component.ts
 var _c016 = () => ({ label: "All Customers", value: "" });
 var _c15 = (a0) => ["/plan-coating/edit", a0];
-function PlanCoatingListComponent_div_26_Template(rf, ctx) {
+function PlanCoatingListComponent_button_20_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 30);
+    \u0275\u0275element(1, "i", 31);
+    \u0275\u0275text(2, " Add New Process ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanCoatingListComponent_div_24_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 31)(1, "button", 32);
-    \u0275\u0275listener("click", function PlanCoatingListComponent_div_26_Template_button_click_1_listener() {
+    \u0275\u0275elementStart(0, "div", 32)(1, "button", 33);
+    \u0275\u0275listener("click", function PlanCoatingListComponent_div_24_Template_button_click_1_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.generatePdf());
@@ -79207,7 +80233,7 @@ function PlanCoatingListComponent_div_26_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r1.isGeneratingPdf ? "Generating..." : "Generate PDF", " ");
   }
 }
-function PlanCoatingListComponent_tr_64_span_7_span_1_Template(rf, ctx) {
+function PlanCoatingListComponent_tr_62_span_7_span_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span", 42);
     \u0275\u0275text(1);
@@ -79219,10 +80245,10 @@ function PlanCoatingListComponent_tr_64_span_7_span_1_Template(rf, ctx) {
     \u0275\u0275textInterpolate(pn_r5);
   }
 }
-function PlanCoatingListComponent_tr_64_span_7_Template(rf, ctx) {
+function PlanCoatingListComponent_tr_62_span_7_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
-    \u0275\u0275template(1, PlanCoatingListComponent_tr_64_span_7_span_1_Template, 2, 1, "span", 41);
+    \u0275\u0275template(1, PlanCoatingListComponent_tr_62_span_7_span_1_Template, 2, 1, "span", 41);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -79231,14 +80257,14 @@ function PlanCoatingListComponent_tr_64_span_7_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", process_r4.planningNumbers);
   }
 }
-function PlanCoatingListComponent_tr_64_ng_template_8_Template(rf, ctx) {
+function PlanCoatingListComponent_tr_62_ng_template_8_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span", 43);
     \u0275\u0275text(1, "Existing");
     \u0275\u0275elementEnd();
   }
 }
-function PlanCoatingListComponent_tr_64_div_15_Template(rf, ctx) {
+function PlanCoatingListComponent_tr_62_div_15_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 44)(1, "small");
     \u0275\u0275text(2);
@@ -79251,25 +80277,45 @@ function PlanCoatingListComponent_tr_64_div_15_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.getItemNames(process_r4));
   }
 }
-function PlanCoatingListComponent_tr_64_Conditional_38_Template(rf, ctx) {
+function PlanCoatingListComponent_tr_62_button_37_Template(rf, ctx) {
   if (rf & 1) {
-    const _r6 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "button", 45);
-    \u0275\u0275listener("click", function PlanCoatingListComponent_tr_64_Conditional_38_Template_button_click_0_listener() {
-      \u0275\u0275restoreView(_r6);
-      const process_r4 = \u0275\u0275nextContext().$implicit;
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.deleteProcess(process_r4.id));
-    });
     \u0275\u0275element(1, "i", 46);
     \u0275\u0275elementEnd();
   }
+  if (rf & 2) {
+    const process_r4 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c15, ctx_r1.encId(process_r4.id)));
+  }
 }
-function PlanCoatingListComponent_tr_64_Template(rf, ctx) {
+function PlanCoatingListComponent_tr_62_Conditional_38_button_0_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 48);
+    \u0275\u0275listener("click", function PlanCoatingListComponent_tr_62_Conditional_38_button_0_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r6);
+      const process_r4 = \u0275\u0275nextContext(2).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.deleteProcess(process_r4.id));
+    });
+    \u0275\u0275element(1, "i", 49);
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanCoatingListComponent_tr_62_Conditional_38_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275template(0, PlanCoatingListComponent_tr_62_Conditional_38_button_0_Template, 2, 0, "button", 47);
+  }
+  if (rf & 2) {
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_COATING");
+  }
+}
+function PlanCoatingListComponent_tr_62_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "tr")(1, "td", 23)(2, "div", 24)(3, "input", 33);
-    \u0275\u0275listener("click", function PlanCoatingListComponent_tr_64_Template_input_click_3_listener($event) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 22)(2, "div", 23)(3, "input", 34);
+    \u0275\u0275listener("click", function PlanCoatingListComponent_tr_62_Template_input_click_3_listener($event) {
       const process_r4 = \u0275\u0275restoreView(_r3).$implicit;
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.toggleProcessSelection(process_r4, $event));
@@ -79279,13 +80325,13 @@ function PlanCoatingListComponent_tr_64_Template(rf, ctx) {
     \u0275\u0275text(5);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(6, "td");
-    \u0275\u0275template(7, PlanCoatingListComponent_tr_64_span_7_Template, 2, 1, "span", 34)(8, PlanCoatingListComponent_tr_64_ng_template_8_Template, 2, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+    \u0275\u0275template(7, PlanCoatingListComponent_tr_62_span_7_Template, 2, 1, "span", 35)(8, PlanCoatingListComponent_tr_62_ng_template_8_Template, 2, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "td")(11, "div", 35)(12, "strong");
+    \u0275\u0275elementStart(10, "td")(11, "div", 36)(12, "strong");
     \u0275\u0275text(13);
     \u0275\u0275elementEnd();
     \u0275\u0275text(14, " item(s) ");
-    \u0275\u0275template(15, PlanCoatingListComponent_tr_64_div_15_Template, 3, 1, "div", 36);
+    \u0275\u0275template(15, PlanCoatingListComponent_tr_62_div_15_Template, 3, 1, "div", 37);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(16, "td")(17, "strong");
     \u0275\u0275text(18);
@@ -79306,11 +80352,10 @@ function PlanCoatingListComponent_tr_64_Template(rf, ctx) {
     \u0275\u0275elementStart(32, "td");
     \u0275\u0275text(33);
     \u0275\u0275pipe(34, "date");
+    \u0275\u0275pipe(35, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(35, "td", 37)(36, "button", 38);
-    \u0275\u0275element(37, "i", 39);
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(38, PlanCoatingListComponent_tr_64_Conditional_38_Template, 2, 0, "button", 40);
+    \u0275\u0275elementStart(36, "td", 38);
+    \u0275\u0275template(37, PlanCoatingListComponent_tr_62_button_37_Template, 2, 3, "button", 39)(38, PlanCoatingListComponent_tr_62_Conditional_38_Template, 1, 1, "button", 40);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -79342,22 +80387,22 @@ function PlanCoatingListComponent_tr_64_Template(rf, ctx) {
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", ctx_r1.isProcessCompleted(process_r4) ? "Completed" : "Active", " ");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(34, 21, process_r4.createdAt, "medium"));
-    \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(24, _c15, ctx_r1.encId(process_r4.id)));
-    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(process_r4.coatingDate ? \u0275\u0275pipeBind2(34, 21, process_r4.coatingDate, "dd-MM-yyyy") : \u0275\u0275pipeBind2(35, 24, process_r4.createdAt, "medium"));
+    \u0275\u0275advance(4);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_COATING");
+    \u0275\u0275advance();
     \u0275\u0275conditional(38, ctx_r1.isProcessCompleted(process_r4) ? 38 : -1);
   }
 }
-function PlanCoatingListComponent_app_pagination_66_Template(rf, ctx) {
+function PlanCoatingListComponent_app_pagination_64_Template(rf, ctx) {
   if (rf & 1) {
     const _r9 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 47);
-    \u0275\u0275listener("pageChange", function PlanCoatingListComponent_app_pagination_66_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275elementStart(0, "app-pagination", 50);
+    \u0275\u0275listener("pageChange", function PlanCoatingListComponent_app_pagination_64_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r9);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.onPageChange($event));
-    })("pageSizeChange", function PlanCoatingListComponent_app_pagination_66_Template_app_pagination_pageSizeChange_0_listener($event) {
+    })("pageSizeChange", function PlanCoatingListComponent_app_pagination_64_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r9);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.onPageSizeChange($event));
@@ -79618,7 +80663,7 @@ var PlanCoatingListComponent = class _PlanCoatingListComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanCoatingListComponent, selectors: [["app-plan-coating-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 67, vars: 11, consts: [["plainRow", ""], [1, "process-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group", "search-input"], ["type", "text", "formControlName", "search", "placeholder", "Search by customer...", 1, "form-control"], [1, "form-group", "customer-select"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "add-process-btn"], ["routerLink", "/plan-coating/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "processes-list", "card"], ["class", "table-actions", 4, "ngIf"], [1, "table-responsive"], [1, "table"], [1, "select-column"], [1, "checkbox-wrapper"], ["type", "checkbox", "disabled", ""], ["scope", "col"], ["scope", "col", 1, "actions-cell"], [4, "ngFor", "ngForOf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "table-actions"], [1, "btn", "btn-primary", 3, "click", "disabled"], ["type", "checkbox", 3, "click", "checked", "disabled"], [4, "ngIf", "ngIfElse"], [1, "items-info"], ["class", "item-names", 4, "ngIf"], [1, "actions-cell"], ["title", "Edit Process", "aria-label", "Edit Process", 1, "btn", "btn-icon", "btn-primary", 3, "routerLink"], ["aria-hidden", "true", 1, "fas", "fa-edit"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger"], ["class", "plan-badge", 4, "ngFor", "ngForOf"], [1, "plan-badge"], [1, "existing-badge"], [1, "item-names"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger", 3, "click"], ["aria-hidden", "true", 1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PlanCoatingListComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanCoatingListComponent, selectors: [["app-plan-coating-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 65, vars: 12, consts: [["plainRow", ""], [1, "process-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group", "search-input"], ["type", "text", "formControlName", "search", "placeholder", "Search by customer...", 1, "form-control"], [1, "form-group", "customer-select"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "add-process-btn"], ["class", "btn btn-primary", "routerLink", "/plan-coating/create", 4, "appCanAccess"], [1, "processes-list", "card"], ["class", "table-actions", 4, "ngIf"], [1, "table-responsive"], [1, "table"], [1, "select-column"], [1, "checkbox-wrapper"], ["type", "checkbox", "disabled", ""], ["scope", "col"], ["scope", "col", 1, "actions-cell"], [4, "ngFor", "ngForOf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["routerLink", "/plan-coating/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "table-actions"], [1, "btn", "btn-primary", 3, "click", "disabled"], ["type", "checkbox", 3, "click", "checked", "disabled"], [4, "ngIf", "ngIfElse"], [1, "items-info"], ["class", "item-names", 4, "ngIf"], [1, "actions-cell"], ["class", "btn btn-icon btn-primary", "title", "Edit Process", "aria-label", "Edit Process", 3, "routerLink", 4, "appCanAccess"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger"], ["class", "plan-badge", 4, "ngFor", "ngForOf"], [1, "plan-badge"], [1, "existing-badge"], [1, "item-names"], ["title", "Edit Process", "aria-label", "Edit Process", 1, "btn", "btn-icon", "btn-primary", 3, "routerLink"], ["aria-hidden", "true", 1, "fas", "fa-edit"], ["class", "btn btn-icon btn-danger", "title", "Delete Process", "aria-label", "Delete Process", 3, "click", 4, "appCanAccess"], ["title", "Delete Process", "aria-label", "Delete Process", 1, "btn", "btn-icon", "btn-danger", 3, "click"], ["aria-hidden", "true", 1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PlanCoatingListComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 1);
         \u0275\u0275element(1, "app-loader", 2);
@@ -79651,52 +80696,51 @@ var PlanCoatingListComponent = class _PlanCoatingListComponent {
         \u0275\u0275element(17, "i", 15);
         \u0275\u0275text(18, " Reset ");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(19, "div", 16)(20, "button", 17);
-        \u0275\u0275element(21, "i", 18);
-        \u0275\u0275text(22, " Add New Process ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(23, "div", 19)(24, "h2");
-        \u0275\u0275text(25, "Plan Coating Processes");
+        \u0275\u0275elementStart(19, "div", 16);
+        \u0275\u0275template(20, PlanCoatingListComponent_button_20_Template, 3, 0, "button", 17);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(26, PlanCoatingListComponent_div_26_Template, 4, 3, "div", 20);
-        \u0275\u0275elementStart(27, "div", 21)(28, "table", 22)(29, "thead")(30, "tr")(31, "th", 23)(32, "div", 24);
-        \u0275\u0275element(33, "input", 25);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(34, "th", 26);
-        \u0275\u0275text(35, "#");
+        \u0275\u0275elementStart(21, "div", 18)(22, "h2");
+        \u0275\u0275text(23, "Plan Coating Processes");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(36, "th", 26)(37, "strong");
-        \u0275\u0275text(38, "Planning");
+        \u0275\u0275template(24, PlanCoatingListComponent_div_24_Template, 4, 3, "div", 19);
+        \u0275\u0275elementStart(25, "div", 20)(26, "table", 21)(27, "thead")(28, "tr")(29, "th", 22)(30, "div", 23);
+        \u0275\u0275element(31, "input", 24);
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(39, "th", 26)(40, "strong");
-        \u0275\u0275text(41, "Items");
+        \u0275\u0275elementStart(32, "th", 25);
+        \u0275\u0275text(33, "#");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(34, "th", 25)(35, "strong");
+        \u0275\u0275text(36, "Planning");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(42, "th", 26)(43, "strong");
-        \u0275\u0275text(44, "Customer");
+        \u0275\u0275elementStart(37, "th", 25)(38, "strong");
+        \u0275\u0275text(39, "Items");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(45, "th", 26)(46, "strong");
-        \u0275\u0275text(47, "Total Quantity");
+        \u0275\u0275elementStart(40, "th", 25)(41, "strong");
+        \u0275\u0275text(42, "Customer");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(48, "th", 26)(49, "strong");
-        \u0275\u0275text(50, "Total Bags");
+        \u0275\u0275elementStart(43, "th", 25)(44, "strong");
+        \u0275\u0275text(45, "Total Quantity");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(51, "th", 26)(52, "strong");
-        \u0275\u0275text(53, "Total Amount");
+        \u0275\u0275elementStart(46, "th", 25)(47, "strong");
+        \u0275\u0275text(48, "Total Bags");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(54, "th", 26)(55, "strong");
-        \u0275\u0275text(56, "Status");
+        \u0275\u0275elementStart(49, "th", 25)(50, "strong");
+        \u0275\u0275text(51, "Total Amount");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(57, "th", 26)(58, "strong");
-        \u0275\u0275text(59, "Created At");
+        \u0275\u0275elementStart(52, "th", 25)(53, "strong");
+        \u0275\u0275text(54, "Status");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(60, "th", 27)(61, "strong");
-        \u0275\u0275text(62, "Actions");
+        \u0275\u0275elementStart(55, "th", 25)(56, "strong");
+        \u0275\u0275text(57, "Coating Date");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(58, "th", 26)(59, "strong");
+        \u0275\u0275text(60, "Actions");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(63, "tbody");
-        \u0275\u0275template(64, PlanCoatingListComponent_tr_64_Template, 39, 26, "tr", 28);
+        \u0275\u0275elementStart(61, "tbody");
+        \u0275\u0275template(62, PlanCoatingListComponent_tr_62_Template, 39, 27, "tr", 27);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(65, "div", 29);
-        \u0275\u0275template(66, PlanCoatingListComponent_app_pagination_66_Template, 1, 4, "app-pagination", 30);
+        \u0275\u0275elementStart(63, "div", 28);
+        \u0275\u0275template(64, PlanCoatingListComponent_app_pagination_64_Template, 1, 4, "app-pagination", 29);
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
@@ -79705,12 +80749,14 @@ var PlanCoatingListComponent = class _PlanCoatingListComponent {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(5);
-        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(10, _c016))("searchPlaceholder", "Search customers...");
+        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(11, _c016))("searchPlaceholder", "Search customers...");
         \u0275\u0275advance();
         \u0275\u0275property("disabled", ctx.isLoadingCustomers);
         \u0275\u0275advance();
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
-        \u0275\u0275advance(14);
+        \u0275\u0275advance(8);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_COATING");
+        \u0275\u0275advance(4);
         \u0275\u0275property("ngIf", ctx.selectedProcesses.size > 0);
         \u0275\u0275advance(38);
         \u0275\u0275property("ngForOf", ctx.processes);
@@ -79735,19 +80781,20 @@ var PlanCoatingListComponent = class _PlanCoatingListComponent {
       SearchableSelectComponent,
       FormsModule,
       RouterLink,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ['\n\n.process-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  position: relative;\n  min-height: 200px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n  margin-bottom: 2rem;\n  background: white;\n  border-radius: var(--border-radius);\n  box-shadow: var(--card-shadow);\n  padding: 1.5rem;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 1.5rem;\n  color: var(--text-primary);\n  font-size: 1.25rem;\n  font-weight: 500;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 1rem;\n  flex-wrap: wrap;\n  align-items: flex-start;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 200px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.search-input[_ngcontent-%COMP%] {\n  max-width: 300px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  padding: 8px;\n  cursor: pointer;\n  border-radius: 6px;\n  color: var(--secondary);\n  background-color: rgba(var(--secondary-rgb), 0.1);\n  transition: all 0.2s ease;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled), .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--secondary);\n  color: white;\n  transform: translateY(-1px);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active:not(:disabled), .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active:not(:disabled) {\n  transform: translateY(0);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled, .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.5;\n  cursor: not-allowed;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 16px;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%] {\n  height: 30px;\n  padding: 0 1.5rem;\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  white-space: nowrap;\n  background: var(--primary);\n  color: white;\n  border: none;\n  border-radius: var(--border-radius);\n  transition: all 0.2s ease;\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%]:hover {\n  transform: scale(1.02);\n}\n.process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-btn[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 0.9rem;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%] {\n  min-width: 1200px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  min-width: 120px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th.select-column[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td.select-column[_ngcontent-%COMP%] {\n  width: 40px;\n  min-width: 40px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   th.actions-cell[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td.actions-cell[_ngcontent-%COMP%] {\n  width: 120px;\n  min-width: 120px;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%] {\n  white-space: normal;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%]   .item-names[_ngcontent-%COMP%] {\n  margin-top: 0.25rem;\n}\n.process-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]   table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%]   .items-info[_ngcontent-%COMP%]   .item-names[_ngcontent-%COMP%]   small[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.875rem;\n  display: block;\n}\n@media (max-width: 768px) {\n  .process-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n    min-width: unset;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.search-input[_ngcontent-%COMP%] {\n    max-width: unset;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n    padding: 6px;\n  }\n  .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.customer-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%], .process-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group.product-select[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n    font-size: 14px;\n  }\n}\n.product-select-group[_ngcontent-%COMP%] {\n  gap: 0.5rem;\n  align-items: stretch;\n}\n.product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  color: var(--primary);\n  width: 30px;\n  height: 30px;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.form-control[_ngcontent-%COMP%] {\n  width: 90%;\n  padding: 0.5rem 1rem;\n  border-radius: 4px;\n  background: white;\n  color: var(--text-primary);\n  transition: border-color 0.2s ease;\n}\n.form-control[_ngcontent-%COMP%]:focus {\n  outline: none;\n  border-color: var(--primary);\n  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);\n}\n.form-control[_ngcontent-%COMP%]::placeholder {\n  color: var(--text-secondary);\n}\n.actions-cell[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  width: 100px;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  width: 32px;\n  height: 32px;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin: 0 0.25rem;\n  border-radius: var(--border-radius);\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-primary[_ngcontent-%COMP%] {\n  background-color: var(--primary);\n  border-color: var(--primary);\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-danger[_ngcontent-%COMP%] {\n  background-color: #dc3545;\n  border-color: #dc3545;\n}\n.actions-cell[_ngcontent-%COMP%]   .btn-icon.btn-danger[_ngcontent-%COMP%]:hover {\n  background-color: #c82333;\n  border-color: #bd2130;\n}\n.table-actions[_ngcontent-%COMP%] {\n  margin: 1rem 0;\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.5rem;\n}\n.table-actions[_ngcontent-%COMP%]   .btn-primary[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.5rem 1rem;\n}\n.table-actions[_ngcontent-%COMP%]   .btn-primary[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1rem;\n}\n.select-column[_ngcontent-%COMP%] {\n  width: 40px;\n  text-align: center;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  width: 18px;\n  height: 18px;\n  cursor: pointer;\n}\n.select-column[_ngcontent-%COMP%]   .checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  cursor: not-allowed;\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  appearance: none;\n  -webkit-appearance: none;\n  width: 18px;\n  height: 18px;\n  border: 2px solid var(--primary);\n  border-radius: 4px;\n  cursor: pointer;\n  position: relative;\n  margin: 0;\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:checked {\n  background-color: var(--primary);\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:checked::after {\n  content: "";\n  position: absolute;\n  left: 5px;\n  top: 2px;\n  width: 5px;\n  height: 10px;\n  border: solid white;\n  border-width: 0 2px 2px 0;\n  transform: rotate(45deg);\n}\n.checkbox-wrapper[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  border-color: var(--border-color);\n  background-color: var(--background-light);\n  cursor: not-allowed;\n  opacity: 0.5;\n}\n.plan-badge[_ngcontent-%COMP%] {\n  display: inline-block;\n  color: var(--secondary);\n  background-color: rgba(0, 153, 156, 0.12);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n  white-space: nowrap;\n  margin: 2px 4px 2px 0;\n}\n.existing-badge[_ngcontent-%COMP%] {\n  display: inline-block;\n  color: var(--text-secondary);\n  background-color: var(--bg-secondary, #f1f3f5);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n  white-space: nowrap;\n}\n/*# sourceMappingURL=plan-coating-list.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanCoatingListComponent, { className: "PlanCoatingListComponent", filePath: "src\\app\\components\\plan-coating\\plan-coating-list\\plan-coating-list.component.ts", lineNumber: 36 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanCoatingListComponent, { className: "PlanCoatingListComponent", filePath: "src\\app\\components\\plan-coating\\plan-coating-list\\plan-coating-list.component.ts", lineNumber: 38 });
 })();
 
 // src/app/components/plan-coating/plan-coating-form/plan-coating-form.component.ts
 var _c017 = () => ({ label: "No plan", value: "" });
 function PlanCoatingFormComponent_div_28_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -79757,16 +80804,28 @@ function PlanCoatingFormComponent_div_28_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.processForm.get("customerId"), "customer"), " ");
   }
 }
-function PlanCoatingFormComponent_tr_67_small_4_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_37_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "small", 53);
+    \u0275\u0275elementStart(0, "div", 40);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.processForm.get("coatingDate"), "coating date"), " ");
+  }
+}
+function PlanCoatingFormComponent_tr_76_small_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "small", 56);
     \u0275\u0275text(1, "Linked: progress auto-updated.");
     \u0275\u0275elementEnd();
   }
 }
-function PlanCoatingFormComponent_tr_67_small_5_Template(rf, ctx) {
+function PlanCoatingFormComponent_tr_76_small_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "small", 54);
+    \u0275\u0275elementStart(0, "small", 57);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -79777,9 +80836,9 @@ function PlanCoatingFormComponent_tr_67_small_5_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.balanceForRow(item_r3));
   }
 }
-function PlanCoatingFormComponent_tr_67_div_12_Template(rf, ctx) {
+function PlanCoatingFormComponent_tr_76_div_12_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -79790,9 +80849,9 @@ function PlanCoatingFormComponent_tr_67_div_12_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r4).get("productId"), "product"), " ");
   }
 }
-function PlanCoatingFormComponent_tr_67_div_15_Template(rf, ctx) {
+function PlanCoatingFormComponent_tr_76_div_15_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -79803,9 +80862,9 @@ function PlanCoatingFormComponent_tr_67_div_15_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r4).get("quantity"), "quantity"), " ");
   }
 }
-function PlanCoatingFormComponent_tr_67_div_18_Template(rf, ctx) {
+function PlanCoatingFormComponent_tr_76_div_18_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -79816,9 +80875,9 @@ function PlanCoatingFormComponent_tr_67_div_18_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r4).get("totalBags"), "total bags"), " ");
   }
 }
-function PlanCoatingFormComponent_tr_67_div_21_Template(rf, ctx) {
+function PlanCoatingFormComponent_tr_76_div_21_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37);
+    \u0275\u0275elementStart(0, "div", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -79829,17 +80888,17 @@ function PlanCoatingFormComponent_tr_67_div_21_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r0.getFieldError(ctx_r0.itemsFormArray.at(i_r4).get("unitPrice"), "unit price"), " ");
   }
 }
-function PlanCoatingFormComponent_tr_67_Template(rf, ctx) {
+function PlanCoatingFormComponent_tr_76_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "tr", 38)(1, "td", 39)(2, "div", 40);
-    \u0275\u0275element(3, "app-searchable-select", 41);
-    \u0275\u0275template(4, PlanCoatingFormComponent_tr_67_small_4_Template, 2, 0, "small", 42)(5, PlanCoatingFormComponent_tr_67_small_5_Template, 2, 1, "small", 43);
+    \u0275\u0275elementStart(0, "tr", 41)(1, "td", 42)(2, "div", 43);
+    \u0275\u0275element(3, "app-searchable-select", 44);
+    \u0275\u0275template(4, PlanCoatingFormComponent_tr_76_small_4_Template, 2, 0, "small", 45)(5, PlanCoatingFormComponent_tr_76_small_5_Template, 2, 1, "small", 46);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(6, "td")(7, "div", 40)(8, "div", 16);
-    \u0275\u0275element(9, "app-searchable-select", 44);
-    \u0275\u0275elementStart(10, "button", 45);
-    \u0275\u0275listener("click", function PlanCoatingFormComponent_tr_67_Template_button_click_10_listener($event) {
+    \u0275\u0275elementStart(6, "td")(7, "div", 43)(8, "div", 16);
+    \u0275\u0275element(9, "app-searchable-select", 47);
+    \u0275\u0275elementStart(10, "button", 48);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_tr_76_Template_button_click_10_listener($event) {
       \u0275\u0275restoreView(_r2);
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.refreshProducts();
@@ -79848,35 +80907,35 @@ function PlanCoatingFormComponent_tr_67_Template(rf, ctx) {
     });
     \u0275\u0275element(11, "i", 19);
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(12, PlanCoatingFormComponent_tr_67_div_12_Template, 2, 1, "div", 20);
+    \u0275\u0275template(12, PlanCoatingFormComponent_tr_76_div_12_Template, 2, 1, "div", 20);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(13, "td");
-    \u0275\u0275element(14, "input", 46);
-    \u0275\u0275template(15, PlanCoatingFormComponent_tr_67_div_15_Template, 2, 1, "div", 20);
+    \u0275\u0275element(14, "input", 49);
+    \u0275\u0275template(15, PlanCoatingFormComponent_tr_76_div_15_Template, 2, 1, "div", 20);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(16, "td");
-    \u0275\u0275element(17, "input", 47);
-    \u0275\u0275template(18, PlanCoatingFormComponent_tr_67_div_18_Template, 2, 1, "div", 20);
+    \u0275\u0275element(17, "input", 50);
+    \u0275\u0275template(18, PlanCoatingFormComponent_tr_76_div_18_Template, 2, 1, "div", 20);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(19, "td");
-    \u0275\u0275element(20, "input", 48);
-    \u0275\u0275template(21, PlanCoatingFormComponent_tr_67_div_21_Template, 2, 1, "div", 20);
+    \u0275\u0275element(20, "input", 51);
+    \u0275\u0275template(21, PlanCoatingFormComponent_tr_76_div_21_Template, 2, 1, "div", 20);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(22, "td");
-    \u0275\u0275element(23, "input", 49);
+    \u0275\u0275element(23, "input", 52);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(24, "td");
-    \u0275\u0275element(25, "input", 50);
+    \u0275\u0275element(25, "input", 53);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(26, "td")(27, "button", 51);
-    \u0275\u0275listener("click", function PlanCoatingFormComponent_tr_67_Template_button_click_27_listener($event) {
+    \u0275\u0275elementStart(26, "td")(27, "button", 54);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_tr_76_Template_button_click_27_listener($event) {
       const i_r4 = \u0275\u0275restoreView(_r2).index;
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.removeItem(i_r4);
       $event.preventDefault();
       return \u0275\u0275resetView($event.stopPropagation());
     });
-    \u0275\u0275element(28, "i", 52);
+    \u0275\u0275element(28, "i", 55);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -79925,23 +80984,23 @@ function PlanCoatingFormComponent_tr_67_Template(rf, ctx) {
     \u0275\u0275attribute("aria-label", "Remove item " + (i_r4 + 1));
   }
 }
-function PlanCoatingFormComponent_tr_68_Template(rf, ctx) {
+function PlanCoatingFormComponent_tr_77_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 55);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 58);
     \u0275\u0275text(2, 'No items added. Click "Add Item" to get started.');
     \u0275\u0275elementEnd()();
   }
 }
-function PlanCoatingFormComponent_tfoot_69_Template(rf, ctx) {
+function PlanCoatingFormComponent_tfoot_78_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 56)(3, "strong");
+    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 59)(3, "strong");
     \u0275\u0275text(4, "Grand Total:");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(5, "td")(6, "strong");
     \u0275\u0275text(7);
     \u0275\u0275pipe(8, "number");
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(9, "td", 57);
+    \u0275\u0275element(9, "td", 60);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -79950,7 +81009,7 @@ function PlanCoatingFormComponent_tfoot_69_Template(rf, ctx) {
     \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(8, 1, ctx_r0.getGrandTotal(), "1.2-2"));
   }
 }
-function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_span_5_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_span_5_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1);
@@ -79964,7 +81023,7 @@ function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_span_5_Temp
     \u0275\u0275textInterpolate1(" - ", ctx_r0.getProductName((tmp_7_0 = itemControl_r7.get("productId")) == null ? null : tmp_7_0.value), " ");
   }
 }
-function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_tr_16_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_div_9_tr_16_Template(rf, ctx) {
   if (rf & 1) {
     const _r8 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr")(1, "td");
@@ -79977,15 +81036,15 @@ function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_tr_16
     \u0275\u0275text(7);
     \u0275\u0275pipe(8, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "td", 71)(10, "button", 72);
-    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_tr_16_Template_button_click_10_listener() {
+    \u0275\u0275elementStart(9, "td", 74)(10, "button", 75);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_div_9_tr_16_Template_button_click_10_listener() {
       let tmp_11_0;
       const returnItem_r9 = \u0275\u0275restoreView(_r8).$implicit;
       const itemControl_r7 = \u0275\u0275nextContext(3).$implicit;
       const ctx_r0 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r0.deleteReturn(returnItem_r9.id, (tmp_11_0 = itemControl_r7.get("id")) == null ? null : tmp_11_0.value));
     });
-    \u0275\u0275element(11, "i", 52);
+    \u0275\u0275element(11, "i", 55);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -80004,27 +81063,27 @@ function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_tr_16
     \u0275\u0275attribute("aria-label", "Delete return " + (returnIndex_r10 + 1) + " for item " + (itemIndex_r11 + 1));
   }
 }
-function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_div_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 26)(1, "table", 68)(2, "thead")(3, "tr")(4, "th", 28);
+    \u0275\u0275elementStart(0, "div", 29)(1, "table", 71)(2, "thead")(3, "tr")(4, "th", 31);
     \u0275\u0275text(5, "#");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "th", 28)(7, "strong");
+    \u0275\u0275elementStart(6, "th", 31)(7, "strong");
     \u0275\u0275text(8, "Return Quantity");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "th", 28)(10, "strong");
+    \u0275\u0275elementStart(9, "th", 31)(10, "strong");
     \u0275\u0275text(11, "Return Date");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "th", 28)(13, "strong");
+    \u0275\u0275elementStart(12, "th", 31)(13, "strong");
     \u0275\u0275text(14, "Actions");
     \u0275\u0275elementEnd()()()();
     \u0275\u0275elementStart(15, "tbody");
-    \u0275\u0275template(16, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_tr_16_Template, 12, 8, "tr", 69);
+    \u0275\u0275template(16, PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_div_9_tr_16_Template, 12, 8, "tr", 72);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(17, "tfoot")(18, "tr")(19, "td")(20, "strong");
     \u0275\u0275text(21, "Total Returns");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(22, "td", 70)(23, "strong");
+    \u0275\u0275elementStart(22, "td", 73)(23, "strong");
     \u0275\u0275text(24);
     \u0275\u0275elementEnd()()()()()();
   }
@@ -80039,34 +81098,34 @@ function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_Templ
     \u0275\u0275textInterpolate(ctx_r0.getTotalReturnsForItem((tmp_8_0 = itemControl_r7.get("id")) == null ? null : tmp_8_0.value));
   }
 }
-function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_10_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_div_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 73);
+    \u0275\u0275elementStart(0, "div", 76);
     \u0275\u0275text(1, " No returns found for this item. ");
     \u0275\u0275elementEnd();
   }
 }
-function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r6 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 64)(2, "h3")(3, "strong");
+    \u0275\u0275elementStart(1, "div", 67)(2, "h3")(3, "strong");
     \u0275\u0275text(4);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_span_5_Template, 2, 1, "span", 30);
+    \u0275\u0275template(5, PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_span_5_Template, 2, 1, "span", 33);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "button", 65);
-    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_Template_button_click_6_listener() {
+    \u0275\u0275elementStart(6, "button", 68);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_Template_button_click_6_listener() {
       let tmp_7_0;
       \u0275\u0275restoreView(_r6);
       const itemControl_r7 = \u0275\u0275nextContext().$implicit;
       const ctx_r0 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r0.openReturnModal((tmp_7_0 = itemControl_r7.get("id")) == null ? null : tmp_7_0.value));
     });
-    \u0275\u0275element(7, "i", 25);
+    \u0275\u0275element(7, "i", 28);
     \u0275\u0275text(8, " Add Return ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(9, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_9_Template, 25, 2, "div", 66)(10, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_div_10_Template, 2, 0, "div", 67);
+    \u0275\u0275template(9, PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_div_9_Template, 25, 2, "div", 69)(10, PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_div_10_Template, 2, 0, "div", 70);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
@@ -80090,10 +81149,10 @@ function PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_Template(rf
     \u0275\u0275property("ngIf", ctx_r0.loadItemReturns((tmp_11_0 = itemControl_r7.get("id")) == null ? null : tmp_11_0.value).length === 0);
   }
 }
-function PlanCoatingFormComponent_div_77_div_10_div_1_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_86_div_10_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 63);
-    \u0275\u0275template(1, PlanCoatingFormComponent_div_77_div_10_div_1_ng_container_1_Template, 11, 6, "ng-container", 30);
+    \u0275\u0275elementStart(0, "div", 66);
+    \u0275\u0275template(1, PlanCoatingFormComponent_div_86_div_10_div_1_ng_container_1_Template, 11, 6, "ng-container", 33);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -80103,10 +81162,10 @@ function PlanCoatingFormComponent_div_77_div_10_div_1_Template(rf, ctx) {
     \u0275\u0275property("ngIf", (tmp_5_0 = itemControl_r7.get("id")) == null ? null : tmp_5_0.value);
   }
 }
-function PlanCoatingFormComponent_div_77_div_10_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_86_div_10_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div");
-    \u0275\u0275template(1, PlanCoatingFormComponent_div_77_div_10_div_1_Template, 2, 1, "div", 62);
+    \u0275\u0275template(1, PlanCoatingFormComponent_div_86_div_10_div_1_Template, 2, 1, "div", 65);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -80115,34 +81174,34 @@ function PlanCoatingFormComponent_div_77_div_10_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r0.itemsFormArray.controls);
   }
 }
-function PlanCoatingFormComponent_div_77_Template(rf, ctx) {
+function PlanCoatingFormComponent_div_86_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 58)(1, "div", 59);
-    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_77_Template_div_click_1_listener() {
+    \u0275\u0275elementStart(0, "div", 61)(1, "div", 62);
+    \u0275\u0275listener("click", function PlanCoatingFormComponent_div_86_Template_div_click_1_listener() {
       \u0275\u0275restoreView(_r5);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.toggleReturns());
-    })("keydown.enter", function PlanCoatingFormComponent_div_77_Template_div_keydown_enter_1_listener() {
+    })("keydown.enter", function PlanCoatingFormComponent_div_86_Template_div_keydown_enter_1_listener() {
       \u0275\u0275restoreView(_r5);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.toggleReturns());
-    })("keydown.space", function PlanCoatingFormComponent_div_77_Template_div_keydown_space_1_listener($event) {
+    })("keydown.space", function PlanCoatingFormComponent_div_86_Template_div_keydown_space_1_listener($event) {
       \u0275\u0275restoreView(_r5);
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.toggleReturns();
       return \u0275\u0275resetView($event.preventDefault());
     });
-    \u0275\u0275elementStart(2, "div", 60);
-    \u0275\u0275element(3, "i", 33);
+    \u0275\u0275elementStart(2, "div", 63);
+    \u0275\u0275element(3, "i", 36);
     \u0275\u0275elementStart(4, "h2")(5, "strong");
     \u0275\u0275text(6, "Process Returns");
     \u0275\u0275elementEnd()()();
     \u0275\u0275element(7, "i", 19);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "div", 61);
+    \u0275\u0275elementStart(8, "div", 64);
     \u0275\u0275element(9, "app-loader", 8);
-    \u0275\u0275template(10, PlanCoatingFormComponent_div_77_div_10_Template, 2, 1, "div", 30);
+    \u0275\u0275template(10, PlanCoatingFormComponent_div_86_div_10_Template, 2, 1, "div", 33);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -80230,6 +81289,8 @@ var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
   initializeForm() {
     this.processForm = this.fb.group({
       customerId: ["", [Validators.required]],
+      // TRANSPORT_COATING_DATE: business date, defaults to today, editable.
+      coatingDate: [formatDate(/* @__PURE__ */ new Date(), "yyyy-MM-dd", "en"), Validators.required],
       status: ["A"],
       items: this.fb.array([])
     });
@@ -80346,6 +81407,7 @@ var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
         this.snackbar.error("Row product is not in the selected plan and was cleared");
       } else {
         itemGroup.patchValue({ planningItemId: match2 ? Number(match2.planningItemId ?? match2.id) : null }, { emitEvent: false });
+        this.autofillQuantityFromBalance(itemGroup);
       }
     });
   }
@@ -80358,6 +81420,29 @@ var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
     const prodId = Number(itemGroup.get("productId")?.value);
     const match2 = prodId ? (this.planItemsCache.get(pid) || []).find((p) => Number(p.productId) === prodId) : null;
     itemGroup.patchValue({ planningItemId: match2 ? Number(match2.planningItemId ?? match2.id) : null }, { emitEvent: false });
+    this.autofillQuantityFromBalance(itemGroup);
+  }
+  /**
+   * AUTOFILL_BALANCE_QTY: places the "Can coat" balance directly inside
+   * Quantity (still editable). Only fills empty inputs — typed or stored
+   * values are never overwritten. Emits so item totals recalculate exactly
+   * like a keystroke.
+   */
+  autofillQuantityFromBalance(itemGroup) {
+    const qtyCtrl = itemGroup.get("quantity");
+    if (!qtyCtrl || qtyCtrl.value !== null && qtyCtrl.value !== "" && Number(qtyCtrl.value) !== 0) {
+      return;
+    }
+    const pid = this.rowPlanningId(itemGroup);
+    const piId = itemGroup.get("planningItemId")?.value;
+    if (!pid || !piId) {
+      return;
+    }
+    const pi = (this.planItemsCache.get(pid) || []).find((p) => Number(p.planningItemId ?? p.id) === Number(piId));
+    const balance = pi ? Number(pi.coatable ?? 0) : 0;
+    if (balance > 0) {
+      qtyCtrl.patchValue(balance);
+    }
   }
   // --- Items (same shape as the old coating form + plan controls) ---
   addItem(itemData) {
@@ -80515,6 +81600,7 @@ var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
           }
           this.processForm.patchValue({
             customerId: data.customerId,
+            coatingDate: data.coatingDate ? formatDate(data.coatingDate, "yyyy-MM-dd", "en") : formatDate(/* @__PURE__ */ new Date(), "yyyy-MM-dd", "en"),
             status: data.status || "A"
           });
           if (data.items && data.items.length > 0) {
@@ -80610,6 +81696,7 @@ var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
     const requestData = {
       id: this.isEditMode ? this.processId : void 0,
       customerId: formValue.customerId,
+      coatingDate: formValue.coatingDate || null,
       status: formValue.status,
       items: this.itemsFormArray.controls.map((control) => {
         const itemGroup = control;
@@ -80788,7 +81875,7 @@ var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
         let _t;
         \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.returnModal = _t.first);
       }
-    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 79, vars: 21, consts: [[1, "add-process-container"], ["routerLink", "/plan-coating", "type", "button", 1, "btn", "btn-secondary", "back-btn"], ["aria-hidden", "true", 1, "fas", "fa-arrow-left"], [1, "form-card"], [1, "card-header"], [1, "form-title"], ["aria-hidden", "true", 1, "fas", "fa-spray-can"], [1, "form-content"], [3, "show"], ["novalidate", "", 1, "process-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], ["for", "customerId"], ["aria-hidden", "true", 1, "fas", "fa-user"], ["aria-label", "required", 1, "required"], [1, "select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", "id", "customerId", "aria-required", "true", 3, "options", "placeholder"], ["type", "button", "title", "Refresh Customers", "aria-label", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], ["aria-hidden", "true", 1, "fas", "fa-boxes"], ["type", "button", "aria-label", "Add Item", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-plus"], [1, "table-responsive"], ["role", "table", "aria-label", "Process Items", 1, "table", "items-table"], ["scope", "col"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "form-actions"], ["type", "button", "aria-label", "Reset Form", 1, "btn", "btn-secondary", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-undo"], ["type", "submit", "aria-label", "Save Process", 1, "btn", "btn-primary", 3, "disabled"], ["class", "returns-section card", 4, "ngIf"], [3, "returnCreated"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "plan-cell"], [1, "form-field-container"], ["labelKey", "planningNumber", "valueKey", "id", 3, "formControlName", "options", "placeholder", "defaultOption", "searchPlaceholder"], ["class", "plan-hint", 4, "ngIf"], ["class", "balance-hint", 4, "ngIf"], ["aria-required", "true", 3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", "aria-label", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "unitPrice", "min", "0", "step", "0.01", "aria-required", "true", 1, "form-control"], ["type", "text", "formControlName", "totalAmount", "readonly", "", 1, "form-control"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled", "title"], ["aria-hidden", "true", 1, "fas", "fa-trash"], [1, "plan-hint"], [1, "balance-hint"], ["colspan", "8", 1, "text-center"], ["colspan", "5", 1, "text-end"], ["colspan", "2"], [1, "returns-section", "card"], ["role", "button", "tabindex", "0", 1, "returns-header", 3, "click", "keydown.enter", "keydown.space"], [1, "header-content"], [1, "returns-content"], ["class", "item-returns-section", 4, "ngFor", "ngForOf"], [1, "item-returns-section"], [1, "item-returns-header"], ["type", "button", 1, "btn", "btn-primary", "btn-sm", "add-return-btn", 3, "click", "disabled"], ["class", "table-responsive", 4, "ngIf"], ["class", "no-returns-message", 4, "ngIf"], [1, "table", "returns-table"], [4, "ngFor", "ngForOf"], ["colspan", "3"], [1, "actions-cell"], ["type", "button", "title", "Delete Return", 1, "btn", "btn-icon", "btn-danger", 3, "click", "disabled"], [1, "no-returns-message"]], template: function PlanCoatingFormComponent_Template(rf, ctx) {
+    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 88, vars: 24, consts: [[1, "add-process-container"], ["routerLink", "/plan-coating", "type", "button", 1, "btn", "btn-secondary", "back-btn"], ["aria-hidden", "true", 1, "fas", "fa-arrow-left"], [1, "form-card"], [1, "card-header"], [1, "form-title"], ["aria-hidden", "true", 1, "fas", "fa-spray-can"], [1, "form-content"], [3, "show"], ["novalidate", "", 1, "process-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], ["for", "customerId"], ["aria-hidden", "true", 1, "fas", "fa-user"], ["aria-label", "required", 1, "required"], [1, "select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", "id", "customerId", "aria-required", "true", 3, "options", "placeholder"], ["type", "button", "title", "Refresh Customers", "aria-label", "Refresh Customers", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], ["for", "coatingDate"], ["aria-hidden", "true", 1, "fas", "fa-calendar-alt"], ["type", "date", "id", "coatingDate", "formControlName", "coatingDate", 1, "form-control", 3, "touchstart"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], ["aria-hidden", "true", 1, "fas", "fa-boxes"], ["type", "button", "aria-label", "Add Item", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-plus"], [1, "table-responsive"], ["role", "table", "aria-label", "Process Items", 1, "table", "items-table"], ["scope", "col"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "form-actions"], ["type", "button", "aria-label", "Reset Form", 1, "btn", "btn-secondary", 3, "click", "disabled"], ["aria-hidden", "true", 1, "fas", "fa-undo"], ["type", "submit", "aria-label", "Save Process", 1, "btn", "btn-primary", 3, "disabled"], ["class", "returns-section card", 4, "ngIf"], [3, "returnCreated"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "plan-cell"], [1, "form-field-container"], ["labelKey", "planningNumber", "valueKey", "id", 3, "formControlName", "options", "placeholder", "defaultOption", "searchPlaceholder"], ["class", "plan-hint", 4, "ngIf"], ["class", "balance-hint", 4, "ngIf"], ["aria-required", "true", 3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder"], ["type", "button", "title", "Refresh Products", "aria-label", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "quantity", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "1", "step", "1", "aria-required", "true", 1, "form-control"], ["type", "number", "formControlName", "unitPrice", "min", "0", "step", "0.01", "aria-required", "true", 1, "form-control"], ["type", "text", "formControlName", "totalAmount", "readonly", "", 1, "form-control"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional remarks", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled", "title"], ["aria-hidden", "true", 1, "fas", "fa-trash"], [1, "plan-hint"], [1, "balance-hint"], ["colspan", "8", 1, "text-center"], ["colspan", "5", 1, "text-end"], ["colspan", "2"], [1, "returns-section", "card"], ["role", "button", "tabindex", "0", 1, "returns-header", 3, "click", "keydown.enter", "keydown.space"], [1, "header-content"], [1, "returns-content"], ["class", "item-returns-section", 4, "ngFor", "ngForOf"], [1, "item-returns-section"], [1, "item-returns-header"], ["type", "button", 1, "btn", "btn-primary", "btn-sm", "add-return-btn", 3, "click", "disabled"], ["class", "table-responsive", 4, "ngIf"], ["class", "no-returns-message", 4, "ngIf"], [1, "table", "returns-table"], [4, "ngFor", "ngForOf"], ["colspan", "3"], [1, "actions-cell"], ["type", "button", "title", "Delete Return", 1, "btn", "btn-icon", "btn-danger", 3, "click", "disabled"], [1, "no-returns-message"]], template: function PlanCoatingFormComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "button", 1);
         \u0275\u0275element(2, "i", 2);
@@ -80824,62 +81911,77 @@ var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
         \u0275\u0275element(27, "i", 19);
         \u0275\u0275elementEnd()();
         \u0275\u0275template(28, PlanCoatingFormComponent_div_28_Template, 2, 1, "div", 20);
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(29, "div", 21)(30, "div", 22)(31, "h2");
-        \u0275\u0275element(32, "i", 23);
-        \u0275\u0275elementStart(33, "strong");
-        \u0275\u0275text(34, "Process Items");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(29, "div", 12)(30, "label", 21);
+        \u0275\u0275element(31, "i", 22);
+        \u0275\u0275elementStart(32, "strong");
+        \u0275\u0275text(33, "Coating Date");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(34, "span", 15);
+        \u0275\u0275text(35, "*");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(35, "button", 24);
-        \u0275\u0275listener("click", function PlanCoatingFormComponent_Template_button_click_35_listener() {
+        \u0275\u0275elementStart(36, "input", 23);
+        \u0275\u0275listener("touchstart", function PlanCoatingFormComponent_Template_input_touchstart_36_listener($event) {
+          return $event.stopPropagation();
+        });
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(37, PlanCoatingFormComponent_div_37_Template, 2, 1, "div", 20);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(38, "div", 24)(39, "div", 25)(40, "h2");
+        \u0275\u0275element(41, "i", 26);
+        \u0275\u0275elementStart(42, "strong");
+        \u0275\u0275text(43, "Process Items");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(44, "button", 27);
+        \u0275\u0275listener("click", function PlanCoatingFormComponent_Template_button_click_44_listener() {
           return ctx.addItem();
         });
-        \u0275\u0275element(36, "i", 25);
-        \u0275\u0275text(37, " Add Item ");
+        \u0275\u0275element(45, "i", 28);
+        \u0275\u0275text(46, " Add Item ");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(38, "div", 26)(39, "table", 27)(40, "thead")(41, "tr")(42, "th", 28)(43, "strong");
-        \u0275\u0275text(44, "Plan");
+        \u0275\u0275elementStart(47, "div", 29)(48, "table", 30)(49, "thead")(50, "tr")(51, "th", 31)(52, "strong");
+        \u0275\u0275text(53, "Plan");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(45, "th", 28)(46, "strong");
-        \u0275\u0275text(47, "Product");
+        \u0275\u0275elementStart(54, "th", 31)(55, "strong");
+        \u0275\u0275text(56, "Product");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(48, "th", 28)(49, "strong");
-        \u0275\u0275text(50, "Quantity");
+        \u0275\u0275elementStart(57, "th", 31)(58, "strong");
+        \u0275\u0275text(59, "Quantity");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(51, "th", 28)(52, "strong");
-        \u0275\u0275text(53, "Total Bags");
+        \u0275\u0275elementStart(60, "th", 31)(61, "strong");
+        \u0275\u0275text(62, "Total Bags");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(54, "th", 28)(55, "strong");
-        \u0275\u0275text(56, "Unit Price");
+        \u0275\u0275elementStart(63, "th", 31)(64, "strong");
+        \u0275\u0275text(65, "Unit Price");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(57, "th", 28)(58, "strong");
-        \u0275\u0275text(59, "Total Amount");
+        \u0275\u0275elementStart(66, "th", 31)(67, "strong");
+        \u0275\u0275text(68, "Total Amount");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(60, "th", 28)(61, "strong");
-        \u0275\u0275text(62, "Remarks");
+        \u0275\u0275elementStart(69, "th", 31)(70, "strong");
+        \u0275\u0275text(71, "Remarks");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(63, "th", 28)(64, "strong");
-        \u0275\u0275text(65, "Actions");
+        \u0275\u0275elementStart(72, "th", 31)(73, "strong");
+        \u0275\u0275text(74, "Actions");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(66, "tbody");
-        \u0275\u0275template(67, PlanCoatingFormComponent_tr_67_Template, 29, 44, "tr", 29)(68, PlanCoatingFormComponent_tr_68_Template, 3, 0, "tr", 30);
+        \u0275\u0275elementStart(75, "tbody");
+        \u0275\u0275template(76, PlanCoatingFormComponent_tr_76_Template, 29, 44, "tr", 32)(77, PlanCoatingFormComponent_tr_77_Template, 3, 0, "tr", 33);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(69, PlanCoatingFormComponent_tfoot_69_Template, 10, 4, "tfoot", 30);
+        \u0275\u0275template(78, PlanCoatingFormComponent_tfoot_78_Template, 10, 4, "tfoot", 33);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(70, "div", 31)(71, "button", 32);
-        \u0275\u0275listener("click", function PlanCoatingFormComponent_Template_button_click_71_listener() {
+        \u0275\u0275elementStart(79, "div", 34)(80, "button", 35);
+        \u0275\u0275listener("click", function PlanCoatingFormComponent_Template_button_click_80_listener() {
           return ctx.resetForm();
         });
-        \u0275\u0275element(72, "i", 33);
-        \u0275\u0275text(73, " Reset ");
+        \u0275\u0275element(81, "i", 36);
+        \u0275\u0275text(82, " Reset ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(74, "button", 34);
-        \u0275\u0275element(75, "i", 19);
-        \u0275\u0275text(76);
+        \u0275\u0275elementStart(83, "button", 37);
+        \u0275\u0275element(84, "i", 19);
+        \u0275\u0275text(85);
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275template(77, PlanCoatingFormComponent_div_77_Template, 11, 7, "div", 35);
-        \u0275\u0275elementStart(78, "app-return-modal", 36);
-        \u0275\u0275listener("returnCreated", function PlanCoatingFormComponent_Template_app_return_modal_returnCreated_78_listener() {
+        \u0275\u0275template(86, PlanCoatingFormComponent_div_86_Template, 11, 7, "div", 38);
+        \u0275\u0275elementStart(87, "app-return-modal", 39);
+        \u0275\u0275listener("returnCreated", function PlanCoatingFormComponent_Template_app_return_modal_returnCreated_87_listener() {
           return ctx.loadAllReturns();
         });
         \u0275\u0275elementEnd()();
@@ -80901,6 +82003,10 @@ var PlanCoatingFormComponent = class _PlanCoatingFormComponent {
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.processForm.get("customerId")));
+        \u0275\u0275advance(8);
+        \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid(ctx.processForm.get("coatingDate")));
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.isFieldInvalid(ctx.processForm.get("coatingDate")));
         \u0275\u0275advance(7);
         \u0275\u0275property("disabled", ctx.loading);
         \u0275\u0275advance(32);
@@ -80961,11 +82067,12 @@ var EmployeeService = class _EmployeeService {
   createEmployee(employee) {
     return this.http.post(this.apiUrl, employee);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateEmployee(id, employee) {
-    return this.http.put(`${this.apiUrl}/${id}`, employee);
+    return this.http.post(`${this.apiUrl}/update`, __spreadProps(__spreadValues({}, employee), { id }));
   }
   deleteEmployee(id) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   getEmployeeDetail(id) {
     return this.http.post(`${this.apiUrl}/detail`, { id });
@@ -80986,9 +82093,42 @@ var EmployeeService = class _EmployeeService {
 // src/app/components/employee/employee-list/employee-list.component.ts
 var _c018 = (a0, a1) => ({ "active": a0, "inactive": a1 });
 var _c16 = (a0) => ["/employee/edit", a0];
-function EmployeeListComponent_tr_44_Template(rf, ctx) {
+function EmployeeListComponent_button_16_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 22);
+    \u0275\u0275element(1, "i", 23);
+    \u0275\u0275text(2, " Add Employee ");
+    \u0275\u0275elementEnd();
+  }
+}
+function EmployeeListComponent_tr_42_button_15_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 28);
+    \u0275\u0275element(1, "i", 29);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const employee_r1 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c16, ctx_r1.encId(employee_r1.id)));
+  }
+}
+function EmployeeListComponent_tr_42_button_16_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 30);
+    \u0275\u0275listener("click", function EmployeeListComponent_tr_42_button_16_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r3);
+      const employee_r1 = \u0275\u0275nextContext().$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.deleteEmployee(employee_r1.id));
+    });
+    \u0275\u0275element(1, "i", 31);
+    \u0275\u0275elementEnd();
+  }
+}
+function EmployeeListComponent_tr_42_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -81004,73 +82144,68 @@ function EmployeeListComponent_tr_44_Template(rf, ctx) {
     \u0275\u0275elementStart(9, "td");
     \u0275\u0275text(10);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(11, "td")(12, "span", 23);
+    \u0275\u0275elementStart(11, "td")(12, "span", 24);
     \u0275\u0275text(13);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "td", 24)(15, "button", 25);
-    \u0275\u0275element(16, "i", 26);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "button", 27);
-    \u0275\u0275listener("click", function EmployeeListComponent_tr_44_Template_button_click_17_listener() {
-      const employee_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.deleteEmployee(employee_r2.id));
-    });
-    \u0275\u0275element(18, "i", 28);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(14, "td", 25);
+    \u0275\u0275template(15, EmployeeListComponent_tr_42_button_15_Template, 2, 3, "button", 26)(16, EmployeeListComponent_tr_42_button_16_Template, 2, 0, "button", 27);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const employee_r2 = ctx.$implicit;
+    const employee_r1 = ctx.$implicit;
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(employee_r2.name);
+    \u0275\u0275textInterpolate(employee_r1.name);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(employee_r2.mobileNumber);
+    \u0275\u0275textInterpolate(employee_r1.mobileNumber);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(employee_r2.email);
+    \u0275\u0275textInterpolate(employee_r1.email);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(employee_r2.designation);
+    \u0275\u0275textInterpolate(employee_r1.designation);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(employee_r2.department);
+    \u0275\u0275textInterpolate(employee_r1.department);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(8, _c018, employee_r2.status === "A", employee_r2.status !== "A"));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(9, _c018, employee_r1.status === "A", employee_r1.status !== "A"));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", employee_r2.status === "A" ? "Active" : "Inactive", " ");
+    \u0275\u0275textInterpolate1(" ", employee_r1.status === "A" ? "Active" : "Inactive", " ");
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(11, _c16, employee_r2.id));
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_EMPLOYEE");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_EMPLOYEE");
   }
 }
-function EmployeeListComponent_tr_45_Template(rf, ctx) {
+function EmployeeListComponent_tr_43_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 29);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 32);
     \u0275\u0275text(2, "No employees found");
     \u0275\u0275elementEnd()();
   }
 }
-function EmployeeListComponent_app_pagination_46_Template(rf, ctx) {
+function EmployeeListComponent_app_pagination_44_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 30);
-    \u0275\u0275listener("pageChange", function EmployeeListComponent_app_pagination_46_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275elementStart(0, "app-pagination", 33);
+    \u0275\u0275listener("pageChange", function EmployeeListComponent_app_pagination_44_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r4);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.onPageChange($event));
-    })("pageSizeChange", function EmployeeListComponent_app_pagination_46_Template_app_pagination_pageSizeChange_0_listener($event) {
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageChange($event));
+    })("pageSizeChange", function EmployeeListComponent_app_pagination_44_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r4);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageSizeChange($event));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r2 = \u0275\u0275nextContext();
-    \u0275\u0275property("currentPage", ctx_r2.currentPage)("pageSize", ctx_r2.pageSize)("totalElements", ctx_r2.totalElements)("pageSizeOptions", ctx_r2.pageSizeOptions);
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r1.currentPage)("pageSize", ctx_r1.pageSize)("totalElements", ctx_r1.totalElements)("pageSizeOptions", ctx_r1.pageSizeOptions);
   }
 }
 var EmployeeListComponent = class _EmployeeListComponent {
-  constructor(employeeService, fb, snackbar) {
+  constructor(employeeService, fb, snackbar, encryptionService) {
     this.employeeService = employeeService;
     this.fb = fb;
     this.snackbar = snackbar;
+    this.encryptionService = encryptionService;
     this.employees = [];
     this.isLoading = false;
     this.currentPage = 0;
@@ -81081,6 +82216,10 @@ var EmployeeListComponent = class _EmployeeListComponent {
     this.startIndex = 0;
     this.endIndex = 0;
     this.initializeForm();
+  }
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
   }
   ngOnInit() {
     this.loadEmployees();
@@ -81159,11 +82298,11 @@ var EmployeeListComponent = class _EmployeeListComponent {
   }
   static {
     this.\u0275fac = function EmployeeListComponent_Factory(t) {
-      return new (t || _EmployeeListComponent)(\u0275\u0275directiveInject(EmployeeService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService));
+      return new (t || _EmployeeListComponent)(\u0275\u0275directiveInject(EmployeeService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _EmployeeListComponent, selectors: [["app-employee-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 47, vars: 7, consts: [[1, "employee-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search employees...", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/employee/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "employees-list", "card"], [1, "table-wrapper"], [1, "table-container"], [3, "show"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "status-badge", 3, "ngClass"], [1, "actions"], ["title", "Edit Employee", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete Employee", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "8", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function EmployeeListComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _EmployeeListComponent, selectors: [["app-employee-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 45, vars: 8, consts: [[1, "employee-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search employees...", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/employee/create", "class", "btn btn-primary", 4, "appCanAccess"], [1, "employees-list", "card"], [1, "table-wrapper"], [1, "table-container"], [3, "show"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["routerLink", "/employee/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "status-badge", 3, "ngClass"], [1, "actions"], ["class", "btn-icon edit", "title", "Edit Employee", 3, "routerLink", 4, "appCanAccess"], ["class", "btn-icon delete", "title", "Delete Employee", 3, "click", 4, "appCanAccess"], ["title", "Edit Employee", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete Employee", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "8", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function EmployeeListComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
         \u0275\u0275text(3, "Search Employees");
@@ -81186,46 +82325,47 @@ var EmployeeListComponent = class _EmployeeListComponent {
         \u0275\u0275element(13, "i", 10);
         \u0275\u0275text(14, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(15, "div", 11)(16, "button", 12);
-        \u0275\u0275element(17, "i", 13);
-        \u0275\u0275text(18, " Add Employee ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(19, "div", 14)(20, "h2");
-        \u0275\u0275text(21, "Employees");
+        \u0275\u0275elementStart(15, "div", 11);
+        \u0275\u0275template(16, EmployeeListComponent_button_16_Template, 3, 0, "button", 12);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(22, "div", 15)(23, "div", 16);
-        \u0275\u0275element(24, "app-loader", 17);
-        \u0275\u0275elementStart(25, "div", 18)(26, "table", 19)(27, "thead")(28, "tr")(29, "th");
-        \u0275\u0275text(30, "Name");
+        \u0275\u0275elementStart(17, "div", 13)(18, "h2");
+        \u0275\u0275text(19, "Employees");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(20, "div", 14)(21, "div", 15);
+        \u0275\u0275element(22, "app-loader", 16);
+        \u0275\u0275elementStart(23, "div", 17)(24, "table", 18)(25, "thead")(26, "tr")(27, "th");
+        \u0275\u0275text(28, "Name");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(29, "th");
+        \u0275\u0275text(30, "Mobile");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(31, "th");
-        \u0275\u0275text(32, "Mobile");
+        \u0275\u0275text(32, "Email");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(33, "th");
-        \u0275\u0275text(34, "Email");
+        \u0275\u0275text(34, "Designation");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(35, "th");
-        \u0275\u0275text(36, "Designation");
+        \u0275\u0275text(36, "Department");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(37, "th");
-        \u0275\u0275text(38, "Department");
+        \u0275\u0275text(38, "Status");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(39, "th");
-        \u0275\u0275text(40, "Status");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(41, "th");
-        \u0275\u0275text(42, "Actions");
+        \u0275\u0275text(40, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(43, "tbody");
-        \u0275\u0275template(44, EmployeeListComponent_tr_44_Template, 19, 13, "tr", 20)(45, EmployeeListComponent_tr_45_Template, 3, 0, "tr", 21);
+        \u0275\u0275elementStart(41, "tbody");
+        \u0275\u0275template(42, EmployeeListComponent_tr_42_Template, 17, 12, "tr", 19)(43, EmployeeListComponent_tr_43_Template, 3, 0, "tr", 20);
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275template(46, EmployeeListComponent_app_pagination_46_Template, 1, 4, "app-pagination", 22);
+        \u0275\u0275template(44, EmployeeListComponent_app_pagination_44_Template, 1, 4, "app-pagination", 21);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
-        \u0275\u0275advance(20);
+        \u0275\u0275advance(12);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_EMPLOYEE");
+        \u0275\u0275advance(6);
         \u0275\u0275property("show", ctx.isLoading);
         \u0275\u0275advance();
         \u0275\u0275classProp("loading", ctx.isLoading);
@@ -81252,12 +82392,13 @@ var EmployeeListComponent = class _EmployeeListComponent {
       FormControlName,
       FormsModule,
       LoaderComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.employee-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.employee-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.employee-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.employee-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  align-items: center;\n}\n.employee-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.employee-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n}\n.employee-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%] {\n  margin: 20px 0;\n}\n.employee-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 20px;\n}\n.employee-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.employee-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  margin-bottom: 0;\n  color: var(--text-secondary);\n}\n.employee-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select[_ngcontent-%COMP%] {\n  width: 80px;\n  padding: 5px;\n  border-radius: 4px;\n  border: 1px solid var(--supporting);\n  background-color: white;\n  color: var(--text-primary);\n}\n.employee-container[_ngcontent-%COMP%]   .table-wrapper[_ngcontent-%COMP%] {\n  position: relative;\n  overflow: hidden;\n}\n.employee-container[_ngcontent-%COMP%]   .table-container[_ngcontent-%COMP%] {\n  position: relative;\n  min-height: 200px;\n  background: white;\n}\n.employee-container[_ngcontent-%COMP%]   .table-container[_ngcontent-%COMP%]   app-loader[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  z-index: 2;\n}\n.employee-container[_ngcontent-%COMP%]   .table-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n}\n.employee-container[_ngcontent-%COMP%]   .table-container[_ngcontent-%COMP%]   .table-responsive.loading[_ngcontent-%COMP%] {\n  opacity: 0.6;\n  pointer-events: none;\n}\n.employee-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  position: relative;\n  min-height: 200px;\n  overflow-x: auto;\n}\n.employee-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar {\n  height: 8px;\n}\n.employee-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-track {\n  background: #f1f1f1;\n  border-radius: 4px;\n}\n.employee-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-thumb {\n  background: var(--supporting);\n  border-radius: 4px;\n}\n.employee-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%]::-webkit-scrollbar-thumb:hover {\n  background: #8eafbc;\n}\n.employee-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%] {\n  width: 100%;\n  border-collapse: separate;\n  border-spacing: 0;\n}\n.employee-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  padding: 15px 12px;\n  font-weight: 600;\n  font-size: 0.9rem;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n  background-color: var(--background);\n  color: var(--text-primary);\n}\n.employee-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 12px;\n  vertical-align: middle;\n  border-top: 1px solid var(--supporting);\n  color: var(--text-primary);\n}\n.employee-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   .status-badge[_ngcontent-%COMP%] {\n  padding: 4px 8px;\n  border-radius: 12px;\n  font-size: 0.85rem;\n  font-weight: 500;\n}\n.employee-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   .status-badge.active[_ngcontent-%COMP%] {\n  background-color: rgba(90, 158, 111, 0.1);\n  color: var(--accent2);\n}\n.employee-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   .status-badge.inactive[_ngcontent-%COMP%] {\n  background-color: rgba(118, 118, 118, 0.1);\n  color: var(--text-secondary);\n}\n.actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  align-items: center;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  padding: 6px;\n  cursor: pointer;\n  border-radius: 4px;\n  transition: all 0.2s ease;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.edit[_ngcontent-%COMP%] {\n  color: var(--secondary);\n  background-color: rgba(var(--secondary-rgb), 0.1);\n  padding: 8px;\n  border-radius: 6px;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.edit[_ngcontent-%COMP%]:hover {\n  background-color: var(--secondary);\n  color: white;\n  transform: translateY(-1px);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.edit[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%] {\n  color: #dc3545;\n  background-color: rgba(220, 53, 69, 0.1);\n  padding: 8px;\n  border-radius: 6px;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%]:hover {\n  background-color: #dc3545;\n  color: white;\n  transform: translateY(-1px);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 16px;\n}\n@media (max-width: 768px) {\n  .employee-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .employee-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 10px;\n  }\n  .employee-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: flex-end;\n  }\n  .employee-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    margin: 0 -15px;\n    padding: 0 15px;\n  }\n}\n/*# sourceMappingURL=employee-list.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeListComponent, { className: "EmployeeListComponent", filePath: "src\\app\\components\\employee\\employee-list\\employee-list.component.ts", lineNumber: 28 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeListComponent, { className: "EmployeeListComponent", filePath: "src\\app\\components\\employee\\employee-list\\employee-list.component.ts", lineNumber: 31 });
 })();
 
 // src/app/components/employee/employee-form/employee-form.component.ts
@@ -81346,22 +82487,34 @@ function EmployeeFormComponent_div_58_Template(rf, ctx) {
   }
 }
 var EmployeeFormComponent = class _EmployeeFormComponent {
-  constructor(fb, employeeService, router, route, snackbar) {
+  constructor(fb, employeeService, router, route, snackbar, encryptionService) {
     this.fb = fb;
     this.employeeService = employeeService;
     this.router = router;
     this.route = route;
     this.snackbar = snackbar;
+    this.encryptionService = encryptionService;
     this.isLoading = false;
     this.isEditMode = false;
     this.initializeForm();
   }
   ngOnInit() {
-    this.employeeId = Number(this.route.snapshot.paramMap.get("id"));
-    if (this.employeeId) {
+    const rawId = this.route.snapshot.paramMap.get("id");
+    const decrypted = rawId ? Number(this.encryptionService.decrypt(rawId)) : NaN;
+    if (rawId && !decrypted) {
+      this.snackbar.error("Invalid link");
+      this.router.navigate(["/employee"]);
+      return;
+    }
+    if (decrypted) {
+      this.employeeId = decrypted;
       this.isEditMode = true;
       this.loadEmployee();
     }
+  }
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
   }
   initializeForm() {
     this.employeeForm = this.fb.group({
@@ -81450,7 +82603,7 @@ var EmployeeFormComponent = class _EmployeeFormComponent {
   }
   static {
     this.\u0275fac = function EmployeeFormComponent_Factory(t) {
-      return new (t || _EmployeeFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(EmployeeService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(SnackbarService));
+      return new (t || _EmployeeFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(EmployeeService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService));
     };
   }
   static {
@@ -81593,7 +82746,7 @@ var EmployeeFormComponent = class _EmployeeFormComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeFormComponent, { className: "EmployeeFormComponent", filePath: "src\\app\\components\\employee\\employee-form\\employee-form.component.ts", lineNumber: 21 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeFormComponent, { className: "EmployeeFormComponent", filePath: "src\\app\\components\\employee\\employee-form\\employee-form.component.ts", lineNumber: 22 });
 })();
 
 // src/app/models/machinery.model.ts
@@ -81670,7 +82823,7 @@ var MachineryService = class _MachineryService {
 var _c019 = (a0) => ["/machinery/edit", a0];
 function MachineryListComponent_option_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 26);
+    \u0275\u0275elementStart(0, "option", 25);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -81681,9 +82834,43 @@ function MachineryListComponent_option_10_Template(rf, ctx) {
     \u0275\u0275textInterpolate(s_r1.label);
   }
 }
-function MachineryListComponent_tr_47_Template(rf, ctx) {
+function MachineryListComponent_button_23_Template(rf, ctx) {
   if (rf & 1) {
-    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 26);
+    \u0275\u0275element(1, "i", 27);
+    \u0275\u0275text(2, " Create Machinery ");
+    \u0275\u0275elementEnd();
+  }
+}
+function MachineryListComponent_tr_45_button_14_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 32);
+    \u0275\u0275element(1, "i", 33);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const m_r2 = \u0275\u0275nextContext().$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c019, ctx_r2.encId(m_r2.id)));
+  }
+}
+function MachineryListComponent_tr_45_button_15_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 34);
+    \u0275\u0275listener("click", function MachineryListComponent_tr_45_button_15_Template_button_click_0_listener() {
+      let tmp_4_0;
+      \u0275\u0275restoreView(_r4);
+      const m_r2 = \u0275\u0275nextContext().$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.deleteMachinery((tmp_4_0 = m_r2.id) !== null && tmp_4_0 !== void 0 ? tmp_4_0 : 0));
+    });
+    \u0275\u0275element(1, "i", 35);
+    \u0275\u0275elementEnd();
+  }
+}
+function MachineryListComponent_tr_45_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -81693,70 +82880,63 @@ function MachineryListComponent_tr_47_Template(rf, ctx) {
     \u0275\u0275elementStart(5, "td");
     \u0275\u0275text(6);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "td")(8, "span", 27);
+    \u0275\u0275elementStart(7, "td")(8, "span", 28);
     \u0275\u0275text(9);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(10, "td");
     \u0275\u0275text(11);
     \u0275\u0275pipe(12, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "td", 28)(14, "button", 29);
-    \u0275\u0275element(15, "i", 30);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "button", 31);
-    \u0275\u0275listener("click", function MachineryListComponent_tr_47_Template_button_click_16_listener() {
-      let tmp_3_0;
-      const m_r3 = \u0275\u0275restoreView(_r2).$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.deleteMachinery((tmp_3_0 = m_r3.id) !== null && tmp_3_0 !== void 0 ? tmp_3_0 : 0));
-    });
-    \u0275\u0275element(17, "i", 32);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(13, "td", 29);
+    \u0275\u0275template(14, MachineryListComponent_tr_45_button_14_Template, 2, 3, "button", 30)(15, MachineryListComponent_tr_45_button_15_Template, 2, 0, "button", 31);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const m_r3 = ctx.$implicit;
-    const ctx_r3 = \u0275\u0275nextContext();
+    const m_r2 = ctx.$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(m_r3.name);
+    \u0275\u0275textInterpolate(m_r2.name);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(m_r3.code || "-");
+    \u0275\u0275textInterpolate(m_r2.code || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(m_r3.remarks || "-");
+    \u0275\u0275textInterpolate(m_r2.remarks || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", "status-" + (m_r3.status || "a").toLowerCase());
+    \u0275\u0275property("ngClass", "status-" + (m_r2.status || "a").toLowerCase());
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(ctx_r3.statusLabel(m_r3.status));
+    \u0275\u0275textInterpolate(ctx_r2.statusLabel(m_r2.status));
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(m_r3.updatedAt ? \u0275\u0275pipeBind2(12, 7, m_r3.updatedAt, "dd-MM-yyyy HH:mm") : "-");
+    \u0275\u0275textInterpolate(m_r2.updatedAt ? \u0275\u0275pipeBind2(12, 8, m_r2.updatedAt, "dd-MM-yyyy HH:mm") : "-");
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(10, _c019, ctx_r3.encId(m_r3.id)));
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_MACHINERY");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_MACHINERY");
   }
 }
-function MachineryListComponent_tr_48_Template(rf, ctx) {
+function MachineryListComponent_tr_46_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 33);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 36);
     \u0275\u0275text(2, "No machinery found");
     \u0275\u0275elementEnd()();
   }
 }
-function MachineryListComponent_app_pagination_50_Template(rf, ctx) {
+function MachineryListComponent_app_pagination_48_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 34);
-    \u0275\u0275listener("pageChange", function MachineryListComponent_app_pagination_50_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275elementStart(0, "app-pagination", 37);
+    \u0275\u0275listener("pageChange", function MachineryListComponent_app_pagination_48_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r5);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onPageChange($event));
-    })("pageSizeChange", function MachineryListComponent_app_pagination_50_Template_app_pagination_pageSizeChange_0_listener($event) {
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onPageChange($event));
+    })("pageSizeChange", function MachineryListComponent_app_pagination_48_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r5);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onPageSizeChange($event));
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r3 = \u0275\u0275nextContext();
-    \u0275\u0275property("currentPage", ctx_r3.currentPage)("pageSize", ctx_r3.pageSize)("totalElements", ctx_r3.totalElements)("pageSizeOptions", ctx_r3.pageSizeOptions);
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r2.currentPage)("pageSize", ctx_r2.pageSize)("totalElements", ctx_r2.totalElements)("pageSizeOptions", ctx_r2.pageSizeOptions);
   }
 }
 var MachineryListComponent = class _MachineryListComponent {
@@ -81867,7 +83047,7 @@ var MachineryListComponent = class _MachineryListComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _MachineryListComponent, selectors: [["app-machinery-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 51, vars: 6, consts: [[1, "machinery-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by name or code...", 1, "form-control"], ["formControlName", "status", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/machinery/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "machinery-list", "card"], [1, "table-responsive"], [3, "show"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "value"], [3, "ngClass"], [1, "actions"], ["title", "Edit", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "6", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function MachineryListComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _MachineryListComponent, selectors: [["app-machinery-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 49, vars: 7, consts: [[1, "machinery-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by name or code...", 1, "form-control"], ["formControlName", "status", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/machinery/create", "class", "btn btn-primary", 4, "appCanAccess"], [1, "machinery-list", "card"], [1, "table-responsive"], [3, "show"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "value"], ["routerLink", "/machinery/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [3, "ngClass"], [1, "actions"], ["class", "btn-icon edit", "title", "Edit", 3, "routerLink", 4, "appCanAccess"], ["class", "btn-icon delete", "title", "Delete", 3, "click", 4, "appCanAccess"], ["title", "Edit", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "6", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function MachineryListComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
         \u0275\u0275text(3, "Search Machinery");
@@ -81899,38 +83079,37 @@ var MachineryListComponent = class _MachineryListComponent {
         \u0275\u0275element(20, "i", 14);
         \u0275\u0275text(21, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(22, "div", 15)(23, "button", 16);
-        \u0275\u0275element(24, "i", 17);
-        \u0275\u0275text(25, " Create Machinery ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(26, "div", 18)(27, "h2");
-        \u0275\u0275text(28, "Machinery");
+        \u0275\u0275elementStart(22, "div", 15);
+        \u0275\u0275template(23, MachineryListComponent_button_23_Template, 3, 0, "button", 16);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(29, "div", 19);
-        \u0275\u0275element(30, "app-loader", 20);
-        \u0275\u0275elementStart(31, "table", 21)(32, "thead")(33, "tr")(34, "th");
-        \u0275\u0275text(35, "Name");
+        \u0275\u0275elementStart(24, "div", 17)(25, "h2");
+        \u0275\u0275text(26, "Machinery");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(27, "div", 18);
+        \u0275\u0275element(28, "app-loader", 19);
+        \u0275\u0275elementStart(29, "table", 20)(30, "thead")(31, "tr")(32, "th");
+        \u0275\u0275text(33, "Name");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(34, "th");
+        \u0275\u0275text(35, "Code");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(36, "th");
-        \u0275\u0275text(37, "Code");
+        \u0275\u0275text(37, "Remarks");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(38, "th");
-        \u0275\u0275text(39, "Remarks");
+        \u0275\u0275text(39, "Status");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(40, "th");
-        \u0275\u0275text(41, "Status");
+        \u0275\u0275text(41, "Updated At");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(42, "th");
-        \u0275\u0275text(43, "Updated At");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(44, "th");
-        \u0275\u0275text(45, "Actions");
+        \u0275\u0275text(43, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(46, "tbody");
-        \u0275\u0275template(47, MachineryListComponent_tr_47_Template, 18, 12, "tr", 22)(48, MachineryListComponent_tr_48_Template, 3, 0, "tr", 23);
+        \u0275\u0275elementStart(44, "tbody");
+        \u0275\u0275template(45, MachineryListComponent_tr_45_Template, 16, 11, "tr", 21)(46, MachineryListComponent_tr_46_Template, 3, 0, "tr", 22);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(49, "div", 24);
-        \u0275\u0275template(50, MachineryListComponent_app_pagination_50_Template, 1, 4, "app-pagination", 25);
+        \u0275\u0275elementStart(47, "div", 23);
+        \u0275\u0275template(48, MachineryListComponent_app_pagination_48_Template, 1, 4, "app-pagination", 24);
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
@@ -81938,7 +83117,9 @@ var MachineryListComponent = class _MachineryListComponent {
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(6);
         \u0275\u0275property("ngForOf", ctx.statusOptions);
-        \u0275\u0275advance(20);
+        \u0275\u0275advance(13);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_MACHINERY");
+        \u0275\u0275advance(5);
         \u0275\u0275property("show", ctx.isLoading);
         \u0275\u0275advance(17);
         \u0275\u0275property("ngForOf", ctx.machineries);
@@ -81967,12 +83148,13 @@ var MachineryListComponent = class _MachineryListComponent {
       RouterModule,
       RouterLink,
       LoaderComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.machinery-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.machinery-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.machinery-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 15px;\n  align-items: start;\n}\n.machinery-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n}\n.machinery-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%] {\n  margin: 20px 0;\n  display: flex;\n  gap: 10px;\n  flex-wrap: wrap;\n}\n.machinery-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.machinery-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 12px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .status-o[_ngcontent-%COMP%] {\n  color: var(--warning);\n  background-color: rgba(255, 165, 0, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .status-p[_ngcontent-%COMP%] {\n  color: var(--info);\n  background-color: rgba(0, 153, 156, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .status-c[_ngcontent-%COMP%] {\n  color: var(--success);\n  background-color: rgba(90, 158, 111, 0.12);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.machinery-container[_ngcontent-%COMP%]   .status-i[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  background-color: rgba(0, 0, 0, 0.06);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n@media (max-width: 768px) {\n  .machinery-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .machinery-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    gap: 10px;\n  }\n  .machinery-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: flex-end;\n  }\n  .machinery-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    margin: 0 -15px;\n    padding: 0 15px;\n  }\n}\n/*# sourceMappingURL=machinery-list.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(MachineryListComponent, { className: "MachineryListComponent", filePath: "src\\app\\components\\machinery\\machinery-list\\machinery-list.component.ts", lineNumber: 28 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(MachineryListComponent, { className: "MachineryListComponent", filePath: "src\\app\\components\\machinery\\machinery-list\\machinery-list.component.ts", lineNumber: 30 });
 })();
 
 // src/app/components/machinery/machinery-form/machinery-form.component.ts
@@ -82191,11 +83373,12 @@ var EmployeeOrderService = class _EmployeeOrderService {
   createEmployeeOrder(order) {
     return this.http.post(`${this.apiUrl}/create`, order);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateEmployeeOrder(order) {
-    return this.http.put(`${this.apiUrl}/update`, order);
+    return this.http.post(`${this.apiUrl}/update`, order);
   }
   deleteEmployeeOrder(id) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+    return this.http.post(`${this.apiUrl}/delete`, { id });
   }
   getEmployeeOrderDetail(id) {
     return this.http.post(`${this.apiUrl}/detail`, { id });
@@ -82212,9 +83395,43 @@ var EmployeeOrderService = class _EmployeeOrderService {
 
 // src/app/components/employee-order/employee-order-list/employee-order-list.component.ts
 var _c020 = (a0) => ["/employee-order/edit", a0];
-function EmployeeOrderListComponent_tr_60_Template(rf, ctx) {
+function EmployeeOrderListComponent_button_30_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 28);
+    \u0275\u0275element(1, "i", 29);
+    \u0275\u0275text(2, " Create Employee Order ");
+    \u0275\u0275elementEnd();
+  }
+}
+function EmployeeOrderListComponent_tr_58_button_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 34);
+    \u0275\u0275element(1, "i", 35);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const order_r1 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c020, ctx_r1.encId(order_r1.id)));
+  }
+}
+function EmployeeOrderListComponent_tr_58_button_22_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 36);
+    \u0275\u0275listener("click", function EmployeeOrderListComponent_tr_58_button_22_Template_button_click_0_listener() {
+      let tmp_4_0;
+      \u0275\u0275restoreView(_r3);
+      const order_r1 = \u0275\u0275nextContext().$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.deleteEmployeeOrder((tmp_4_0 = order_r1.id) !== null && tmp_4_0 !== void 0 ? tmp_4_0 : 0));
+    });
+    \u0275\u0275element(1, "i", 37);
+    \u0275\u0275elementEnd();
+  }
+}
+function EmployeeOrderListComponent_tr_58_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -82234,84 +83451,78 @@ function EmployeeOrderListComponent_tr_60_Template(rf, ctx) {
     \u0275\u0275elementStart(12, "td");
     \u0275\u0275text(13);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "td")(15, "span", 29);
+    \u0275\u0275elementStart(14, "td")(15, "span", 30);
     \u0275\u0275text(16);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(17, "td");
     \u0275\u0275text(18);
     \u0275\u0275pipe(19, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "td", 30)(21, "button", 31);
-    \u0275\u0275element(22, "i", 32);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(23, "button", 33);
-    \u0275\u0275listener("click", function EmployeeOrderListComponent_tr_60_Template_button_click_23_listener() {
-      let tmp_3_0;
-      const order_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.deleteEmployeeOrder((tmp_3_0 = order_r2.id) !== null && tmp_3_0 !== void 0 ? tmp_3_0 : 0));
-    });
-    \u0275\u0275element(24, "i", 34);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(20, "td", 31);
+    \u0275\u0275template(21, EmployeeOrderListComponent_tr_58_button_21_Template, 2, 3, "button", 32)(22, EmployeeOrderListComponent_tr_58_button_22_Template, 2, 0, "button", 33);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const order_r2 = ctx.$implicit;
-    const ctx_r2 = \u0275\u0275nextContext();
+    const order_r1 = ctx.$implicit;
+    const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(order_r2.employeeOrderNumber || "-");
+    \u0275\u0275textInterpolate(order_r1.employeeOrderNumber || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(order_r2.orderDate ? \u0275\u0275pipeBind2(5, 10, order_r2.orderDate, "dd-MM-yyyy") : "-");
+    \u0275\u0275textInterpolate(order_r1.orderDate ? \u0275\u0275pipeBind2(5, 11, order_r1.orderDate, "dd-MM-yyyy") : "-");
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(ctx_r2.getProductSummary(order_r2));
+    \u0275\u0275textInterpolate(ctx_r1.getProductSummary(order_r1));
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("", order_r2.employeeIds.length || 0, " assigned");
+    \u0275\u0275textInterpolate1("", order_r1.employeeIds.length || 0, " assigned");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r2.getTotalQuantity(order_r2));
+    \u0275\u0275textInterpolate(ctx_r1.getTotalQuantity(order_r1));
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(order_r2.remarks);
+    \u0275\u0275textInterpolate(order_r1.remarks);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", "status-" + order_r2.status.toLowerCase());
+    \u0275\u0275property("ngClass", "status-" + order_r1.status.toLowerCase());
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", order_r2.status === "O" ? "Open" : order_r2.status === "I" ? "In Progress" : order_r2.status === "C" ? "Completed" : "Unknown", " ");
+    \u0275\u0275textInterpolate1(" ", order_r1.status === "O" ? "Open" : order_r1.status === "I" ? "In Progress" : order_r1.status === "C" ? "Completed" : "Unknown", " ");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 13, order_r2.createdAt, "medium"));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 14, order_r1.createdAt, "medium"));
     \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(16, _c020, order_r2.id));
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_EMPLOYEE_ORDER");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_EMPLOYEE_ORDER");
   }
 }
-function EmployeeOrderListComponent_tr_61_Template(rf, ctx) {
+function EmployeeOrderListComponent_tr_59_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 35);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 38);
     \u0275\u0275text(2, "No employee orders found");
     \u0275\u0275elementEnd()();
   }
 }
-function EmployeeOrderListComponent_app_pagination_63_Template(rf, ctx) {
+function EmployeeOrderListComponent_app_pagination_61_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 36);
-    \u0275\u0275listener("pageChange", function EmployeeOrderListComponent_app_pagination_63_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275elementStart(0, "app-pagination", 39);
+    \u0275\u0275listener("pageChange", function EmployeeOrderListComponent_app_pagination_61_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r4);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.onPageChange($event));
-    })("pageSizeChange", function EmployeeOrderListComponent_app_pagination_63_Template_app_pagination_pageSizeChange_0_listener($event) {
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageChange($event));
+    })("pageSizeChange", function EmployeeOrderListComponent_app_pagination_61_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r4);
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageSizeChange($event));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r2 = \u0275\u0275nextContext();
-    \u0275\u0275property("currentPage", ctx_r2.currentPage)("pageSize", ctx_r2.pageSize)("totalElements", ctx_r2.totalElements)("pageSizeOptions", ctx_r2.pageSizeOptions);
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r1.currentPage)("pageSize", ctx_r1.pageSize)("totalElements", ctx_r1.totalElements)("pageSizeOptions", ctx_r1.pageSizeOptions);
   }
 }
 var EmployeeOrderListComponent = class _EmployeeOrderListComponent {
-  constructor(employeeOrderService, fb, snackbar, dateUtils) {
+  constructor(employeeOrderService, fb, snackbar, dateUtils, encryptionService) {
     this.employeeOrderService = employeeOrderService;
     this.fb = fb;
     this.snackbar = snackbar;
     this.dateUtils = dateUtils;
+    this.encryptionService = encryptionService;
     this.employeeOrders = [];
     this.isLoading = false;
     this.currentPage = 0;
@@ -82329,6 +83540,10 @@ var EmployeeOrderListComponent = class _EmployeeOrderListComponent {
       { label: "Inactive", value: "I" }
     ];
     this.initializeForm();
+  }
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
   }
   ngOnInit() {
     this.loadEmployeeOrders();
@@ -82429,11 +83644,11 @@ var EmployeeOrderListComponent = class _EmployeeOrderListComponent {
   }
   static {
     this.\u0275fac = function EmployeeOrderListComponent_Factory(t) {
-      return new (t || _EmployeeOrderListComponent)(\u0275\u0275directiveInject(EmployeeOrderService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(DateUtils));
+      return new (t || _EmployeeOrderListComponent)(\u0275\u0275directiveInject(EmployeeOrderService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(DateUtils), \u0275\u0275directiveInject(EncryptionService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _EmployeeOrderListComponent, selectors: [["app-employee-order-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 64, vars: 5, consts: [[1, "employee-order-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by order no, product name or remarks...", 1, "form-control"], ["formControlName", "status", 1, "form-control"], ["value", ""], ["value", "O"], ["value", "I"], ["value", "C"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/employee-order/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [1, "employee-orders-list", "card"], [1, "table-responsive"], [3, "show"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "ngClass"], [1, "actions"], ["title", "Edit Order", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete Order", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "9", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function EmployeeOrderListComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _EmployeeOrderListComponent, selectors: [["app-employee-order-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 62, vars: 6, consts: [[1, "employee-order-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by order no, product name or remarks...", 1, "form-control"], ["formControlName", "status", 1, "form-control"], ["value", ""], ["value", "O"], ["value", "I"], ["value", "C"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/employee-order/create", "class", "btn btn-primary", 4, "appCanAccess"], [1, "employee-orders-list", "card"], [1, "table-responsive"], [3, "show"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], ["routerLink", "/employee-order/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], [3, "ngClass"], [1, "actions"], ["class", "btn-icon edit", "title", "Edit Order", 3, "routerLink", 4, "appCanAccess"], ["class", "btn-icon delete", "title", "Delete Order", 3, "click", 4, "appCanAccess"], ["title", "Edit Order", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete Order", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "9", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function EmployeeOrderListComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
         \u0275\u0275text(3, "Search Employee Orders");
@@ -82474,53 +83689,54 @@ var EmployeeOrderListComponent = class _EmployeeOrderListComponent {
         \u0275\u0275element(27, "i", 17);
         \u0275\u0275text(28, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(29, "div", 18)(30, "button", 19);
-        \u0275\u0275element(31, "i", 20);
-        \u0275\u0275text(32, " Create Employee Order ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(33, "div", 21)(34, "h2");
-        \u0275\u0275text(35, "Employee Orders");
+        \u0275\u0275elementStart(29, "div", 18);
+        \u0275\u0275template(30, EmployeeOrderListComponent_button_30_Template, 3, 0, "button", 19);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(36, "div", 22);
-        \u0275\u0275element(37, "app-loader", 23);
-        \u0275\u0275elementStart(38, "table", 24)(39, "thead")(40, "tr")(41, "th");
-        \u0275\u0275text(42, "Order No");
+        \u0275\u0275elementStart(31, "div", 20)(32, "h2");
+        \u0275\u0275text(33, "Employee Orders");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(34, "div", 21);
+        \u0275\u0275element(35, "app-loader", 22);
+        \u0275\u0275elementStart(36, "table", 23)(37, "thead")(38, "tr")(39, "th");
+        \u0275\u0275text(40, "Order No");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(41, "th");
+        \u0275\u0275text(42, "Order Date");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(43, "th");
-        \u0275\u0275text(44, "Order Date");
+        \u0275\u0275text(44, "Products");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(45, "th");
-        \u0275\u0275text(46, "Products");
+        \u0275\u0275text(46, "Employees");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(47, "th");
-        \u0275\u0275text(48, "Employees");
+        \u0275\u0275text(48, "Total Qty");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(49, "th");
-        \u0275\u0275text(50, "Total Qty");
+        \u0275\u0275text(50, "Remarks");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(51, "th");
-        \u0275\u0275text(52, "Remarks");
+        \u0275\u0275text(52, "Status");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(53, "th");
-        \u0275\u0275text(54, "Status");
+        \u0275\u0275text(54, "Created At");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(55, "th");
-        \u0275\u0275text(56, "Created At");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(57, "th");
-        \u0275\u0275text(58, "Actions");
+        \u0275\u0275text(56, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(59, "tbody");
-        \u0275\u0275template(60, EmployeeOrderListComponent_tr_60_Template, 25, 18, "tr", 25)(61, EmployeeOrderListComponent_tr_61_Template, 3, 0, "tr", 26);
+        \u0275\u0275elementStart(57, "tbody");
+        \u0275\u0275template(58, EmployeeOrderListComponent_tr_58_Template, 23, 17, "tr", 24)(59, EmployeeOrderListComponent_tr_59_Template, 3, 0, "tr", 25);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(62, "div", 27);
-        \u0275\u0275template(63, EmployeeOrderListComponent_app_pagination_63_Template, 1, 4, "app-pagination", 28);
+        \u0275\u0275elementStart(60, "div", 26);
+        \u0275\u0275template(61, EmployeeOrderListComponent_app_pagination_61_Template, 1, 4, "app-pagination", 27);
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
-        \u0275\u0275advance(33);
+        \u0275\u0275advance(26);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_EMPLOYEE_ORDER");
+        \u0275\u0275advance(5);
         \u0275\u0275property("show", ctx.isLoading);
         \u0275\u0275advance(23);
         \u0275\u0275property("ngForOf", ctx.employeeOrders);
@@ -82549,12 +83765,13 @@ var EmployeeOrderListComponent = class _EmployeeOrderListComponent {
       RouterModule,
       RouterLink,
       LoaderComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.employee-order-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.employee-order-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.employee-order-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.employee-order-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 15px;\n  align-items: start;\n}\n.employee-order-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n}\n.employee-order-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%] {\n  margin: 20px 0;\n}\n.employee-order-container[_ngcontent-%COMP%]   .status-o[_ngcontent-%COMP%] {\n  color: var(--warning);\n  background-color: rgba(255, 165, 0, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.employee-order-container[_ngcontent-%COMP%]   .status-i[_ngcontent-%COMP%] {\n  color: var(--info);\n  background-color: rgba(255, 165, 0, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.employee-order-container[_ngcontent-%COMP%]   .status-c[_ngcontent-%COMP%] {\n  color: var(--success);\n  background-color: rgba(255, 165, 0, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n@media (max-width: 768px) {\n  .employee-order-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .employee-order-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    gap: 10px;\n  }\n  .employee-order-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: flex-end;\n  }\n  .employee-order-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    margin: 0 -15px;\n    padding: 0 15px;\n  }\n}\n/*# sourceMappingURL=employee-order-list.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeOrderListComponent, { className: "EmployeeOrderListComponent", filePath: "src\\app\\components\\employee-order\\employee-order-list\\employee-order-list.component.ts", lineNumber: 29 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeOrderListComponent, { className: "EmployeeOrderListComponent", filePath: "src\\app\\components\\employee-order\\employee-order-list\\employee-order-list.component.ts", lineNumber: 32 });
 })();
 
 // src/app/components/employee-order/employee-order-form/employee-order-form.component.ts
@@ -82738,7 +83955,7 @@ var EmployeeOrderFormComponent = class _EmployeeOrderFormComponent {
       this.addItemAndFocus();
     }
   }
-  constructor(fb, employeeOrderService, employeeService, productService, router, route, snackbar) {
+  constructor(fb, employeeOrderService, employeeService, productService, router, route, snackbar, encryptionService) {
     this.fb = fb;
     this.employeeOrderService = employeeOrderService;
     this.employeeService = employeeService;
@@ -82746,6 +83963,7 @@ var EmployeeOrderFormComponent = class _EmployeeOrderFormComponent {
     this.router = router;
     this.route = route;
     this.snackbar = snackbar;
+    this.encryptionService = encryptionService;
     this.isLoading = false;
     this.isEditMode = false;
     this.products = [];
@@ -82756,8 +83974,15 @@ var EmployeeOrderFormComponent = class _EmployeeOrderFormComponent {
     this.initializeForm();
   }
   ngOnInit() {
-    this.orderId = Number(this.route.snapshot.paramMap.get("id"));
-    if (this.orderId) {
+    const rawId = this.route.snapshot.paramMap.get("id");
+    const decrypted = rawId ? Number(this.encryptionService.decrypt(rawId)) : NaN;
+    if (rawId && !decrypted) {
+      this.snackbar.error("Invalid link");
+      this.router.navigate(["/employee-order"]);
+      return;
+    }
+    if (decrypted) {
+      this.orderId = decrypted;
       this.isEditMode = true;
       this.loadEmployeeOrder();
     } else {
@@ -82765,6 +83990,10 @@ var EmployeeOrderFormComponent = class _EmployeeOrderFormComponent {
     }
     this.loadProducts();
     this.loadEmployees();
+  }
+  /** ENC_URL_POST_V1: Encrypted id for URLs; numeric ids stay in POST bodies. */
+  encId(id) {
+    return this.encryptionService.encrypt(String(id ?? ""));
   }
   ngOnDestroy() {
     this.destroy$.next();
@@ -83011,7 +84240,7 @@ var EmployeeOrderFormComponent = class _EmployeeOrderFormComponent {
   }
   static {
     this.\u0275fac = function EmployeeOrderFormComponent_Factory(t) {
-      return new (t || _EmployeeOrderFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(EmployeeOrderService), \u0275\u0275directiveInject(EmployeeService), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(SnackbarService));
+      return new (t || _EmployeeOrderFormComponent)(\u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(EmployeeOrderService), \u0275\u0275directiveInject(EmployeeService), \u0275\u0275directiveInject(ProductService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(SnackbarService), \u0275\u0275directiveInject(EncryptionService));
     };
   }
   static {
@@ -83200,7 +84429,7 @@ var EmployeeOrderFormComponent = class _EmployeeOrderFormComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeOrderFormComponent, { className: "EmployeeOrderFormComponent", filePath: "src\\app\\components\\employee-order\\employee-order-form\\employee-order-form.component.ts", lineNumber: 28 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(EmployeeOrderFormComponent, { className: "EmployeeOrderFormComponent", filePath: "src\\app\\components\\employee-order\\employee-order-form\\employee-order-form.component.ts", lineNumber: 29 });
 })();
 
 // src/app/models/planning.model.ts
@@ -83211,6 +84440,21 @@ var PLANNING_STATUS_OPTIONS = [
   { label: "Completed", value: "C" },
   { label: "Inactive", value: "I" }
 ];
+var PLANNING_PRIORITY_OPTIONS = [
+  { label: "Urgent", value: "U" },
+  { label: "Normal", value: "N" },
+  { label: "For Stock", value: "F" }
+];
+function planningPriorityLabel(priority) {
+  switch (priority) {
+    case "U":
+      return "Urgent";
+    case "F":
+      return "For Stock";
+    default:
+      return "Normal";
+  }
+}
 function planningStatusLabel(status) {
   switch (status) {
     case "O":
@@ -83231,7 +84475,7 @@ var _c021 = (a0) => ["/planning", a0];
 var _c17 = (a0) => ["/planning/edit", a0];
 function PlanningListComponent_option_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 31);
+    \u0275\u0275elementStart(0, "option", 28);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -83242,10 +84486,60 @@ function PlanningListComponent_option_10_Template(rf, ctx) {
     \u0275\u0275textInterpolate(s_r1.label);
   }
 }
-function PlanningListComponent_tr_67_Template(rf, ctx) {
+function PlanningListComponent_button_23_Template(rf, ctx) {
   if (rf & 1) {
-    const _r2 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "tr")(1, "td")(2, "a", 32);
+    \u0275\u0275elementStart(0, "button", 29);
+    \u0275\u0275element(1, "i", 30);
+    \u0275\u0275text(2, " Create Planning ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanningListComponent_button_24_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 31);
+    \u0275\u0275element(1, "i", 32);
+    \u0275\u0275text(2, " Dashboard ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanningListComponent_button_25_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 33);
+    \u0275\u0275element(1, "i", 34);
+    \u0275\u0275text(2, " Production Entry ");
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanningListComponent_tr_61_button_31_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 42);
+    \u0275\u0275element(1, "i", 43);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const p_r2 = \u0275\u0275nextContext().$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c17, ctx_r2.encId(p_r2.id)));
+  }
+}
+function PlanningListComponent_tr_61_button_32_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 44);
+    \u0275\u0275listener("click", function PlanningListComponent_tr_61_button_32_Template_button_click_0_listener() {
+      let tmp_4_0;
+      \u0275\u0275restoreView(_r4);
+      const p_r2 = \u0275\u0275nextContext().$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.deletePlanning((tmp_4_0 = p_r2.id) !== null && tmp_4_0 !== void 0 ? tmp_4_0 : 0));
+    });
+    \u0275\u0275element(1, "i", 45);
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanningListComponent_tr_61_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td")(2, "a", 35);
     \u0275\u0275text(3);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(4, "td");
@@ -83279,24 +84573,14 @@ function PlanningListComponent_tr_67_Template(rf, ctx) {
     \u0275\u0275elementStart(23, "td");
     \u0275\u0275text(24);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(25, "td")(26, "span", 33);
+    \u0275\u0275elementStart(25, "td")(26, "span", 36);
     \u0275\u0275text(27);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(28, "td", 34)(29, "button", 35);
-    \u0275\u0275element(30, "i", 36);
+    \u0275\u0275elementStart(28, "td", 37)(29, "button", 38);
+    \u0275\u0275element(30, "i", 39);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(31, "button", 37);
-    \u0275\u0275element(32, "i", 38);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(33, "button", 39);
-    \u0275\u0275listener("click", function PlanningListComponent_tr_67_Template_button_click_33_listener() {
-      let tmp_3_0;
-      const p_r3 = \u0275\u0275restoreView(_r2).$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.deletePlanning((tmp_3_0 = p_r3.id) !== null && tmp_3_0 !== void 0 ? tmp_3_0 : 0));
-    });
-    \u0275\u0275element(34, "i", 40);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275template(31, PlanningListComponent_tr_61_button_31_Template, 2, 3, "button", 40)(32, PlanningListComponent_tr_61_button_32_Template, 2, 0, "button", 41);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     let tmp_6_0;
@@ -83308,69 +84592,71 @@ function PlanningListComponent_tr_67_Template(rf, ctx) {
     let tmp_12_0;
     let tmp_13_0;
     let tmp_14_0;
-    const p_r3 = ctx.$implicit;
-    const ctx_r3 = \u0275\u0275nextContext();
+    const p_r2 = ctx.$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(21, _c021, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(22, _c021, ctx_r2.encId(p_r2.id)));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(p_r3.planningNumber || "-");
+    \u0275\u0275textInterpolate(p_r2.planningNumber || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(p_r3.planningDate ? \u0275\u0275pipeBind2(6, 18, p_r3.planningDate, "dd-MM-yyyy") : "-");
+    \u0275\u0275textInterpolate(p_r2.planningDate ? \u0275\u0275pipeBind2(6, 19, p_r2.planningDate, "dd-MM-yyyy") : "-");
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(p_r3.customerName || "-");
+    \u0275\u0275textInterpolate(p_r2.customerName || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_6_0 = p_r3.productCount) !== null && tmp_6_0 !== void 0 ? tmp_6_0 : "-");
+    \u0275\u0275textInterpolate((tmp_6_0 = p_r2.productCount) !== null && tmp_6_0 !== void 0 ? tmp_6_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_7_0 = p_r3.totalPlanned) !== null && tmp_7_0 !== void 0 ? tmp_7_0 : "-");
+    \u0275\u0275textInterpolate((tmp_7_0 = p_r2.totalPlanned) !== null && tmp_7_0 !== void 0 ? tmp_7_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_8_0 = p_r3.cuttingQty) !== null && tmp_8_0 !== void 0 ? tmp_8_0 : "-");
+    \u0275\u0275textInterpolate((tmp_8_0 = p_r2.cuttingQty) !== null && tmp_8_0 !== void 0 ? tmp_8_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_9_0 = p_r3.embossQty) !== null && tmp_9_0 !== void 0 ? tmp_9_0 : "-");
+    \u0275\u0275textInterpolate((tmp_9_0 = p_r2.embossQty) !== null && tmp_9_0 !== void 0 ? tmp_9_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_10_0 = p_r3.coatingQty) !== null && tmp_10_0 !== void 0 ? tmp_10_0 : "-");
+    \u0275\u0275textInterpolate((tmp_10_0 = p_r2.coatingQty) !== null && tmp_10_0 !== void 0 ? tmp_10_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_11_0 = p_r3.packingQty) !== null && tmp_11_0 !== void 0 ? tmp_11_0 : "-");
+    \u0275\u0275textInterpolate((tmp_11_0 = p_r2.packingQty) !== null && tmp_11_0 !== void 0 ? tmp_11_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_12_0 = p_r3.dispatchQty) !== null && tmp_12_0 !== void 0 ? tmp_12_0 : "-");
+    \u0275\u0275textInterpolate((tmp_12_0 = p_r2.dispatchQty) !== null && tmp_12_0 !== void 0 ? tmp_12_0 : "-");
     \u0275\u0275advance();
-    \u0275\u0275classProp("negative", ((tmp_13_0 = p_r3.remainingQty) !== null && tmp_13_0 !== void 0 ? tmp_13_0 : 0) < 0);
+    \u0275\u0275classProp("negative", ((tmp_13_0 = p_r2.remainingQty) !== null && tmp_13_0 !== void 0 ? tmp_13_0 : 0) < 0);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate((tmp_14_0 = p_r3.remainingQty) !== null && tmp_14_0 !== void 0 ? tmp_14_0 : "-");
+    \u0275\u0275textInterpolate((tmp_14_0 = p_r2.remainingQty) !== null && tmp_14_0 !== void 0 ? tmp_14_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", "status-" + (p_r3.status || "o").toLowerCase());
+    \u0275\u0275property("ngClass", "status-" + (p_r2.status || "o").toLowerCase());
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(ctx_r3.statusLabel(p_r3.status));
+    \u0275\u0275textInterpolate(ctx_r2.statusLabel(p_r2.status));
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(23, _c021, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(24, _c021, ctx_r2.encId(p_r2.id)));
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(25, _c17, ctx_r3.encId(p_r3.id)));
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN");
   }
 }
-function PlanningListComponent_tr_68_Template(rf, ctx) {
+function PlanningListComponent_tr_62_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 41);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 46);
     \u0275\u0275text(2, "No plannings found");
     \u0275\u0275elementEnd()();
   }
 }
-function PlanningListComponent_app_pagination_70_Template(rf, ctx) {
+function PlanningListComponent_app_pagination_64_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 42);
-    \u0275\u0275listener("pageChange", function PlanningListComponent_app_pagination_70_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275elementStart(0, "app-pagination", 47);
+    \u0275\u0275listener("pageChange", function PlanningListComponent_app_pagination_64_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r5);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onPageChange($event));
-    })("pageSizeChange", function PlanningListComponent_app_pagination_70_Template_app_pagination_pageSizeChange_0_listener($event) {
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onPageChange($event));
+    })("pageSizeChange", function PlanningListComponent_app_pagination_64_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r5);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onPageSizeChange($event));
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r3 = \u0275\u0275nextContext();
-    \u0275\u0275property("currentPage", ctx_r3.currentPage)("pageSize", ctx_r3.pageSize)("totalElements", ctx_r3.totalElements)("pageSizeOptions", ctx_r3.pageSizeOptions);
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r2.currentPage)("pageSize", ctx_r2.pageSize)("totalElements", ctx_r2.totalElements)("pageSizeOptions", ctx_r2.pageSizeOptions);
   }
 }
 var PlanningListComponent = class _PlanningListComponent {
@@ -83481,7 +84767,7 @@ var PlanningListComponent = class _PlanningListComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningListComponent, selectors: [["app-planning-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 73, vars: 6, consts: [[1, "planning-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by planning no or remarks...", 1, "form-control"], ["formControlName", "status", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/planning/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], ["routerLink", "/dashboard", 1, "btn", "btn-secondary"], [1, "fas", "fa-chart-bar"], ["routerLink", "/production/entry", 1, "btn", "btn-secondary"], [1, "fas", "fa-industry"], [1, "planning-list", "card"], [1, "table-responsive"], [3, "show"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "hint"], [3, "value"], [3, "routerLink"], [3, "ngClass"], [1, "actions"], ["title", "View Detail", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-eye"], ["title", "Edit", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "13", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PlanningListComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningListComponent, selectors: [["app-planning-list"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 67, vars: 9, consts: [[1, "planning-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by planning no or remarks...", 1, "form-control"], ["formControlName", "status", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "action-buttons"], ["routerLink", "/planning/create", "class", "btn btn-primary", 4, "appCanAccess"], ["routerLink", "/dashboard", "class", "btn btn-secondary", 4, "appCanAccess"], ["routerLink", "/production/entry", "class", "btn btn-secondary", 4, "appCanAccess"], [1, "planning-list", "card"], [1, "table-responsive"], [3, "show"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "table-controls"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "hint"], [3, "value"], ["routerLink", "/planning/create", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], ["routerLink", "/dashboard", 1, "btn", "btn-secondary"], [1, "fas", "fa-chart-bar"], ["routerLink", "/production/entry", 1, "btn", "btn-secondary"], [1, "fas", "fa-industry"], [3, "routerLink"], [3, "ngClass"], [1, "actions"], ["title", "View Detail", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-eye"], ["class", "btn-icon edit", "title", "Edit", 3, "routerLink", 4, "appCanAccess"], ["class", "btn-icon delete", "title", "Delete", 3, "click", 4, "appCanAccess"], ["title", "Edit", 1, "btn-icon", "edit", 3, "routerLink"], [1, "fas", "fa-edit"], ["title", "Delete", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "13", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function PlanningListComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
         \u0275\u0275text(3, "Search Plannings");
@@ -83513,70 +84799,61 @@ var PlanningListComponent = class _PlanningListComponent {
         \u0275\u0275element(20, "i", 14);
         \u0275\u0275text(21, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(22, "div", 15)(23, "button", 16);
-        \u0275\u0275element(24, "i", 17);
-        \u0275\u0275text(25, " Create Planning ");
+        \u0275\u0275elementStart(22, "div", 15);
+        \u0275\u0275template(23, PlanningListComponent_button_23_Template, 3, 0, "button", 16)(24, PlanningListComponent_button_24_Template, 3, 0, "button", 17)(25, PlanningListComponent_button_25_Template, 3, 0, "button", 18);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(26, "button", 18);
-        \u0275\u0275element(27, "i", 19);
-        \u0275\u0275text(28, " Dashboard ");
+        \u0275\u0275elementStart(26, "div", 19)(27, "h2");
+        \u0275\u0275text(28, "Plannings");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(29, "button", 20);
-        \u0275\u0275element(30, "i", 21);
-        \u0275\u0275text(31, " Production Entry ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(32, "div", 22)(33, "h2");
-        \u0275\u0275text(34, "Plannings");
+        \u0275\u0275elementStart(29, "div", 20);
+        \u0275\u0275element(30, "app-loader", 21);
+        \u0275\u0275elementStart(31, "table", 22)(32, "thead")(33, "tr")(34, "th");
+        \u0275\u0275text(35, "Planning No");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(35, "div", 23);
-        \u0275\u0275element(36, "app-loader", 24);
-        \u0275\u0275elementStart(37, "table", 25)(38, "thead")(39, "tr")(40, "th");
-        \u0275\u0275text(41, "Planning No");
+        \u0275\u0275elementStart(36, "th");
+        \u0275\u0275text(37, "Date");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(38, "th");
+        \u0275\u0275text(39, "Customer");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(40, "th");
+        \u0275\u0275text(41, "Products");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(42, "th");
-        \u0275\u0275text(43, "Date");
+        \u0275\u0275text(43, "Planned");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(44, "th");
-        \u0275\u0275text(45, "Customer");
+        \u0275\u0275text(45, "Cutting");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(46, "th");
-        \u0275\u0275text(47, "Products");
+        \u0275\u0275text(47, "Emboss");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(48, "th");
-        \u0275\u0275text(49, "Planned");
+        \u0275\u0275text(49, "Coating");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(50, "th");
-        \u0275\u0275text(51, "Cutting");
+        \u0275\u0275text(51, "Packing");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(52, "th");
-        \u0275\u0275text(53, "Emboss");
+        \u0275\u0275text(53, "Dispatch");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(54, "th");
-        \u0275\u0275text(55, "Coating");
+        \u0275\u0275text(55, "Remaining");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(56, "th");
-        \u0275\u0275text(57, "Packing");
+        \u0275\u0275text(57, "Status");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(58, "th");
-        \u0275\u0275text(59, "Dispatch");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(60, "th");
-        \u0275\u0275text(61, "Remaining");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(62, "th");
-        \u0275\u0275text(63, "Status");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(64, "th");
-        \u0275\u0275text(65, "Actions");
+        \u0275\u0275text(59, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(66, "tbody");
-        \u0275\u0275template(67, PlanningListComponent_tr_67_Template, 35, 27, "tr", 26)(68, PlanningListComponent_tr_68_Template, 3, 0, "tr", 27);
+        \u0275\u0275elementStart(60, "tbody");
+        \u0275\u0275template(61, PlanningListComponent_tr_61_Template, 33, 26, "tr", 23)(62, PlanningListComponent_tr_62_Template, 3, 0, "tr", 24);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(69, "div", 28);
-        \u0275\u0275template(70, PlanningListComponent_app_pagination_70_Template, 1, 4, "app-pagination", 29);
+        \u0275\u0275elementStart(63, "div", 25);
+        \u0275\u0275template(64, PlanningListComponent_app_pagination_64_Template, 1, 4, "app-pagination", 26);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(71, "p", 30);
-        \u0275\u0275text(72, "Remaining = Planned \u2212 Cutting (combined Cutting+Emboss counts inside Cutting; later stages consume prior-stage stock, not the plan).");
+        \u0275\u0275elementStart(65, "p", 27);
+        \u0275\u0275text(66, "Remaining = Planned \u2212 Cutting (combined Cutting+Emboss counts inside Cutting; later stages consume prior-stage stock, not the plan).");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
@@ -83584,7 +84861,13 @@ var PlanningListComponent = class _PlanningListComponent {
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(6);
         \u0275\u0275property("ngForOf", ctx.statusOptions);
-        \u0275\u0275advance(26);
+        \u0275\u0275advance(13);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN");
+        \u0275\u0275advance();
+        \u0275\u0275property("appCanAccess", "SELECT_DASHBOARD");
+        \u0275\u0275advance();
+        \u0275\u0275property("appCanAccess", "SELECT_PRODUCTION");
+        \u0275\u0275advance(5);
         \u0275\u0275property("show", ctx.isLoading);
         \u0275\u0275advance(31);
         \u0275\u0275property("ngForOf", ctx.plannings);
@@ -83613,12 +84896,13 @@ var PlanningListComponent = class _PlanningListComponent {
       RouterModule,
       RouterLink,
       LoaderComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.planning-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.planning-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.planning-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.planning-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 15px;\n  align-items: start;\n}\n.planning-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n}\n.planning-container[_ngcontent-%COMP%]   .action-buttons[_ngcontent-%COMP%] {\n  margin: 20px 0;\n  display: flex;\n  gap: 10px;\n  flex-wrap: wrap;\n}\n.planning-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.planning-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 12px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.planning-container[_ngcontent-%COMP%]   .status-o[_ngcontent-%COMP%] {\n  color: var(--warning);\n  background-color: rgba(255, 165, 0, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.planning-container[_ngcontent-%COMP%]   .status-p[_ngcontent-%COMP%] {\n  color: var(--info);\n  background-color: rgba(0, 153, 156, 0.1);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.planning-container[_ngcontent-%COMP%]   .status-c[_ngcontent-%COMP%] {\n  color: var(--success);\n  background-color: rgba(90, 158, 111, 0.12);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n.planning-container[_ngcontent-%COMP%]   .status-i[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  background-color: rgba(0, 0, 0, 0.06);\n  padding: 4px 8px;\n  border-radius: 4px;\n  font-size: 0.875rem;\n}\n@media (max-width: 768px) {\n  .planning-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .planning-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    gap: 10px;\n  }\n  .planning-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: flex-end;\n  }\n  .planning-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n    margin: 0 -15px;\n    padding: 0 15px;\n  }\n}\n/*# sourceMappingURL=planning-list.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanningListComponent, { className: "PlanningListComponent", filePath: "src\\app\\components\\planning\\planning-list\\planning-list.component.ts", lineNumber: 28 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanningListComponent, { className: "PlanningListComponent", filePath: "src\\app\\components\\planning\\planning-list\\planning-list.component.ts", lineNumber: 30 });
 })();
 
 // src/app/components/planning/planning-form/planning-form.component.ts
@@ -83646,7 +84930,7 @@ function PlanningFormComponent_div_24_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.getFieldError("employeeIds"));
   }
 }
-function PlanningFormComponent_tr_83_div_8_Template(rf, ctx) {
+function PlanningFormComponent_tr_85_div_8_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 44);
     \u0275\u0275text(1);
@@ -83659,7 +84943,7 @@ function PlanningFormComponent_tr_83_div_8_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.getItemFieldError(i_r3, "productId"));
   }
 }
-function PlanningFormComponent_tr_83_div_11_Template(rf, ctx) {
+function PlanningFormComponent_tr_85_div_11_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 44);
     \u0275\u0275text(1);
@@ -83672,7 +84956,7 @@ function PlanningFormComponent_tr_83_div_11_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.getItemFieldError(i_r3, "plannedQuantity"));
   }
 }
-function PlanningFormComponent_tr_83_small_12_Template(rf, ctx) {
+function PlanningFormComponent_tr_85_small_12_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "small");
     \u0275\u0275text(1);
@@ -83685,14 +84969,27 @@ function PlanningFormComponent_tr_83_small_12_Template(rf, ctx) {
     \u0275\u0275textInterpolate1("Min: ", ctx_r0.getItemFloor(i_r3), " (already cut)");
   }
 }
-function PlanningFormComponent_tr_83_div_15_Template(rf, ctx) {
+function PlanningFormComponent_tr_85_div_15_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 44);
     \u0275\u0275text(1, "Must be 0 or greater");
     \u0275\u0275elementEnd();
   }
 }
-function PlanningFormComponent_tr_83_Template(rf, ctx) {
+function PlanningFormComponent_tr_85_option_20_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 59);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const p_r4 = ctx.$implicit;
+    \u0275\u0275property("value", p_r4.value);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(p_r4.label);
+  }
+}
+function PlanningFormComponent_tr_85_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr", 45)(1, "td", 46);
@@ -83701,7 +84998,7 @@ function PlanningFormComponent_tr_83_Template(rf, ctx) {
     \u0275\u0275elementStart(3, "td")(4, "div", 47);
     \u0275\u0275element(5, "app-searchable-select", 48);
     \u0275\u0275elementStart(6, "button", 49);
-    \u0275\u0275listener("click", function PlanningFormComponent_tr_83_Template_button_click_6_listener($event) {
+    \u0275\u0275listener("click", function PlanningFormComponent_tr_85_Template_button_click_6_listener($event) {
       \u0275\u0275restoreView(_r2);
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.refreshProducts();
@@ -83710,31 +85007,34 @@ function PlanningFormComponent_tr_83_Template(rf, ctx) {
     });
     \u0275\u0275element(7, "i", 16);
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(8, PlanningFormComponent_tr_83_div_8_Template, 2, 1, "div", 17);
+    \u0275\u0275template(8, PlanningFormComponent_tr_85_div_8_Template, 2, 1, "div", 17);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(9, "td");
     \u0275\u0275element(10, "input", 50);
-    \u0275\u0275template(11, PlanningFormComponent_tr_83_div_11_Template, 2, 1, "div", 17)(12, PlanningFormComponent_tr_83_small_12_Template, 2, 1, "small", 6);
+    \u0275\u0275template(11, PlanningFormComponent_tr_85_div_11_Template, 2, 1, "div", 17)(12, PlanningFormComponent_tr_85_small_12_Template, 2, 1, "small", 6);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(13, "td");
     \u0275\u0275element(14, "input", 51);
-    \u0275\u0275template(15, PlanningFormComponent_tr_83_div_15_Template, 2, 0, "div", 17);
+    \u0275\u0275template(15, PlanningFormComponent_tr_85_div_15_Template, 2, 0, "div", 17);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(16, "td", 52);
     \u0275\u0275element(17, "input", 53);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "td");
-    \u0275\u0275element(19, "input", 54);
+    \u0275\u0275elementStart(18, "td")(19, "select", 54);
+    \u0275\u0275template(20, PlanningFormComponent_tr_85_option_20_Template, 2, 2, "option", 55);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(21, "td");
+    \u0275\u0275element(22, "input", 56);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "td")(21, "button", 55);
-    \u0275\u0275listener("click", function PlanningFormComponent_tr_83_Template_button_click_21_listener($event) {
+    \u0275\u0275elementStart(23, "td")(24, "button", 57);
+    \u0275\u0275listener("click", function PlanningFormComponent_tr_85_Template_button_click_24_listener($event) {
       const i_r3 = \u0275\u0275restoreView(_r2).index;
       const ctx_r0 = \u0275\u0275nextContext();
       ctx_r0.removeItem(i_r3);
       $event.preventDefault();
       return \u0275\u0275resetView($event.stopPropagation());
     });
-    \u0275\u0275element(22, "i", 56);
+    \u0275\u0275element(25, "i", 58);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -83762,26 +85062,28 @@ function PlanningFormComponent_tr_83_Template(rf, ctx) {
     \u0275\u0275classProp("is-invalid", ctx_r0.isItemFieldInvalid(i_r3, "totalBags"));
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r0.isItemFieldInvalid(i_r3, "totalBags"));
-    \u0275\u0275advance(6);
+    \u0275\u0275advance(5);
+    \u0275\u0275property("ngForOf", ctx_r0.priorityOptions);
+    \u0275\u0275advance(4);
     \u0275\u0275property("disabled", ctx_r0.isLoading || ctx_r0.itemsFormArray.length <= 1);
   }
 }
-function PlanningFormComponent_tr_84_Template(rf, ctx) {
+function PlanningFormComponent_tr_86_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 57);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 60);
     \u0275\u0275text(2, 'No products added. Click "Add Product" to get started.');
     \u0275\u0275elementEnd()();
   }
 }
-function PlanningFormComponent_tfoot_85_Template(rf, ctx) {
+function PlanningFormComponent_tfoot_87_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 58)(3, "strong");
+    \u0275\u0275elementStart(0, "tfoot")(1, "tr")(2, "td", 61)(3, "strong");
     \u0275\u0275text(4, "Total Planned:");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(5, "td")(6, "strong");
     \u0275\u0275text(7);
     \u0275\u0275elementEnd()();
-    \u0275\u0275element(8, "td", 59);
+    \u0275\u0275element(8, "td", 62);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -83816,6 +85118,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
     this.snackbar = snackbar;
     this.isLoading = false;
     this.isEditMode = false;
+    this.priorityOptions = PLANNING_PRIORITY_OPTIONS;
     this.products = [];
     this.employees = [];
     this.customers = [];
@@ -83866,6 +85169,8 @@ var PlanningFormComponent = class _PlanningFormComponent {
       plannedQuantity: [itemData?.plannedQuantity || "", [Validators.required, Validators.min(1)]],
       totalBags: [itemData?.totalBags ?? null, [Validators.min(0)]],
       coatingRequired: [itemData?.coatingRequired || false],
+      // PLAN_PRIORITY: U = Urgent, N = Normal (default), F = For Stock.
+      priority: [itemData?.priority || "N", Validators.required],
       remarks: [itemData?.remarks || ""]
     });
     this.itemsFormArray.push(itemGroup);
@@ -83928,6 +85233,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
                 plannedQuantity: item.plannedQuantity,
                 totalBags: item.totalBags ?? null,
                 coatingRequired: !!item.coatingRequired,
+                priority: item.priority || "N",
                 remarks: item.remarks || ""
               });
               if (item.id) {
@@ -84041,6 +85347,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
         plannedQuantity: Number(v.plannedQuantity),
         totalBags: v.totalBags === null || v.totalBags === "" || v.totalBags === void 0 ? null : Number(v.totalBags),
         coatingRequired: !!v.coatingRequired,
+        priority: v.priority || "N",
         remarks: v.remarks || ""
       };
       if (this.isEditMode && v.id) {
@@ -84147,7 +85454,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
           return ctx.onGlobalKeydown($event);
         }, false, \u0275\u0275resolveDocument);
       }
-    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 99, vars: 28, consts: [[1, "planning-form-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-clipboard-list"], [4, "ngIf"], ["novalidate", "", 1, "planning-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], [1, "fas", "fa-users"], [1, "required"], [1, "employee-select-group"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "button", "title", "Refresh Employees", "aria-label", "Refresh Employees", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "fas", "fa-user"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "allowClear", "focusWidthPx", "maxHeight"], [1, "fas", "fa-info-circle"], ["formControlName", "status", 1, "form-control"], ["value", "O"], ["value", "P"], ["value", "C"], ["value", "I"], [1, "fas", "fa-calendar-alt"], ["type", "date", "formControlName", "planningDate", 1, "form-control"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], [1, "fas", "fa-boxes"], ["type", "button", "title", "Add Product (Alt+P)", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "kbd-hint"], [1, "table-responsive"], [1, "table", "items-table"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "form-group", "remarks-group"], [1, "fas", "fa-comment"], ["formControlName", "remarks", "rows", "3", "placeholder", "Optional note for this planning", 1, "form-control"], [1, "form-actions"], ["type", "button", "routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "row-index"], [1, "product-select-group"], [3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "plannedQuantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"], [1, "text-center"], ["type", "checkbox", "formControlName", "coatingRequired", "title", "Coating required?"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"], ["colspan", "2", 1, "text-end"], ["colspan", "4"]], template: function PlanningFormComponent_Template(rf, ctx) {
+    }, standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 101, vars: 28, consts: [[1, "planning-form-container"], [3, "show"], [1, "form-card"], [1, "card-header"], [1, "form-title"], [1, "fas", "fa-clipboard-list"], [4, "ngIf"], ["novalidate", "", 1, "planning-form", 3, "ngSubmit", "formGroup"], [1, "section-card"], [1, "form-row"], [1, "form-group"], [1, "fas", "fa-users"], [1, "required"], [1, "employee-select-group"], ["formControlName", "employeeIds", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "multiple"], ["type", "button", "title", "Refresh Employees", "aria-label", "Refresh Employees", 1, "btn-icon", "refresh", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["class", "invalid-feedback", 4, "ngIf"], [1, "fas", "fa-user"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "searchPlaceholder", "allowClear", "focusWidthPx", "maxHeight"], [1, "fas", "fa-info-circle"], ["formControlName", "status", 1, "form-control"], ["value", "O"], ["value", "P"], ["value", "C"], ["value", "I"], [1, "fas", "fa-calendar-alt"], ["type", "date", "formControlName", "planningDate", 1, "form-control"], ["formArrayName", "items", 1, "section-card", "items-section"], [1, "items-header"], [1, "fas", "fa-boxes"], ["type", "button", "title", "Add Product (Alt+P)", 1, "btn", "btn-primary", "add-item-btn", 3, "click", "disabled"], [1, "fas", "fa-plus"], [1, "kbd-hint"], [1, "table-responsive"], [1, "table", "items-table"], [3, "formGroupName", 4, "ngFor", "ngForOf"], [1, "form-group", "remarks-group"], [1, "fas", "fa-comment"], ["formControlName", "remarks", "rows", "3", "placeholder", "Optional note for this planning", 1, "form-control"], [1, "form-actions"], ["type", "button", "routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-times"], ["type", "submit", 1, "btn", "btn-primary", 3, "disabled"], [1, "invalid-feedback"], [3, "formGroupName"], [1, "row-index"], [1, "product-select-group"], [3, "formControlName", "options", "labelKey", "valueKey", "placeholder", "searchPlaceholder", "focusWidthPx", "maxHeight"], ["type", "button", "title", "Refresh Products", 1, "btn-icon", "refresh", 3, "click", "disabled"], ["type", "number", "formControlName", "plannedQuantity", "min", "1", "step", "1", 1, "form-control"], ["type", "number", "formControlName", "totalBags", "min", "0", "step", "1", "placeholder", "Optional", 1, "form-control"], [1, "text-center"], ["type", "checkbox", "formControlName", "coatingRequired", "title", "Coating required?"], ["formControlName", "priority", "title", "Priority", 1, "form-control"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "text", "formControlName", "remarks", "placeholder", "Optional", 1, "form-control"], ["type", "button", 1, "btn", "btn-sm", "btn-danger", 3, "click", "disabled"], [1, "fas", "fa-trash"], [3, "value"], ["colspan", "8", 1, "text-center"], ["colspan", "2", 1, "text-end"], ["colspan", "5"]], template: function PlanningFormComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -84247,29 +85554,32 @@ var PlanningFormComponent = class _PlanningFormComponent {
         \u0275\u0275text(77, "Coating?");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(78, "th");
-        \u0275\u0275text(79, "Remarks");
+        \u0275\u0275text(79, "Priority");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(80, "th");
-        \u0275\u0275text(81, "Actions");
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(82, "tbody");
-        \u0275\u0275template(83, PlanningFormComponent_tr_83_Template, 23, 22, "tr", 36)(84, PlanningFormComponent_tr_84_Template, 3, 0, "tr", 6);
+        \u0275\u0275text(81, "Remarks");
         \u0275\u0275elementEnd();
-        \u0275\u0275template(85, PlanningFormComponent_tfoot_85_Template, 9, 1, "tfoot", 6);
+        \u0275\u0275elementStart(82, "th");
+        \u0275\u0275text(83, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(86, "div", 8)(87, "div", 37)(88, "label");
-        \u0275\u0275element(89, "i", 38);
-        \u0275\u0275text(90, " Remarks");
+        \u0275\u0275elementStart(84, "tbody");
+        \u0275\u0275template(85, PlanningFormComponent_tr_85_Template, 26, 23, "tr", 36)(86, PlanningFormComponent_tr_86_Template, 3, 0, "tr", 6);
         \u0275\u0275elementEnd();
-        \u0275\u0275element(91, "textarea", 39);
+        \u0275\u0275template(87, PlanningFormComponent_tfoot_87_Template, 9, 1, "tfoot", 6);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(88, "div", 8)(89, "div", 37)(90, "label");
+        \u0275\u0275element(91, "i", 38);
+        \u0275\u0275text(92, " Remarks");
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(93, "textarea", 39);
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(92, "div", 40)(93, "button", 41);
-        \u0275\u0275element(94, "i", 42);
-        \u0275\u0275text(95, " Cancel ");
+        \u0275\u0275elementStart(94, "div", 40)(95, "button", 41);
+        \u0275\u0275element(96, "i", 42);
+        \u0275\u0275text(97, " Cancel ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(96, "button", 43);
-        \u0275\u0275element(97, "i", 16);
-        \u0275\u0275text(98);
+        \u0275\u0275elementStart(98, "button", 43);
+        \u0275\u0275element(99, "i", 16);
+        \u0275\u0275text(100);
         \u0275\u0275elementEnd()()()()();
       }
       if (rf & 2) {
@@ -84297,7 +85607,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
         \u0275\u0275classProp("is-invalid", ctx.isFieldInvalid("planningDate"));
         \u0275\u0275advance(6);
         \u0275\u0275property("disabled", ctx.isLoading);
-        \u0275\u0275advance(28);
+        \u0275\u0275advance(30);
         \u0275\u0275property("ngForOf", ctx.itemsFormArray.controls);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.itemsFormArray.length === 0);
@@ -84339,7 +85649,7 @@ var PlanningFormComponent = class _PlanningFormComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanningFormComponent, { className: "PlanningFormComponent", filePath: "src\\app\\components\\planning\\planning-form\\planning-form.component.ts", lineNumber: 30 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanningFormComponent, { className: "PlanningFormComponent", filePath: "src\\app\\components\\planning\\planning-form\\planning-form.component.ts", lineNumber: 31 });
 })();
 
 // src/app/shared/utils/csv-export.util.ts
@@ -84390,8 +85700,9 @@ var ProductionService = class _ProductionService {
   getProductionReport(params) {
     return this.http.post(`${this.apiUrl}/report`, params);
   }
+  // ENC_URL_POST_V1: POST with id in body (no id in URL).
   getTransactionsByItem(planningItemId) {
-    return this.http.post(`${this.apiUrl}/by-planning-item/${planningItemId}`, {});
+    return this.http.post(`${this.apiUrl}/by-planning-item`, { planningItemId });
   }
   getDashboardSummary(planningId, currentPage, perPageRecord, filters) {
     const body = {};
@@ -84406,6 +85717,9 @@ var ProductionService = class _ProductionService {
     }
     if (filters?.endDate) {
       body.endDate = filters.endDate;
+    }
+    if (filters?.process) {
+      body.process = filters.process;
     }
     if (currentPage !== void 0 && currentPage !== null) {
       body.currentPage = currentPage;
@@ -84437,65 +85751,81 @@ var _c43 = () => ["/plan-dispatch/create"];
 var _c53 = () => ["/plan-coating/create"];
 var _c63 = (a0, a1) => ({ planningId: a0, planningItemId: a1 });
 var _c72 = (a0) => ["/production/edit", a0];
-function PlanningDetailComponent_div_2_Template(rf, ctx) {
+function PlanningDetailComponent_div_2_button_4_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 7)(1, "button", 8);
-    \u0275\u0275element(2, "i", 9);
-    \u0275\u0275text(3, " Back");
+    \u0275\u0275elementStart(0, "button", 16);
+    \u0275\u0275element(1, "i", 17);
+    \u0275\u0275text(2, " Edit");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "button", 10);
-    \u0275\u0275element(5, "i", 11);
-    \u0275\u0275text(6, " Edit");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "button", 12);
-    \u0275\u0275element(8, "i", 13);
-    \u0275\u0275text(9, " Production Entry");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "button", 14);
-    \u0275\u0275element(11, "i", 15);
-    \u0275\u0275text(12, " Dashboard");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "button", 12);
-    \u0275\u0275element(14, "i", 16);
-    \u0275\u0275text(15, " Dispatch");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "button", 12);
-    \u0275\u0275element(17, "i", 17);
-    \u0275\u0275text(18, " Coating");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(19, "button", 18);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_19_listener() {
-      \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.openQuickDispatch());
-    });
-    \u0275\u0275element(20, "i", 19);
-    \u0275\u0275text(21);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "button", 20);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_22_listener() {
-      \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.exportExcel());
-    });
-    \u0275\u0275element(23, "i", 21);
-    \u0275\u0275text(24, " Excel");
-    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(4);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(13, _c022, ctx_r1.encId(ctx_r1.planning.id)));
-    \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(15, _c18))("queryParams", \u0275\u0275pureFunction1(16, _c24, ctx_r1.encId(ctx_r1.planning.id)));
-    \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(18, _c33))("queryParams", \u0275\u0275pureFunction1(19, _c24, ctx_r1.encId(ctx_r1.planning.id)));
-    \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(21, _c43))("queryParams", \u0275\u0275pureFunction1(22, _c24, ctx_r1.encId(ctx_r1.planning.id)));
-    \u0275\u0275advance(3);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(24, _c53))("queryParams", \u0275\u0275pureFunction1(25, _c24, ctx_r1.encId(ctx_r1.planning.id)));
-    \u0275\u0275advance(3);
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c022, ctx_r1.encId(ctx_r1.planning.id)));
+  }
+}
+function PlanningDetailComponent_div_2_button_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 18);
+    \u0275\u0275element(1, "i", 19);
+    \u0275\u0275text(2, " Production Entry");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(2, _c18))("queryParams", \u0275\u0275pureFunction1(3, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+  }
+}
+function PlanningDetailComponent_div_2_button_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 20);
+    \u0275\u0275element(1, "i", 21);
+    \u0275\u0275text(2, " Dashboard");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(2, _c33))("queryParams", \u0275\u0275pureFunction1(3, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+  }
+}
+function PlanningDetailComponent_div_2_button_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 18);
+    \u0275\u0275element(1, "i", 22);
+    \u0275\u0275text(2, " Dispatch");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(2, _c43))("queryParams", \u0275\u0275pureFunction1(3, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+  }
+}
+function PlanningDetailComponent_div_2_button_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 18);
+    \u0275\u0275element(1, "i", 23);
+    \u0275\u0275text(2, " Coating");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(2, _c53))("queryParams", \u0275\u0275pureFunction1(3, _c24, ctx_r1.encId(ctx_r1.planning.id)));
+  }
+}
+function PlanningDetailComponent_div_2_button_9_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 24);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_button_9_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.openQuickDispatch());
+    });
+    \u0275\u0275element(1, "i", 25);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275property("disabled", !ctx_r1.selectedDispatch.size || ctx_r1.isDispatching || !ctx_r1.hasCustomer)("title", ctx_r1.hasCustomer ? "Dispatch full pack balance of checked products" : "Attach a customer to the plan first (Planning Edit)");
     \u0275\u0275advance();
     \u0275\u0275property("ngClass", ctx_r1.isDispatching ? "fa-spinner fa-spin" : "fa-truck-fast");
@@ -84503,19 +85833,52 @@ function PlanningDetailComponent_div_2_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r1.isDispatching ? "Dispatching\u2026" : "Dispatch Selected" + (ctx_r1.selectedDispatch.size ? " (" + ctx_r1.selectedDispatch.size + ")" : ""), " ");
   }
 }
+function PlanningDetailComponent_div_2_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 7)(1, "button", 8);
+    \u0275\u0275element(2, "i", 9);
+    \u0275\u0275text(3, " Back");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(4, PlanningDetailComponent_div_2_button_4_Template, 3, 3, "button", 10)(5, PlanningDetailComponent_div_2_button_5_Template, 3, 5, "button", 11)(6, PlanningDetailComponent_div_2_button_6_Template, 3, 5, "button", 12)(7, PlanningDetailComponent_div_2_button_7_Template, 3, 5, "button", 11)(8, PlanningDetailComponent_div_2_button_8_Template, 3, 5, "button", 11)(9, PlanningDetailComponent_div_2_button_9_Template, 3, 4, "button", 13);
+    \u0275\u0275elementStart(10, "button", 14);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_2_Template_button_click_10_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.exportExcel());
+    });
+    \u0275\u0275element(11, "i", 15);
+    \u0275\u0275text(12, " Excel");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    \u0275\u0275advance(4);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "SELECT_PRODUCTION");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "SELECT_DASHBOARD");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_DISPATCH");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_COATING");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PLAN_DISPATCH");
+  }
+}
 function PlanningDetailComponent_p_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 22);
+    \u0275\u0275elementStart(0, "p", 26);
     \u0275\u0275text(1, "Attach a customer in Planning Edit to enable one-click dispatch.");
     \u0275\u0275elementEnd();
   }
 }
 function PlanningDetailComponent_div_4_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 23)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 27)(1, "h2");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 24)(4, "div")(5, "span");
+    \u0275\u0275elementStart(3, "div", 28)(4, "div")(5, "span");
     \u0275\u0275text(6, "Planning No:");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(7, "strong");
@@ -84540,7 +85903,7 @@ function PlanningDetailComponent_div_4_Template(rf, ctx) {
     \u0275\u0275elementStart(23, "strong");
     \u0275\u0275text(24);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(25, "div", 25)(26, "span");
+    \u0275\u0275elementStart(25, "div", 29)(26, "span");
     \u0275\u0275text(27, "Remarks:");
     \u0275\u0275elementEnd();
     \u0275\u0275text(28);
@@ -84564,52 +85927,52 @@ function PlanningDetailComponent_div_4_Template(rf, ctx) {
 }
 function PlanningDetailComponent_div_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 26)(1, "h2");
+    \u0275\u0275elementStart(0, "div", 30)(1, "h2");
     \u0275\u0275text(2, "Production Summary");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 27)(4, "div", 28)(5, "span", 29);
+    \u0275\u0275elementStart(3, "div", 31)(4, "div", 32)(5, "span", 33);
     \u0275\u0275text(6, "Planned");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "span", 30);
+    \u0275\u0275elementStart(7, "span", 34);
     \u0275\u0275text(8);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "div", 28)(10, "span", 29);
+    \u0275\u0275elementStart(9, "div", 32)(10, "span", 33);
     \u0275\u0275text(11, "Cutting");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "span", 30);
+    \u0275\u0275elementStart(12, "span", 34);
     \u0275\u0275text(13);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "div", 28)(15, "span", 29);
+    \u0275\u0275elementStart(14, "div", 32)(15, "span", 33);
     \u0275\u0275text(16, "Emboss");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "span", 30);
+    \u0275\u0275elementStart(17, "span", 34);
     \u0275\u0275text(18);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(19, "div", 28)(20, "span", 29);
+    \u0275\u0275elementStart(19, "div", 32)(20, "span", 33);
     \u0275\u0275text(21, "Coating");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "span", 30);
+    \u0275\u0275elementStart(22, "span", 34);
     \u0275\u0275text(23);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(24, "div", 28)(25, "span", 29);
+    \u0275\u0275elementStart(24, "div", 32)(25, "span", 33);
     \u0275\u0275text(26, "Packing");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(27, "span", 30);
+    \u0275\u0275elementStart(27, "span", 34);
     \u0275\u0275text(28);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "div", 28)(30, "span", 29);
+    \u0275\u0275elementStart(29, "div", 32)(30, "span", 33);
     \u0275\u0275text(31, "Dispatch");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(32, "span", 30);
+    \u0275\u0275elementStart(32, "span", 34);
     \u0275\u0275text(33);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(34, "div", 28)(35, "span", 29);
+    \u0275\u0275elementStart(34, "div", 32)(35, "span", 33);
     \u0275\u0275text(36, "Remaining");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(37, "span", 30);
+    \u0275\u0275elementStart(37, "span", 34);
     \u0275\u0275text(38);
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(39, "p", 22);
+    \u0275\u0275elementStart(39, "p", 26);
     \u0275\u0275text(40, "Remaining = Planned \u2212 Cutting (combined Cutting+Emboss counts inside Cutting)");
     \u0275\u0275elementEnd()();
   }
@@ -84636,36 +85999,89 @@ function PlanningDetailComponent_div_5_Template(rf, ctx) {
 }
 function PlanningDetailComponent_div_6_ng_container_33_span_6_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 44);
+    \u0275\u0275elementStart(0, "span", 50);
     \u0275\u0275text(1, "Coating");
     \u0275\u0275elementEnd();
   }
 }
 function PlanningDetailComponent_div_6_ng_container_33_span_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 45);
+    \u0275\u0275elementStart(0, "span", 51);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     let tmp_4_0;
     let tmp_5_0;
-    const item_r5 = \u0275\u0275nextContext().$implicit;
-    \u0275\u0275property("title", "Original plan: " + ((tmp_4_0 = item_r5.originalPlannedQuantity) !== null && tmp_4_0 !== void 0 ? tmp_4_0 : "-"));
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275property("title", "Original plan: " + ((tmp_4_0 = item_r6.originalPlannedQuantity) !== null && tmp_4_0 !== void 0 ? tmp_4_0 : "-"));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("Auto (was ", (tmp_5_0 = item_r5.originalPlannedQuantity) !== null && tmp_5_0 !== void 0 ? tmp_5_0 : "-", ")");
+    \u0275\u0275textInterpolate1("Auto (was ", (tmp_5_0 = item_r6.originalPlannedQuantity) !== null && tmp_5_0 !== void 0 ? tmp_5_0 : "-", ")");
   }
 }
-function PlanningDetailComponent_div_6_ng_container_33_tr_37_div_2_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_span_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 52);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("ngClass", "badge-priority-" + (item_r6.priority || "N"))("title", ctx_r1.priorityLabel(item_r6.priority));
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r1.priorityLabel(item_r6.priority));
+  }
+}
+function PlanningDetailComponent_div_6_ng_container_33_button_35_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "button", 53);
+    \u0275\u0275element(1, "i", 19);
+    \u0275\u0275text(2, " Entry ");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const item_r6 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(2, _c18))("queryParams", \u0275\u0275pureFunction2(3, _c63, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r6.id)));
+  }
+}
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_div_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div");
     \u0275\u0275text(1, "Loading transactions\u2026");
     \u0275\u0275elementEnd();
   }
 }
-function PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_tr_18_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_button_16_Template(rf, ctx) {
   if (rf & 1) {
-    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 60);
+    \u0275\u0275element(1, "i", 17);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const op_r7 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(5);
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(1, _c72, ctx_r1.encId(op_r7.id)));
+  }
+}
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_button_17_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r8 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 61);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_button_17_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r8);
+      const op_r7 = \u0275\u0275nextContext().$implicit;
+      const item_r6 = \u0275\u0275nextContext(3).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.deleteEntry(op_r7.id, item_r6));
+    });
+    \u0275\u0275element(1, "i", 62);
+    \u0275\u0275elementEnd();
+  }
+}
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_Template(rf, ctx) {
+  if (rf & 1) {
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -84686,23 +86102,13 @@ function PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_tr_18_Templ
     \u0275\u0275elementStart(13, "td");
     \u0275\u0275text(14);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(15, "td", 49)(16, "button", 50);
-    \u0275\u0275element(17, "i", 11);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "button", 51);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_tr_18_Template_button_click_18_listener() {
-      const op_r7 = \u0275\u0275restoreView(_r6).$implicit;
-      const item_r5 = \u0275\u0275nextContext(3).$implicit;
-      const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.deleteEntry(op_r7.id, item_r5));
-    });
-    \u0275\u0275element(19, "i", 52);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(15, "td", 57);
+    \u0275\u0275template(16, PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_button_16_Template, 2, 3, "button", 58)(17, PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_button_17_Template, 2, 0, "button", 59);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     let tmp_9_0;
     const op_r7 = ctx.$implicit;
-    const ctx_r1 = \u0275\u0275nextContext(5);
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(op_r7.operationType);
     \u0275\u0275advance(2);
@@ -84710,25 +86116,27 @@ function PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_tr_18_Templ
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate((tmp_9_0 = op_r7.totalBags) !== null && tmp_9_0 !== void 0 ? tmp_9_0 : "-");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(op_r7.operationDate ? \u0275\u0275pipeBind2(9, 7, op_r7.operationDate, "dd-MM-yyyy HH:mm") : \u0275\u0275pipeBind2(10, 10, op_r7.createdAt, "dd-MM-yyyy HH:mm"));
+    \u0275\u0275textInterpolate(op_r7.operationDate ? \u0275\u0275pipeBind2(9, 8, op_r7.operationDate, "dd-MM-yyyy HH:mm") : \u0275\u0275pipeBind2(10, 11, op_r7.createdAt, "dd-MM-yyyy HH:mm"));
     \u0275\u0275advance(4);
     \u0275\u0275textInterpolate(op_r7.machineryName || "-");
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(op_r7.remarks || "-");
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(13, _c72, ctx_r1.encId(op_r7.id)));
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PRODUCTION");
+    \u0275\u0275advance();
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PRODUCTION");
   }
 }
-function PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_tr_19_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_19_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 53);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 63);
     \u0275\u0275text(2, "No transactions yet");
     \u0275\u0275elementEnd()();
   }
 }
-function PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "table", 48)(1, "thead")(2, "tr")(3, "th");
+    \u0275\u0275elementStart(0, "table", 56)(1, "thead")(2, "tr")(3, "th");
     \u0275\u0275text(4, "Type");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "th");
@@ -84750,157 +86158,159 @@ function PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_Template(rf
     \u0275\u0275text(16, "Actions");
     \u0275\u0275elementEnd()()();
     \u0275\u0275elementStart(17, "tbody");
-    \u0275\u0275template(18, PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_tr_18_Template, 20, 15, "tr", 35)(19, PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_tr_19_Template, 3, 0, "tr", 43);
+    \u0275\u0275template(18, PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_18_Template, 18, 14, "tr", 39)(19, PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_tr_19_Template, 3, 0, "tr", 49);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const item_r5 = \u0275\u0275nextContext(2).$implicit;
+    const item_r6 = \u0275\u0275nextContext(2).$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(18);
-    \u0275\u0275property("ngForOf", ctx_r1.transactionsByItem[item_r5.id].operations);
+    \u0275\u0275property("ngForOf", ctx_r1.transactionsByItem[item_r6.id].operations);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", !(ctx_r1.transactionsByItem[item_r5.id].operations == null ? null : ctx_r1.transactionsByItem[item_r5.id].operations.length));
+    \u0275\u0275property("ngIf", !(ctx_r1.transactionsByItem[item_r6.id].operations == null ? null : ctx_r1.transactionsByItem[item_r6.id].operations.length));
   }
 }
-function PlanningDetailComponent_div_6_ng_container_33_tr_37_Template(rf, ctx) {
+function PlanningDetailComponent_div_6_ng_container_33_tr_36_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 46);
-    \u0275\u0275template(2, PlanningDetailComponent_div_6_ng_container_33_tr_37_div_2_Template, 2, 0, "div", 43)(3, PlanningDetailComponent_div_6_ng_container_33_tr_37_table_3_Template, 20, 2, "table", 47);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 54);
+    \u0275\u0275template(2, PlanningDetailComponent_div_6_ng_container_33_tr_36_div_2_Template, 2, 0, "div", 49)(3, PlanningDetailComponent_div_6_ng_container_33_tr_36_table_3_Template, 20, 2, "table", 55);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const item_r5 = \u0275\u0275nextContext().$implicit;
+    const item_r6 = \u0275\u0275nextContext().$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ctx_r1.loadingTx[item_r5.id]);
+    \u0275\u0275property("ngIf", ctx_r1.loadingTx[item_r6.id]);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.transactionsByItem[item_r5.id]);
+    \u0275\u0275property("ngIf", ctx_r1.transactionsByItem[item_r6.id]);
   }
 }
 function PlanningDetailComponent_div_6_ng_container_33_Template(rf, ctx) {
   if (rf & 1) {
-    const _r4 = \u0275\u0275getCurrentView();
+    const _r5 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "tr")(2, "td", 33)(3, "input", 36);
+    \u0275\u0275elementStart(1, "tr", 40)(2, "td", 37)(3, "input", 41);
     \u0275\u0275listener("change", function PlanningDetailComponent_div_6_ng_container_33_Template_input_change_3_listener() {
-      const item_r5 = \u0275\u0275restoreView(_r4).$implicit;
+      const item_r6 = \u0275\u0275restoreView(_r5).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.toggleItemSelection(item_r5));
+      return \u0275\u0275resetView(ctx_r1.toggleItemSelection(item_r6));
     })("click", function PlanningDetailComponent_div_6_ng_container_33_Template_input_click_3_listener($event) {
-      \u0275\u0275restoreView(_r4);
+      \u0275\u0275restoreView(_r5);
       return \u0275\u0275resetView($event.stopPropagation());
     });
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(4, "td");
     \u0275\u0275text(5);
-    \u0275\u0275template(6, PlanningDetailComponent_div_6_ng_container_33_span_6_Template, 2, 0, "span", 37)(7, PlanningDetailComponent_div_6_ng_container_33_span_7_Template, 2, 2, "span", 38);
+    \u0275\u0275template(6, PlanningDetailComponent_div_6_ng_container_33_span_6_Template, 2, 0, "span", 42)(7, PlanningDetailComponent_div_6_ng_container_33_span_7_Template, 2, 2, "span", 43)(8, PlanningDetailComponent_div_6_ng_container_33_span_8_Template, 2, 3, "span", 44);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "td");
-    \u0275\u0275text(9);
+    \u0275\u0275elementStart(9, "td");
+    \u0275\u0275text(10);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "td");
-    \u0275\u0275text(11);
+    \u0275\u0275elementStart(11, "td");
+    \u0275\u0275text(12);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "td");
-    \u0275\u0275text(13);
+    \u0275\u0275elementStart(13, "td");
+    \u0275\u0275text(14);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "td");
-    \u0275\u0275text(15);
+    \u0275\u0275elementStart(15, "td");
+    \u0275\u0275text(16);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "td");
-    \u0275\u0275text(17);
+    \u0275\u0275elementStart(17, "td");
+    \u0275\u0275text(18);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "td");
-    \u0275\u0275text(19);
+    \u0275\u0275elementStart(19, "td");
+    \u0275\u0275text(20);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "td");
-    \u0275\u0275text(21);
+    \u0275\u0275elementStart(21, "td");
+    \u0275\u0275text(22);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "td");
-    \u0275\u0275text(23);
+    \u0275\u0275elementStart(23, "td");
+    \u0275\u0275text(24);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(24, "td")(25, "div", 39);
-    \u0275\u0275element(26, "div", 40);
+    \u0275\u0275elementStart(25, "td")(26, "div", 45);
+    \u0275\u0275element(27, "div", 46);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(27, "small");
-    \u0275\u0275text(28);
+    \u0275\u0275elementStart(28, "small");
+    \u0275\u0275text(29);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "td");
-    \u0275\u0275text(30);
+    \u0275\u0275elementStart(30, "td");
+    \u0275\u0275text(31);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(31, "td")(32, "button", 41);
-    \u0275\u0275listener("click", function PlanningDetailComponent_div_6_ng_container_33_Template_button_click_32_listener() {
-      const item_r5 = \u0275\u0275restoreView(_r4).$implicit;
+    \u0275\u0275elementStart(32, "td")(33, "button", 47);
+    \u0275\u0275listener("click", function PlanningDetailComponent_div_6_ng_container_33_Template_button_click_33_listener() {
+      const item_r6 = \u0275\u0275restoreView(_r5).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.toggleTransactions(item_r5));
+      return \u0275\u0275resetView(ctx_r1.toggleTransactions(item_r6));
     });
-    \u0275\u0275text(33);
+    \u0275\u0275text(34);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(34, "button", 42);
-    \u0275\u0275element(35, "i", 13);
-    \u0275\u0275text(36, " Entry ");
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275template(37, PlanningDetailComponent_div_6_ng_container_33_tr_37_Template, 4, 2, "tr", 43);
+    \u0275\u0275template(35, PlanningDetailComponent_div_6_ng_container_33_button_35_Template, 3, 6, "button", 48);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275template(36, PlanningDetailComponent_div_6_ng_container_33_tr_36_Template, 4, 2, "tr", 49);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
-    let tmp_10_0;
-    let tmp_16_0;
-    const item_r5 = ctx.$implicit;
+    let tmp_12_0;
+    let tmp_18_0;
+    const item_r6 = ctx.$implicit;
     const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", "priority-" + (item_r6.priority || "N"));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("checked", ctx_r1.selectedDispatch.has(item_r6.id))("disabled", !ctx_r1.isDispatchable(item_r6))("title", ctx_r1.isDispatchable(item_r6) ? "Select for dispatch (" + ctx_r1.dispatchableQty(item_r6) + " pcs)" : ctx_r1.dispatchBlockReason(item_r6));
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate1("", item_r6.productName, " ");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", item_r6.coatingRequired);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", item_r6.autoUpdated);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", (item_r6.priority || "N") !== "N");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r6.plannedQuantity);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate((tmp_12_0 = item_r6.totalBags) !== null && tmp_12_0 !== void 0 ? tmp_12_0 : "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r6.cuttingQty);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r6.embossQty);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r6.coatingRequired ? item_r6.coatingQty : "N/A");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r6.packingQty);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r6.dispatchQty);
+    \u0275\u0275advance();
+    \u0275\u0275classProp("negative", ((tmp_18_0 = item_r6.remainingQty) !== null && tmp_18_0 !== void 0 ? tmp_18_0 : 0) < 0);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(item_r6.remainingQty);
     \u0275\u0275advance(3);
-    \u0275\u0275property("checked", ctx_r1.selectedDispatch.has(item_r5.id))("disabled", !ctx_r1.isDispatchable(item_r5))("title", ctx_r1.isDispatchable(item_r5) ? "Select for dispatch (" + ctx_r1.dispatchableQty(item_r5) + " pcs)" : ctx_r1.dispatchBlockReason(item_r5));
+    \u0275\u0275styleProp("width", ctx_r1.progressPercent(item_r6), "%");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("", item_r5.productName, " ");
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", item_r5.coatingRequired);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", item_r5.autoUpdated);
+    \u0275\u0275textInterpolate1("", ctx_r1.progressPercent(item_r6), "%");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r5.plannedQuantity);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_10_0 = item_r5.totalBags) !== null && tmp_10_0 !== void 0 ? tmp_10_0 : "-");
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r5.cuttingQty);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r5.embossQty);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r5.coatingRequired ? item_r5.coatingQty : "N/A");
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r5.packingQty);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(item_r5.dispatchQty);
-    \u0275\u0275advance();
-    \u0275\u0275classProp("negative", ((tmp_16_0 = item_r5.remainingQty) !== null && tmp_16_0 !== void 0 ? tmp_16_0 : 0) < 0);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(item_r5.remainingQty);
+    \u0275\u0275textInterpolate(ctx_r1.itemStatusLabel(item_r6.itemStatus));
     \u0275\u0275advance(3);
-    \u0275\u0275styleProp("width", ctx_r1.progressPercent(item_r5), "%");
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("", ctx_r1.progressPercent(item_r5), "%");
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r1.itemStatusLabel(item_r5.itemStatus));
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1(" ", ctx_r1.expandedItemId === item_r5.id ? "Hide" : "Transactions", " ");
+    \u0275\u0275textInterpolate1(" ", ctx_r1.expandedItemId === item_r6.id ? "Hide" : "Transactions", " ");
     \u0275\u0275advance();
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction0(24, _c18))("queryParams", \u0275\u0275pureFunction2(25, _c63, ctx_r1.encId(ctx_r1.planning.id), ctx_r1.encId(item_r5.id)));
-    \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", ctx_r1.expandedItemId === item_r5.id);
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_PRODUCTION");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.expandedItemId === item_r6.id);
   }
 }
 function PlanningDetailComponent_div_6_Template(rf, ctx) {
   if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 23)(1, "h2");
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 27)(1, "h2");
     \u0275\u0275text(2, "Product-wise Production");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 31)(4, "table", 32)(5, "thead")(6, "tr")(7, "th", 33)(8, "input", 34);
+    \u0275\u0275elementStart(3, "div", 35)(4, "table", 36)(5, "thead")(6, "tr")(7, "th", 37)(8, "input", 38);
     \u0275\u0275listener("change", function PlanningDetailComponent_div_6_Template_input_change_8_listener() {
-      \u0275\u0275restoreView(_r3);
+      \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.toggleAllEligible());
     })("click", function PlanningDetailComponent_div_6_Template_input_click_8_listener($event) {
-      \u0275\u0275restoreView(_r3);
+      \u0275\u0275restoreView(_r4);
       return \u0275\u0275resetView($event.stopPropagation());
     });
     \u0275\u0275elementEnd()();
@@ -84940,7 +86350,7 @@ function PlanningDetailComponent_div_6_Template(rf, ctx) {
     \u0275\u0275element(31, "th");
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(32, "tbody");
-    \u0275\u0275template(33, PlanningDetailComponent_div_6_ng_container_33_Template, 38, 28, "ng-container", 35);
+    \u0275\u0275template(33, PlanningDetailComponent_div_6_ng_container_33_Template, 37, 25, "ng-container", 39);
     \u0275\u0275elementEnd()()()();
   }
   if (rf & 2) {
@@ -85053,6 +86463,7 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
     this.transactionsByItem = {};
     this.loadingTx = {};
     this.statusLabel = planningStatusLabel;
+    this.priorityLabel = planningPriorityLabel;
     this.selectedDispatch = /* @__PURE__ */ new Set();
     this.showQuickModal = false;
     this.isDispatching = false;
@@ -85159,7 +86570,7 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
       this.snackbar.error("No data to export");
       return;
     }
-    const headers = ["Product", "Planned", "Bags", "Cutting", "Emboss", "Coating", "Packing", "Dispatch", "Remaining", "Status"];
+    const headers = ["Product", "Planned", "Bags", "Cutting", "Emboss", "Coating", "Packing", "Dispatch", "Remaining", "Priority", "Status"];
     const rows = this.planning.items.map((item) => [
       item.productName,
       item.plannedQuantity,
@@ -85170,6 +86581,7 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
       item.packingQty,
       item.dispatchQty,
       item.remainingQty,
+      planningPriorityLabel(item.priority),
       this.itemStatusLabel(item.itemStatus)
     ]);
     rows.push([
@@ -85182,6 +86594,7 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
       this.planning.packingQty,
       this.planning.dispatchQty,
       this.planning.remainingQty,
+      "",
       ""
     ]);
     downloadCsv(`planning-${this.planning.planningNumber || this.planning.id}`, headers, rows);
@@ -85193,11 +86606,11 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningDetailComponent, selectors: [["app-planning-detail"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 8, vars: 8, consts: [[1, "planning-detail-container"], [3, "show"], ["class", "action-bar", 4, "ngIf"], ["class", "hint", 4, "ngIf"], ["class", "card", 4, "ngIf"], ["class", "card summary-card", 4, "ngIf"], ["title", "Confirm Dispatch", 3, "confirm", "cancel", "show", "message"], [1, "action-bar"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-arrow-left"], [1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-edit"], [1, "btn", "btn-primary", 3, "routerLink", "queryParams"], [1, "fas", "fa-plus"], [1, "btn", "btn-secondary", 3, "routerLink", "queryParams"], [1, "fas", "fa-chart-bar"], [1, "fas", "fa-truck"], [1, "fas", "fa-spray-can"], ["type", "button", 1, "btn", "btn-primary", 3, "click", "disabled", "title"], [1, "fas", 3, "ngClass"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-file-excel"], [1, "hint"], [1, "card"], [1, "info-grid"], [1, "full"], [1, "card", "summary-card"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-label"], [1, "stat-value"], [1, "table-responsive"], [1, "table"], [1, "check-col"], ["type", "checkbox", "title", "Select all dispatchable products", 3, "change", "click", "checked", "disabled"], [4, "ngFor", "ngForOf"], ["type", "checkbox", 3, "change", "click", "checked", "disabled", "title"], ["class", "badge", 4, "ngIf"], ["class", "badge badge-auto", 3, "title", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "btn", "btn-sm", "btn-secondary", 3, "click"], ["title", "Direct production entry \u2014 planning and product pre-selected, changeable", 1, "btn", "btn-sm", "btn-primary", 3, "routerLink", "queryParams"], [4, "ngIf"], [1, "badge"], [1, "badge", "badge-auto", 3, "title"], ["colspan", "13"], ["class", "table inner", 4, "ngIf"], [1, "table", "inner"], [1, "actions"], ["title", "Edit entry (quantity/date/remarks)", 1, "btn-icon", "edit", 3, "routerLink"], ["title", "Delete entry and reverse stock", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"]], template: function PlanningDetailComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _PlanningDetailComponent, selectors: [["app-planning-detail"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 8, vars: 8, consts: [[1, "planning-detail-container"], [3, "show"], ["class", "action-bar", 4, "ngIf"], ["class", "hint", 4, "ngIf"], ["class", "card", 4, "ngIf"], ["class", "card summary-card", 4, "ngIf"], ["title", "Confirm Dispatch", 3, "confirm", "cancel", "show", "message"], [1, "action-bar"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-arrow-left"], ["class", "btn btn-secondary", 3, "routerLink", 4, "appCanAccess"], ["class", "btn btn-primary", 3, "routerLink", "queryParams", 4, "appCanAccess"], ["class", "btn btn-secondary", 3, "routerLink", "queryParams", 4, "appCanAccess"], ["type", "button", "class", "btn btn-primary", 3, "disabled", "title", "click", 4, "appCanAccess"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-file-excel"], [1, "btn", "btn-secondary", 3, "routerLink"], [1, "fas", "fa-edit"], [1, "btn", "btn-primary", 3, "routerLink", "queryParams"], [1, "fas", "fa-plus"], [1, "btn", "btn-secondary", 3, "routerLink", "queryParams"], [1, "fas", "fa-chart-bar"], [1, "fas", "fa-truck"], [1, "fas", "fa-spray-can"], ["type", "button", 1, "btn", "btn-primary", 3, "click", "disabled", "title"], [1, "fas", 3, "ngClass"], [1, "hint"], [1, "card"], [1, "info-grid"], [1, "full"], [1, "card", "summary-card"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-label"], [1, "stat-value"], [1, "table-responsive"], [1, "table"], [1, "check-col"], ["type", "checkbox", "title", "Select all dispatchable products", 3, "change", "click", "checked", "disabled"], [4, "ngFor", "ngForOf"], [3, "ngClass"], ["type", "checkbox", 3, "change", "click", "checked", "disabled", "title"], ["class", "badge", 4, "ngIf"], ["class", "badge badge-auto", 3, "title", 4, "ngIf"], ["class", "badge badge-priority", 3, "ngClass", "title", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "btn", "btn-sm", "btn-secondary", 3, "click"], ["class", "btn btn-sm btn-primary", "title", "Direct production entry \u2014 planning and product pre-selected, changeable", 3, "routerLink", "queryParams", 4, "appCanAccess"], [4, "ngIf"], [1, "badge"], [1, "badge", "badge-auto", 3, "title"], [1, "badge", "badge-priority", 3, "ngClass", "title"], ["title", "Direct production entry \u2014 planning and product pre-selected, changeable", 1, "btn", "btn-sm", "btn-primary", 3, "routerLink", "queryParams"], ["colspan", "13"], ["class", "table inner", 4, "ngIf"], [1, "table", "inner"], [1, "actions"], ["class", "btn-icon edit", "title", "Edit entry (quantity/date/remarks)", 3, "routerLink", 4, "appCanAccess"], ["class", "btn-icon delete", "title", "Delete entry and reverse stock", 3, "click", 4, "appCanAccess"], ["title", "Edit entry (quantity/date/remarks)", 1, "btn-icon", "edit", 3, "routerLink"], ["title", "Delete entry and reverse stock", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], ["colspan", "7", 1, "text-center"]], template: function PlanningDetailComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
-        \u0275\u0275template(2, PlanningDetailComponent_div_2_Template, 25, 27, "div", 2)(3, PlanningDetailComponent_p_3_Template, 2, 0, "p", 3)(4, PlanningDetailComponent_div_4_Template, 29, 9, "div", 4)(5, PlanningDetailComponent_div_5_Template, 41, 9, "div", 5)(6, PlanningDetailComponent_div_6_Template, 34, 3, "div", 4);
+        \u0275\u0275template(2, PlanningDetailComponent_div_2_Template, 13, 6, "div", 2)(3, PlanningDetailComponent_p_3_Template, 2, 0, "p", 3)(4, PlanningDetailComponent_div_4_Template, 29, 9, "div", 4)(5, PlanningDetailComponent_div_5_Template, 41, 9, "div", 5)(6, PlanningDetailComponent_div_6_Template, 34, 3, "div", 4);
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(7, "app-confirm-modal", 6);
         \u0275\u0275listener("confirm", function PlanningDetailComponent_Template_app_confirm_modal_confirm_7_listener() {
@@ -85223,11 +86636,11 @@ var PlanningDetailComponent = class _PlanningDetailComponent {
         \u0275\u0275advance();
         \u0275\u0275property("show", ctx.showQuickModal)("message", "Dispatch full pack balance? " + ctx.selectedLines().join(" | "));
       }
-    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, DatePipe, RouterModule, RouterLink, LoaderComponent, ConfirmModalComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.planning-detail-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.4rem;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .action-bar[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  margin-bottom: 20px;\n  flex-wrap: wrap;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n  gap: 12px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin-right: 6px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%]   .full[_ngcontent-%COMP%] {\n  grid-column: 1/-1;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));\n  gap: 12px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%] {\n  border: 1px solid #eee;\n  border-left: 4px solid var(--primary);\n  border-radius: 8px;\n  padding: 12px;\n  display: flex;\n  flex-direction: column;\n  background: #fff;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-label[_ngcontent-%COMP%] {\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  font-size: 1.4rem;\n  font-weight: 700;\n  color: var(--text-primary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card.negative[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 10px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%] {\n  width: 44px;\n  text-align: center;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  width: 20px;\n  height: 20px;\n  min-width: 44px;\n  min-height: 44px;\n  accent-color: var(--primary);\n  cursor: pointer;\n  vertical-align: middle;\n  touch-action: manipulation;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge[_ngcontent-%COMP%] {\n  background: rgba(0, 153, 156, 0.12);\n  color: var(--secondary);\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 0.75rem;\n  margin-left: 6px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge.badge-auto[_ngcontent-%COMP%] {\n  background: rgba(253, 120, 35, 0.14);\n  color: var(--primary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%] {\n  height: 8px;\n  background: #eee;\n  border-radius: 4px;\n  overflow: hidden;\n  min-width: 90px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%]   .progress-bar[_ngcontent-%COMP%] {\n  height: 100%;\n  background: var(--primary);\n}\n@media (max-width: 768px) {\n  .planning-detail-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n}\n/*# sourceMappingURL=planning-detail.component.css.map */"] });
+    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, DatePipe, RouterModule, RouterLink, LoaderComponent, ConfirmModalComponent, CanAccessDirective], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.planning-detail-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.4rem;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .action-bar[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  margin-bottom: 20px;\n  flex-wrap: wrap;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n  gap: 12px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin-right: 6px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .info-grid[_ngcontent-%COMP%]   .full[_ngcontent-%COMP%] {\n  grid-column: 1/-1;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));\n  gap: 12px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%] {\n  border: 1px solid #eee;\n  border-left: 4px solid var(--primary);\n  border-radius: 8px;\n  padding: 12px;\n  display: flex;\n  flex-direction: column;\n  background: #fff;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-label[_ngcontent-%COMP%] {\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  font-size: 1.4rem;\n  font-weight: 700;\n  color: var(--text-primary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card.negative[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 10px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%] {\n  width: 44px;\n  text-align: center;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  width: 20px;\n  height: 20px;\n  min-width: 44px;\n  min-height: 44px;\n  accent-color: var(--primary);\n  cursor: pointer;\n  vertical-align: middle;\n  touch-action: manipulation;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .check-col[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%]:disabled {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge[_ngcontent-%COMP%] {\n  background: rgba(0, 153, 156, 0.12);\n  color: var(--secondary);\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 0.75rem;\n  margin-left: 6px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge.badge-auto[_ngcontent-%COMP%] {\n  background: rgba(253, 120, 35, 0.14);\n  color: var(--primary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge.badge-priority[_ngcontent-%COMP%] {\n  color: #fff;\n  font-weight: 700;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge.badge-priority-U[_ngcontent-%COMP%] {\n  background: #d32f2f;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .badge.badge-priority-F[_ngcontent-%COMP%] {\n  background: var(--secondary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   tr.priority-U[_ngcontent-%COMP%] {\n  background-color: rgba(211, 47, 47, 0.16);\n  box-shadow: inset 4px 0 0 #d32f2f;\n}\n.planning-detail-container[_ngcontent-%COMP%]   tr.priority-U[_ngcontent-%COMP%]:hover {\n  background-color: rgba(211, 47, 47, 0.22);\n}\n.planning-detail-container[_ngcontent-%COMP%]   tr.priority-F[_ngcontent-%COMP%] {\n  background-color: rgba(28, 63, 96, 0.13);\n  box-shadow: inset 4px 0 0 var(--secondary);\n}\n.planning-detail-container[_ngcontent-%COMP%]   tr.priority-F[_ngcontent-%COMP%]:hover {\n  background-color: rgba(28, 63, 96, 0.19);\n}\n.planning-detail-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%] {\n  height: 8px;\n  background: #eee;\n  border-radius: 4px;\n  overflow: hidden;\n  min-width: 90px;\n}\n.planning-detail-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%]   .progress-bar[_ngcontent-%COMP%] {\n  height: 100%;\n  background: var(--primary);\n}\n@media (max-width: 768px) {\n  .planning-detail-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n}\n/*# sourceMappingURL=planning-detail.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanningDetailComponent, { className: "PlanningDetailComponent", filePath: "src\\app\\components\\planning\\planning-detail\\planning-detail.component.ts", lineNumber: 21 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(PlanningDetailComponent, { className: "PlanningDetailComponent", filePath: "src\\app\\components\\planning\\planning-detail\\planning-detail.component.ts", lineNumber: 22 });
 })();
 
 // src/app/models/production.model.ts
@@ -85922,16 +87335,55 @@ var ProductionEntryComponent = class _ProductionEntryComponent {
 
 // src/app/components/production/production-dashboard/production-dashboard.component.ts
 var _c023 = (a0) => ["/planning", a0];
-function ProductionDashboardComponent_tr_120_span_9_Template(rf, ctx) {
+function ProductionDashboardComponent_th_118_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 47);
+    \u0275\u0275elementStart(0, "th");
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1("", ctx_r0.processLabel(ctx_r0.selectedProcess), " Pending");
+  }
+}
+function ProductionDashboardComponent_tr_122_span_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 50);
     \u0275\u0275text(1, "Coating");
     \u0275\u0275elementEnd();
   }
 }
-function ProductionDashboardComponent_tr_120_Template(rf, ctx) {
+function ProductionDashboardComponent_tr_122_span_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td")(2, "a", 43);
+    \u0275\u0275elementStart(0, "span", 51);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const row_r2 = \u0275\u0275nextContext().$implicit;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("ngClass", "badge-priority-" + (row_r2.priority || "N"));
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r0.priorityLabel(row_r2.priority));
+  }
+}
+function ProductionDashboardComponent_tr_122_td_25_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "td")(1, "strong");
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const row_r2 = \u0275\u0275nextContext().$implicit;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r0.pendingFor(row_r2));
+  }
+}
+function ProductionDashboardComponent_tr_122_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr", 44)(1, "td")(2, "a", 45);
     \u0275\u0275text(3);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(4, "td");
@@ -85940,97 +87392,108 @@ function ProductionDashboardComponent_tr_120_Template(rf, ctx) {
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(7, "td");
     \u0275\u0275text(8);
-    \u0275\u0275template(9, ProductionDashboardComponent_tr_120_span_9_Template, 2, 0, "span", 44);
+    \u0275\u0275template(9, ProductionDashboardComponent_tr_122_span_9_Template, 2, 0, "span", 46)(10, ProductionDashboardComponent_tr_122_span_10_Template, 2, 2, "span", 47);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "td");
-    \u0275\u0275text(11);
+    \u0275\u0275elementStart(11, "td");
+    \u0275\u0275text(12);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "td");
-    \u0275\u0275text(13);
+    \u0275\u0275elementStart(13, "td");
+    \u0275\u0275text(14);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "td");
-    \u0275\u0275text(15);
+    \u0275\u0275elementStart(15, "td");
+    \u0275\u0275text(16);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "td");
-    \u0275\u0275text(17);
+    \u0275\u0275elementStart(17, "td");
+    \u0275\u0275text(18);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "td");
-    \u0275\u0275text(19);
+    \u0275\u0275elementStart(19, "td");
+    \u0275\u0275text(20);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(20, "td");
-    \u0275\u0275text(21);
+    \u0275\u0275elementStart(21, "td");
+    \u0275\u0275text(22);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "td");
-    \u0275\u0275text(23);
+    \u0275\u0275elementStart(23, "td");
+    \u0275\u0275text(24);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(24, "td")(25, "div", 45);
-    \u0275\u0275element(26, "div", 46);
+    \u0275\u0275template(25, ProductionDashboardComponent_tr_122_td_25_Template, 3, 1, "td", 40);
+    \u0275\u0275elementStart(26, "td")(27, "div", 48);
+    \u0275\u0275element(28, "div", 49);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(27, "small");
-    \u0275\u0275text(28);
+    \u0275\u0275elementStart(29, "small");
+    \u0275\u0275text(30);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    let tmp_13_0;
-    const row_r1 = ctx.$implicit;
-    const ctx_r1 = \u0275\u0275nextContext();
+    let tmp_15_0;
+    const row_r2 = ctx.$implicit;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("ngClass", "priority-" + (row_r2.priority || "N"));
     \u0275\u0275advance(2);
-    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(20, _c023, ctx_r1.encId(row_r1.planningId)));
+    \u0275\u0275property("routerLink", \u0275\u0275pureFunction1(23, _c023, ctx_r0.encId(row_r2.planningId)));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(row_r1.planningNumber);
+    \u0275\u0275textInterpolate(row_r2.planningNumber);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(row_r1.planningDate ? \u0275\u0275pipeBind2(6, 17, row_r1.planningDate, "dd-MM-yyyy") : "-");
+    \u0275\u0275textInterpolate(row_r2.planningDate ? \u0275\u0275pipeBind2(6, 20, row_r2.planningDate, "dd-MM-yyyy") : "-");
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1("", row_r1.productName, " ");
+    \u0275\u0275textInterpolate1("", row_r2.productName, " ");
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", row_r1.coatingRequired);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(row_r1.planned);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(row_r1.cutting);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(row_r1.emboss);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(row_r1.coatingRequired ? row_r1.coating : "N/A");
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(row_r1.packing);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(row_r1.dispatch);
+    \u0275\u0275property("ngIf", row_r2.coatingRequired);
     \u0275\u0275advance();
-    \u0275\u0275classProp("negative", ((tmp_13_0 = row_r1.remaining) !== null && tmp_13_0 !== void 0 ? tmp_13_0 : 0) < 0);
+    \u0275\u0275property("ngIf", (row_r2.priority || "N") !== "N");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(row_r2.planned);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(row_r2.cutting);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(row_r2.emboss);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(row_r2.coatingRequired ? row_r2.coating : "N/A");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(row_r2.packing);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(row_r2.dispatch);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(row_r1.remaining);
+    \u0275\u0275classProp("negative", ((tmp_15_0 = row_r2.remaining) !== null && tmp_15_0 !== void 0 ? tmp_15_0 : 0) < 0);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(row_r2.remaining);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.selectedProcess);
     \u0275\u0275advance(3);
-    \u0275\u0275styleProp("width", ctx_r1.rowPercent(row_r1), "%");
+    \u0275\u0275styleProp("width", ctx_r0.rowPercent(row_r2), "%");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("", ctx_r1.rowPercent(row_r1), "%");
+    \u0275\u0275textInterpolate1("", ctx_r0.rowPercent(row_r2), "%");
   }
 }
-function ProductionDashboardComponent_tr_121_Template(rf, ctx) {
+function ProductionDashboardComponent_tr_123_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr")(1, "td", 48);
+    \u0275\u0275elementStart(0, "tr")(1, "td", 52);
     \u0275\u0275text(2, "No production data yet");
     \u0275\u0275elementEnd()();
   }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275attribute("colspan", ctx_r0.selectedProcess ? 12 : 11);
+  }
 }
-function ProductionDashboardComponent_app_pagination_124_Template(rf, ctx) {
+function ProductionDashboardComponent_app_pagination_126_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 49);
-    \u0275\u0275listener("pageChange", function ProductionDashboardComponent_app_pagination_124_Template_app_pagination_pageChange_0_listener($event) {
+    \u0275\u0275elementStart(0, "app-pagination", 53);
+    \u0275\u0275listener("pageChange", function ProductionDashboardComponent_app_pagination_126_Template_app_pagination_pageChange_0_listener($event) {
       \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.onPageChange($event));
-    })("pageSizeChange", function ProductionDashboardComponent_app_pagination_124_Template_app_pagination_pageSizeChange_0_listener($event) {
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.onPageChange($event));
+    })("pageSizeChange", function ProductionDashboardComponent_app_pagination_126_Template_app_pagination_pageSizeChange_0_listener($event) {
       \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.onPageSizeChange($event));
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.onPageSizeChange($event));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275property("currentPage", ctx_r1.currentPage)("pageSize", ctx_r1.pageSize)("totalElements", ctx_r1.totalElements)("pageSizeOptions", ctx_r1.pageSizeOptions);
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r0.currentPage)("pageSize", ctx_r0.pageSize)("totalElements", ctx_r0.totalElements)("pageSizeOptions", ctx_r0.pageSizeOptions);
   }
 }
 var ProductionDashboardComponent = class _ProductionDashboardComponent {
@@ -86052,12 +87515,52 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
     this.pageSizeOptions = [5, 10, 25, 50, 100];
     this.totalPages = 0;
     this.totalElements = 0;
+    this.priorityLabel = planningPriorityLabel;
     this.filterForm = this.fb.group({
       planningId: [null],
       employeeId: [null],
+      process: [null],
       startDate: [null],
       endDate: [null]
     });
+  }
+  /** Process choices for the pending-work view (combined Cutting+Emboss
+   * counts as emboss completed, so it needs no separate option). */
+  get processOptions() {
+    return [
+      { label: "Cutting", value: "CUTTING" },
+      { label: "Emboss", value: "EMBOSS" },
+      { label: "Coating", value: "COATING" },
+      { label: "Packing", value: "PACKING" },
+      { label: "Dispatch", value: "DISPATCH" }
+    ];
+  }
+  get selectedProcess() {
+    return this.filterForm.value.process || null;
+  }
+  /** Pending work in the selected process, from the row's own numbers. */
+  pendingFor(row) {
+    if (!this.selectedProcess) {
+      return null;
+    }
+    const num = (v) => Number(v) || 0;
+    switch (this.selectedProcess) {
+      case "CUTTING":
+        return num(row.planned) - num(row.cutting);
+      case "EMBOSS":
+        return num(row.cutting) - num(row.emboss);
+      case "COATING":
+        return num(row.emboss) - num(row.coating);
+      case "PACKING":
+        return (row.coatingRequired ? num(row.coating) : num(row.emboss)) - num(row.packing);
+      case "DISPATCH":
+        return num(row.packing) - num(row.dispatch);
+      default:
+        return null;
+    }
+  }
+  processLabel(value) {
+    return this.processOptions.find((o) => o.value === value)?.label || "";
   }
   ngOnInit() {
     const rawPlanningId = this.route.snapshot.queryParamMap.get("planningId");
@@ -86090,6 +87593,7 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
     const v = this.filterForm.value;
     return {
       employeeId: v.employeeId || null,
+      process: v.process || null,
       startDate: v.startDate ? this.dateUtils.formatDateForApi(v.startDate, true) : null,
       endDate: v.endDate ? this.dateUtils.formatDateForApi(v.endDate, false) : null
     };
@@ -86117,7 +87621,7 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
     this.loadSummary();
   }
   resetFilter() {
-    this.filterForm.reset({ planningId: null, employeeId: null, startDate: null, endDate: null });
+    this.filterForm.reset({ planningId: null, employeeId: null, process: null, startDate: null, endDate: null });
     this.currentPage = 0;
     this.loadSummary();
   }
@@ -86170,7 +87674,21 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
     }
     this.isExporting = true;
     try {
-      const headers = ["Planning", "Product", "Planned", "Cutting", "Emboss", "Coating", "Packing", "Dispatch", "Remaining", "Status"];
+      const showPending = !!this.selectedProcess;
+      const headers = [
+        "Planning",
+        "Product",
+        "Planned",
+        "Cutting",
+        "Emboss",
+        "Coating",
+        "Packing",
+        "Dispatch",
+        "Remaining",
+        ...showPending ? [`${this.processLabel(this.selectedProcess)} Pending`] : [],
+        "Priority",
+        "Status"
+      ];
       const rows = this.rows.map((r) => [
         r.planningNumber,
         r.productName,
@@ -86181,6 +87699,8 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
         r.packing,
         r.dispatch,
         (Number(r.planned) || 0) - (Number(r.cutting) || 0),
+        ...showPending ? [this.pendingFor(r) ?? ""] : [],
+        planningPriorityLabel(r.priority),
         r.status === "O" ? "Not Started" : r.status === "P" ? "In Progress" : r.status === "C" ? "Completed" : r.status
       ]);
       rows.push([
@@ -86193,6 +87713,8 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
         this.totalPacking,
         this.totalDispatch,
         this.totalRemaining,
+        ...showPending ? [""] : [],
+        "",
         ""
       ]);
       downloadCsv("production-dashboard", headers, rows);
@@ -86207,7 +87729,7 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionDashboardComponent, selectors: [["app-production-dashboard"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 125, vars: 22, consts: [[1, "dashboard-container"], [3, "show"], [1, "page-header", "card"], [1, "header-content"], [1, "header-icon"], [1, "fas", "fa-chart-bar"], [1, "header-text"], [1, "header-actions"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-clipboard-list"], ["routerLink", "/production/entry", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "filter-row", 3, "ngSubmit", "formGroup"], ["formControlName", "planningId", 3, "placeholder"], ["formControlName", "employeeId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "allowClear"], ["type", "date", "formControlName", "startDate", "aria-label", "Start date", "title", "Planning start date", 1, "form-control", 3, "touchstart"], ["type", "date", "formControlName", "endDate", "aria-label", "End date", "title", "Planning end date", 1, "form-control", 3, "touchstart"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary", 3, "touchstart"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "touchstart"], [1, "fas", "fa-undo"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-icon"], [1, "stat-content"], [1, "stat-label"], [1, "stat-value"], [1, "fas", "fa-cut"], [1, "fas", "fa-stamp"], [1, "fas", "fa-spray-can-sparkles"], [1, "fas", "fa-box"], [1, "fas", "fa-truck"], [1, "fas", "fa-scale-balanced"], [1, "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "routerLink"], ["class", "badge", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "badge"], ["colspan", "11", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProductionDashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProductionDashboardComponent, selectors: [["app-production-dashboard"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 127, vars: 26, consts: [[1, "dashboard-container"], [3, "show"], [1, "page-header", "card"], [1, "header-content"], [1, "header-icon"], [1, "fas", "fa-chart-bar"], [1, "header-text"], [1, "header-actions"], ["routerLink", "/planning", 1, "btn", "btn-secondary"], [1, "fas", "fa-clipboard-list"], ["routerLink", "/production/entry", 1, "btn", "btn-primary"], [1, "fas", "fa-plus"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [1, "filter-row", 3, "ngSubmit", "formGroup"], ["formControlName", "planningId", 3, "placeholder"], ["formControlName", "employeeId", "labelKey", "name", "valueKey", "id", 3, "options", "placeholder", "allowClear"], ["formControlName", "process", "labelKey", "label", "valueKey", "value", "title", "Show only products with pending work in this process", 3, "options", "placeholder", "allowClear"], ["type", "date", "formControlName", "startDate", "aria-label", "Start date", "title", "Planning start date", 1, "form-control", 3, "touchstart"], ["type", "date", "formControlName", "endDate", "aria-label", "End date", "title", "Planning end date", 1, "form-control", 3, "touchstart"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary", 3, "touchstart"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click", "touchstart"], [1, "fas", "fa-undo"], [1, "stat-grid"], [1, "stat-card"], [1, "stat-icon"], [1, "stat-content"], [1, "stat-label"], [1, "stat-value"], [1, "fas", "fa-cut"], [1, "fas", "fa-stamp"], [1, "fas", "fa-spray-can-sparkles"], [1, "fas", "fa-box"], [1, "fas", "fa-truck"], [1, "fas", "fa-scale-balanced"], [1, "card"], [1, "table-responsive"], [1, "table"], [4, "ngIf"], [3, "ngClass", 4, "ngFor", "ngForOf"], [1, "hint"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [3, "ngClass"], [3, "routerLink"], ["class", "badge", 4, "ngIf"], ["class", "badge badge-priority", 3, "ngClass", 4, "ngIf"], [1, "progress"], [1, "progress-bar"], [1, "badge"], [1, "badge", "badge-priority", 3, "ngClass"], [1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function ProductionDashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -86239,139 +87761,140 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
         \u0275\u0275listener("ngSubmit", function ProductionDashboardComponent_Template_form_ngSubmit_21_listener() {
           return ctx.onFilter();
         });
-        \u0275\u0275element(22, "app-plan-select", 15)(23, "app-searchable-select", 16);
-        \u0275\u0275elementStart(24, "input", 17);
-        \u0275\u0275listener("touchstart", function ProductionDashboardComponent_Template_input_touchstart_24_listener($event) {
-          return $event.stopPropagation();
-        });
-        \u0275\u0275elementEnd();
+        \u0275\u0275element(22, "app-plan-select", 15)(23, "app-searchable-select", 16)(24, "app-searchable-select", 17);
         \u0275\u0275elementStart(25, "input", 18);
         \u0275\u0275listener("touchstart", function ProductionDashboardComponent_Template_input_touchstart_25_listener($event) {
           return $event.stopPropagation();
         });
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(26, "div", 19)(27, "button", 20);
-        \u0275\u0275listener("touchstart", function ProductionDashboardComponent_Template_button_touchstart_27_listener($event) {
+        \u0275\u0275elementStart(26, "input", 19);
+        \u0275\u0275listener("touchstart", function ProductionDashboardComponent_Template_input_touchstart_26_listener($event) {
           return $event.stopPropagation();
         });
-        \u0275\u0275element(28, "i", 21);
-        \u0275\u0275text(29, " Filter");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(30, "button", 22);
-        \u0275\u0275listener("click", function ProductionDashboardComponent_Template_button_click_30_listener() {
+        \u0275\u0275elementStart(27, "div", 20)(28, "button", 21);
+        \u0275\u0275listener("touchstart", function ProductionDashboardComponent_Template_button_touchstart_28_listener($event) {
+          return $event.stopPropagation();
+        });
+        \u0275\u0275element(29, "i", 22);
+        \u0275\u0275text(30, " Filter");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(31, "button", 23);
+        \u0275\u0275listener("click", function ProductionDashboardComponent_Template_button_click_31_listener() {
           return ctx.resetFilter();
-        })("touchstart", function ProductionDashboardComponent_Template_button_touchstart_30_listener($event) {
+        })("touchstart", function ProductionDashboardComponent_Template_button_touchstart_31_listener($event) {
           return $event.stopPropagation();
         });
-        \u0275\u0275element(31, "i", 23);
-        \u0275\u0275text(32, " Reset");
+        \u0275\u0275element(32, "i", 24);
+        \u0275\u0275text(33, " Reset");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(33, "section", 24)(34, "div", 25)(35, "div", 26);
-        \u0275\u0275element(36, "i", 9);
+        \u0275\u0275elementStart(34, "section", 25)(35, "div", 26)(36, "div", 27);
+        \u0275\u0275element(37, "i", 9);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(37, "div", 27)(38, "span", 28);
-        \u0275\u0275text(39, "Planned");
+        \u0275\u0275elementStart(38, "div", 28)(39, "span", 29);
+        \u0275\u0275text(40, "Planned");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(40, "span", 29);
-        \u0275\u0275text(41);
+        \u0275\u0275elementStart(41, "span", 30);
+        \u0275\u0275text(42);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(42, "div", 25)(43, "div", 26);
-        \u0275\u0275element(44, "i", 30);
+        \u0275\u0275elementStart(43, "div", 26)(44, "div", 27);
+        \u0275\u0275element(45, "i", 31);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(45, "div", 27)(46, "span", 28);
-        \u0275\u0275text(47, "Cutting");
+        \u0275\u0275elementStart(46, "div", 28)(47, "span", 29);
+        \u0275\u0275text(48, "Cutting");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(48, "span", 29);
-        \u0275\u0275text(49);
+        \u0275\u0275elementStart(49, "span", 30);
+        \u0275\u0275text(50);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(50, "div", 25)(51, "div", 26);
-        \u0275\u0275element(52, "i", 31);
+        \u0275\u0275elementStart(51, "div", 26)(52, "div", 27);
+        \u0275\u0275element(53, "i", 32);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(53, "div", 27)(54, "span", 28);
-        \u0275\u0275text(55, "Emboss");
+        \u0275\u0275elementStart(54, "div", 28)(55, "span", 29);
+        \u0275\u0275text(56, "Emboss");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(56, "span", 29);
-        \u0275\u0275text(57);
+        \u0275\u0275elementStart(57, "span", 30);
+        \u0275\u0275text(58);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(58, "div", 25)(59, "div", 26);
-        \u0275\u0275element(60, "i", 32);
+        \u0275\u0275elementStart(59, "div", 26)(60, "div", 27);
+        \u0275\u0275element(61, "i", 33);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(61, "div", 27)(62, "span", 28);
-        \u0275\u0275text(63, "Coating");
+        \u0275\u0275elementStart(62, "div", 28)(63, "span", 29);
+        \u0275\u0275text(64, "Coating");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(64, "span", 29);
-        \u0275\u0275text(65);
+        \u0275\u0275elementStart(65, "span", 30);
+        \u0275\u0275text(66);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(66, "div", 25)(67, "div", 26);
-        \u0275\u0275element(68, "i", 33);
+        \u0275\u0275elementStart(67, "div", 26)(68, "div", 27);
+        \u0275\u0275element(69, "i", 34);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(69, "div", 27)(70, "span", 28);
-        \u0275\u0275text(71, "Packing");
+        \u0275\u0275elementStart(70, "div", 28)(71, "span", 29);
+        \u0275\u0275text(72, "Packing");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(72, "span", 29);
-        \u0275\u0275text(73);
+        \u0275\u0275elementStart(73, "span", 30);
+        \u0275\u0275text(74);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(74, "div", 25)(75, "div", 26);
-        \u0275\u0275element(76, "i", 34);
+        \u0275\u0275elementStart(75, "div", 26)(76, "div", 27);
+        \u0275\u0275element(77, "i", 35);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(77, "div", 27)(78, "span", 28);
-        \u0275\u0275text(79, "Dispatch");
+        \u0275\u0275elementStart(78, "div", 28)(79, "span", 29);
+        \u0275\u0275text(80, "Dispatch");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(80, "span", 29);
-        \u0275\u0275text(81);
+        \u0275\u0275elementStart(81, "span", 30);
+        \u0275\u0275text(82);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(82, "div", 25)(83, "div", 26);
-        \u0275\u0275element(84, "i", 35);
+        \u0275\u0275elementStart(83, "div", 26)(84, "div", 27);
+        \u0275\u0275element(85, "i", 36);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(85, "div", 27)(86, "span", 28);
-        \u0275\u0275text(87, "Remaining");
+        \u0275\u0275elementStart(86, "div", 28)(87, "span", 29);
+        \u0275\u0275text(88, "Remaining");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(88, "span", 29);
-        \u0275\u0275text(89);
+        \u0275\u0275elementStart(89, "span", 30);
+        \u0275\u0275text(90);
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(90, "section", 36)(91, "h2");
-        \u0275\u0275text(92);
+        \u0275\u0275elementStart(91, "section", 37)(92, "h2");
+        \u0275\u0275text(93);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(93, "div", 37)(94, "table", 38)(95, "thead")(96, "tr")(97, "th");
-        \u0275\u0275text(98, "Planning");
+        \u0275\u0275elementStart(94, "div", 38)(95, "table", 39)(96, "thead")(97, "tr")(98, "th");
+        \u0275\u0275text(99, "Planning");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(99, "th");
-        \u0275\u0275text(100, "Date");
+        \u0275\u0275elementStart(100, "th");
+        \u0275\u0275text(101, "Date");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(101, "th");
-        \u0275\u0275text(102, "Product");
+        \u0275\u0275elementStart(102, "th");
+        \u0275\u0275text(103, "Product");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(103, "th");
-        \u0275\u0275text(104, "Planned");
+        \u0275\u0275elementStart(104, "th");
+        \u0275\u0275text(105, "Planned");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(105, "th");
-        \u0275\u0275text(106, "Cutting");
+        \u0275\u0275elementStart(106, "th");
+        \u0275\u0275text(107, "Cutting");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(107, "th");
-        \u0275\u0275text(108, "Emboss");
+        \u0275\u0275elementStart(108, "th");
+        \u0275\u0275text(109, "Emboss");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(109, "th");
-        \u0275\u0275text(110, "Coating");
+        \u0275\u0275elementStart(110, "th");
+        \u0275\u0275text(111, "Coating");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(111, "th");
-        \u0275\u0275text(112, "Packing");
+        \u0275\u0275elementStart(112, "th");
+        \u0275\u0275text(113, "Packing");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(113, "th");
-        \u0275\u0275text(114, "Dispatch");
+        \u0275\u0275elementStart(114, "th");
+        \u0275\u0275text(115, "Dispatch");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(115, "th");
-        \u0275\u0275text(116, "Remaining");
+        \u0275\u0275elementStart(116, "th");
+        \u0275\u0275text(117, "Remaining");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(117, "th");
-        \u0275\u0275text(118, "Progress");
+        \u0275\u0275template(118, ProductionDashboardComponent_th_118_Template, 2, 1, "th", 40);
+        \u0275\u0275elementStart(119, "th");
+        \u0275\u0275text(120, "Progress");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(119, "tbody");
-        \u0275\u0275template(120, ProductionDashboardComponent_tr_120_Template, 29, 22, "tr", 39)(121, ProductionDashboardComponent_tr_121_Template, 3, 0, "tr", 40);
+        \u0275\u0275elementStart(121, "tbody");
+        \u0275\u0275template(122, ProductionDashboardComponent_tr_122_Template, 31, 25, "tr", 41)(123, ProductionDashboardComponent_tr_123_Template, 3, 1, "tr", 40);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(122, "p", 41);
-        \u0275\u0275text(123, "Cards total the rows on screen (latest first). Remaining = Planned \u2212 Cutting.");
+        \u0275\u0275elementStart(124, "p", 42);
+        \u0275\u0275text(125, "Cards total the rows on screen (latest first). Remaining = Planned \u2212 Cutting.");
         \u0275\u0275elementEnd();
-        \u0275\u0275template(124, ProductionDashboardComponent_app_pagination_124_Template, 1, 4, "app-pagination", 42);
+        \u0275\u0275template(126, ProductionDashboardComponent_app_pagination_126_Template, 1, 4, "app-pagination", 43);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
@@ -86389,6 +87912,8 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
         \u0275\u0275property("placeholder", "All Plannings");
         \u0275\u0275advance();
         \u0275\u0275property("options", ctx.employees)("placeholder", "All Employees")("allowClear", true);
+        \u0275\u0275advance();
+        \u0275\u0275property("options", ctx.processOptions)("placeholder", "All Processes")("allowClear", true);
         \u0275\u0275advance(18);
         \u0275\u0275textInterpolate(ctx.totalPlanned);
         \u0275\u0275advance(8);
@@ -86407,18 +87932,20 @@ var ProductionDashboardComponent = class _ProductionDashboardComponent {
         \u0275\u0275textInterpolate(ctx.totalRemaining);
         \u0275\u0275advance(3);
         \u0275\u0275textInterpolate1("Product Breakdown (latest first, ", ctx.totalElements, ")");
-        \u0275\u0275advance(28);
+        \u0275\u0275advance(25);
+        \u0275\u0275property("ngIf", ctx.selectedProcess);
+        \u0275\u0275advance(4);
         \u0275\u0275property("ngForOf", ctx.rows);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.rows.length);
         \u0275\u0275advance(3);
         \u0275\u0275property("ngIf", ctx.totalPages > 0);
       }
-    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, DatePipe, ReactiveFormsModule, \u0275NgNoValidate, DefaultValueAccessor, NgControlStatus, NgControlStatusGroup, FormGroupDirective, FormControlName, FormsModule, RouterModule, RouterLink, LoaderComponent, PlanSelectComponent, SearchableSelectComponent, PaginationComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.dashboard-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h1[_ngcontent-%COMP%] {\n  font-size: 1.5rem;\n  margin: 0;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  font-size: 1.3rem;\n  margin-bottom: 16px;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin: 4px 0 0;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n  margin-bottom: 14px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-icon[_ngcontent-%COMP%] {\n  width: 46px;\n  height: 46px;\n  border-radius: 10px;\n  background: var(--primary);\n  color: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 1.3rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-text[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .filter-row[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 10px;\n  align-items: start;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .filter-row[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  align-self: end;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));\n  gap: 12px;\n  margin-bottom: 20px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  padding: 14px;\n  display: flex;\n  gap: 12px;\n  align-items: center;\n  border-left: 4px solid var(--primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-icon[_ngcontent-%COMP%] {\n  width: 40px;\n  height: 40px;\n  border-radius: 8px;\n  background: var(--background);\n  color: var(--primary);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 1.1rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%]   .stat-label[_ngcontent-%COMP%] {\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  font-size: 1.4rem;\n  font-weight: 700;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card.negative[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n}\n.dashboard-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.dashboard-container[_ngcontent-%COMP%]   .badge[_ngcontent-%COMP%] {\n  background: rgba(0, 153, 156, 0.12);\n  color: var(--secondary);\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 0.75rem;\n  margin-left: 6px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 10px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%] {\n  height: 8px;\n  background: #eee;\n  border-radius: 4px;\n  overflow: hidden;\n  min-width: 90px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%]   .progress-bar[_ngcontent-%COMP%] {\n  height: 100%;\n  background: var(--primary);\n}\n@media (max-width: 768px) {\n  .dashboard-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n}\n/*# sourceMappingURL=production-dashboard.component.css.map */"] });
+    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, DatePipe, ReactiveFormsModule, \u0275NgNoValidate, DefaultValueAccessor, NgControlStatus, NgControlStatusGroup, FormGroupDirective, FormControlName, FormsModule, RouterModule, RouterLink, LoaderComponent, PlanSelectComponent, SearchableSelectComponent, PaginationComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.dashboard-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h1[_ngcontent-%COMP%] {\n  font-size: 1.5rem;\n  margin: 0;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  font-size: 1.3rem;\n  margin-bottom: 16px;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin: 4px 0 0;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n  margin-bottom: 14px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-icon[_ngcontent-%COMP%] {\n  width: 46px;\n  height: 46px;\n  border-radius: 10px;\n  background: var(--primary);\n  color: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 1.3rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-text[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .header-content[_ngcontent-%COMP%]   .header-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .filter-row[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 10px;\n  align-items: start;\n}\n.dashboard-container[_ngcontent-%COMP%]   .page-header[_ngcontent-%COMP%]   .filter-row[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  align-self: end;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));\n  gap: 12px;\n  margin-bottom: 20px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  padding: 14px;\n  display: flex;\n  gap: 12px;\n  align-items: center;\n  border-left: 4px solid var(--primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-icon[_ngcontent-%COMP%] {\n  width: 40px;\n  height: 40px;\n  border-radius: 8px;\n  background: var(--background);\n  color: var(--primary);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 1.1rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%]   .stat-label[_ngcontent-%COMP%] {\n  font-size: 0.8rem;\n  color: var(--text-secondary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card[_ngcontent-%COMP%]   .stat-content[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  font-size: 1.4rem;\n  font-weight: 700;\n  color: var(--text-primary);\n}\n.dashboard-container[_ngcontent-%COMP%]   .stat-grid[_ngcontent-%COMP%]   .stat-card.negative[_ngcontent-%COMP%]   .stat-value[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n}\n.dashboard-container[_ngcontent-%COMP%]   .negative[_ngcontent-%COMP%] {\n  color: var(--error, #d32f2f);\n  font-weight: 700;\n}\n.dashboard-container[_ngcontent-%COMP%]   .badge[_ngcontent-%COMP%] {\n  background: rgba(0, 153, 156, 0.12);\n  color: var(--secondary);\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 0.75rem;\n  margin-left: 6px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .badge.badge-priority[_ngcontent-%COMP%] {\n  color: #fff;\n  font-weight: 700;\n}\n.dashboard-container[_ngcontent-%COMP%]   .badge.badge-priority-U[_ngcontent-%COMP%] {\n  background: #d32f2f;\n}\n.dashboard-container[_ngcontent-%COMP%]   .badge.badge-priority-F[_ngcontent-%COMP%] {\n  background: var(--secondary);\n}\n.dashboard-container[_ngcontent-%COMP%]   tr.priority-U[_ngcontent-%COMP%] {\n  background-color: rgba(211, 47, 47, 0.16);\n  box-shadow: inset 4px 0 0 #d32f2f;\n}\n.dashboard-container[_ngcontent-%COMP%]   tr.priority-U[_ngcontent-%COMP%]:hover {\n  background-color: rgba(211, 47, 47, 0.22);\n}\n.dashboard-container[_ngcontent-%COMP%]   tr.priority-F[_ngcontent-%COMP%] {\n  background-color: rgba(28, 63, 96, 0.13);\n  box-shadow: inset 4px 0 0 var(--secondary);\n}\n.dashboard-container[_ngcontent-%COMP%]   tr.priority-F[_ngcontent-%COMP%]:hover {\n  background-color: rgba(28, 63, 96, 0.19);\n}\n.dashboard-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  margin-top: 10px;\n  color: var(--text-secondary);\n  font-size: 0.85rem;\n}\n.dashboard-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%] {\n  height: 8px;\n  background: #eee;\n  border-radius: 4px;\n  overflow: hidden;\n  min-width: 90px;\n}\n.dashboard-container[_ngcontent-%COMP%]   .progress[_ngcontent-%COMP%]   .progress-bar[_ngcontent-%COMP%] {\n  height: 100%;\n  background: var(--primary);\n}\n@media (max-width: 768px) {\n  .dashboard-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n}\n/*# sourceMappingURL=production-dashboard.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionDashboardComponent, { className: "ProductionDashboardComponent", filePath: "src\\app\\components\\production\\production-dashboard\\production-dashboard.component.ts", lineNumber: 24 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProductionDashboardComponent, { className: "ProductionDashboardComponent", filePath: "src\\app\\components\\production\\production-dashboard\\production-dashboard.component.ts", lineNumber: 25 });
 })();
 
 // src/app/components/production/process-date-report/process-date-report.component.ts
@@ -87375,9 +88902,10 @@ var QuotationService = class _QuotationService {
   createQuotation(quotation) {
     return this.http.post(`${this.apiUrl}/create`, quotation);
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateQuotation(id, data) {
     data.quotationId = id;
-    return this.http.put(`${this.apiUrl}/update`, data);
+    return this.http.post(`${this.apiUrl}/update`, data);
   }
   searchQuotations(params) {
     return this.http.post(`${this.apiUrl}/search`, params);
@@ -87407,8 +88935,9 @@ var QuotationService = class _QuotationService {
       return { blob, filename };
     }));
   }
+  // ENC_URL_POST_V1: POST with id in body.
   updateQuotationStatus(id, status) {
-    return this.http.put(`${this.apiUrl}/update-status`, { id, status });
+    return this.http.post(`${this.apiUrl}/update-status`, { id, status });
   }
   getQuotationDetail(id) {
     return this.http.post(`${this.apiUrl}/detail`, { id }).pipe(map((response) => {
@@ -88494,92 +90023,129 @@ var QuotationStatus;
 // src/app/components/all-quotation/quotation/quotation.component.ts
 var _c025 = () => ({ label: "All Customers", value: "" });
 var _c19 = () => ({ label: "All Status", value: "" });
-function QuotationComponent_tr_54_button_21_Template(rf, ctx) {
+function QuotationComponent_button_28_Template(rf, ctx) {
   if (rf & 1) {
-    const _r2 = \u0275\u0275getCurrentView();
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 25);
+    \u0275\u0275listener("click", function QuotationComponent_button_28_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.addQuotation());
+    });
+    \u0275\u0275text(1, "Add Quotation");
+    \u0275\u0275elementEnd();
+  }
+}
+function QuotationComponent_tr_53_button_21_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "button", 34);
-    \u0275\u0275listener("click", function QuotationComponent_tr_54_button_21_Template_button_click_0_listener() {
-      \u0275\u0275restoreView(_r2);
-      const quotation_r3 = \u0275\u0275nextContext().$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.toggleStatusDropdown(quotation_r3));
+    \u0275\u0275listener("click", function QuotationComponent_tr_53_button_21_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r4);
+      const quotation_r5 = \u0275\u0275nextContext().$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.toggleStatusDropdown(quotation_r5));
     });
     \u0275\u0275element(1, "i", 35);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const quotation_r3 = \u0275\u0275nextContext().$implicit;
-    \u0275\u0275property("disabled", quotation_r3.isUpdating);
+    const quotation_r5 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275property("disabled", quotation_r5.isUpdating);
   }
 }
-function QuotationComponent_tr_54_div_22_div_1_Template(rf, ctx) {
+function QuotationComponent_tr_53_div_22_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    const _r5 = \u0275\u0275getCurrentView();
+    const _r6 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "div", 38);
-    \u0275\u0275listener("click", function QuotationComponent_tr_54_div_22_div_1_Template_div_click_0_listener() {
-      const option_r6 = \u0275\u0275restoreView(_r5).$implicit;
-      const quotation_r3 = \u0275\u0275nextContext(2).$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.updateStatus(quotation_r3, option_r6.value));
+    \u0275\u0275listener("click", function QuotationComponent_tr_53_div_22_div_1_Template_div_click_0_listener() {
+      const option_r7 = \u0275\u0275restoreView(_r6).$implicit;
+      const quotation_r5 = \u0275\u0275nextContext(2).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.updateStatus(quotation_r5, option_r7.value));
     });
     \u0275\u0275element(1, "i", 10);
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const option_r6 = ctx.$implicit;
-    const ctx_r3 = \u0275\u0275nextContext(3);
-    \u0275\u0275classProp("disabled", option_r6.disabled);
+    const option_r7 = ctx.$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275classProp("disabled", option_r7.disabled);
     \u0275\u0275advance();
-    \u0275\u0275property("ngClass", ctx_r3.getStatusIcon(option_r6.value));
+    \u0275\u0275property("ngClass", ctx_r1.getStatusIcon(option_r7.value));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", option_r6.label, " ");
+    \u0275\u0275textInterpolate1(" ", option_r7.label, " ");
   }
 }
-function QuotationComponent_tr_54_div_22_Template(rf, ctx) {
+function QuotationComponent_tr_53_div_22_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 36);
-    \u0275\u0275template(1, QuotationComponent_tr_54_div_22_div_1_Template, 3, 4, "div", 37);
+    \u0275\u0275template(1, QuotationComponent_tr_53_div_22_div_1_Template, 3, 4, "div", 37);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const quotation_r3 = \u0275\u0275nextContext().$implicit;
-    const ctx_r3 = \u0275\u0275nextContext();
+    const quotation_r5 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance();
-    \u0275\u0275property("ngForOf", ctx_r3.getAvailableStatusOptions(quotation_r3.status));
+    \u0275\u0275property("ngForOf", ctx_r1.getAvailableStatusOptions(quotation_r5.status));
   }
 }
-function QuotationComponent_tr_54_button_26_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r7 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 39);
-    \u0275\u0275listener("click", function QuotationComponent_tr_54_button_26_Template_button_click_0_listener() {
-      \u0275\u0275restoreView(_r7);
-      const quotation_r3 = \u0275\u0275nextContext().$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.editQuotation(quotation_r3.id));
-    });
-    \u0275\u0275element(1, "i", 40);
-    \u0275\u0275elementEnd();
-  }
-}
-function QuotationComponent_tr_54_button_29_Template(rf, ctx) {
+function QuotationComponent_tr_53_ng_container_26_button_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r8 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 41);
-    \u0275\u0275listener("click", function QuotationComponent_tr_54_button_29_Template_button_click_0_listener() {
+    \u0275\u0275elementStart(0, "button", 40);
+    \u0275\u0275listener("click", function QuotationComponent_tr_53_ng_container_26_button_1_Template_button_click_0_listener() {
       \u0275\u0275restoreView(_r8);
-      const quotation_r3 = \u0275\u0275nextContext().$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.deleteQuotation(quotation_r3.id));
+      const quotation_r5 = \u0275\u0275nextContext(2).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.editQuotation(quotation_r5.id));
     });
-    \u0275\u0275element(1, "i", 42);
+    \u0275\u0275element(1, "i", 41);
     \u0275\u0275elementEnd();
   }
 }
-function QuotationComponent_tr_54_Template(rf, ctx) {
+function QuotationComponent_tr_53_ng_container_26_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275template(1, QuotationComponent_tr_53_ng_container_26_button_1_Template, 2, 0, "button", 39);
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const quotation_r5 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", quotation_r5.status == "D" || quotation_r5.status == "Q" || quotation_r5.status == "A" || quotation_r5.status == "C" || quotation_r5.status == "PC");
+  }
+}
+function QuotationComponent_tr_53_ng_container_29_button_1_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r9 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 43);
+    \u0275\u0275listener("click", function QuotationComponent_tr_53_ng_container_29_button_1_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r9);
+      const quotation_r5 = \u0275\u0275nextContext(2).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.deleteQuotation(quotation_r5.id));
+    });
+    \u0275\u0275element(1, "i", 44);
+    \u0275\u0275elementEnd();
+  }
+}
+function QuotationComponent_tr_53_ng_container_29_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275template(1, QuotationComponent_tr_53_ng_container_29_button_1_Template, 2, 0, "button", 42);
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const quotation_r5 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", quotation_r5.status == "D" || quotation_r5.status == "Q" || quotation_r5.status == "A" || quotation_r5.status == "C" || quotation_r5.status == "PC");
+  }
+}
+function QuotationComponent_tr_53_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "tr")(1, "td");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
@@ -88601,90 +90167,90 @@ function QuotationComponent_tr_54_Template(rf, ctx) {
     \u0275\u0275text(14);
     \u0275\u0275pipe(15, "currency");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "td")(17, "div", 25)(18, "span", 26);
+    \u0275\u0275elementStart(16, "td")(17, "div", 26)(18, "span", 27);
     \u0275\u0275element(19, "i", 10);
     \u0275\u0275text(20);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(21, QuotationComponent_tr_54_button_21_Template, 2, 1, "button", 27)(22, QuotationComponent_tr_54_div_22_Template, 2, 1, "div", 28);
+    \u0275\u0275template(21, QuotationComponent_tr_53_button_21_Template, 2, 1, "button", 28)(22, QuotationComponent_tr_53_div_22_Template, 2, 1, "div", 29);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(23, "td", 29)(24, "button", 30);
-    \u0275\u0275listener("click", function QuotationComponent_tr_54_Template_button_click_24_listener() {
-      const quotation_r3 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.generateDispatchPdf(quotation_r3.id, quotation_r3));
+    \u0275\u0275elementStart(23, "td", 30)(24, "button", 31);
+    \u0275\u0275listener("click", function QuotationComponent_tr_53_Template_button_click_24_listener() {
+      const quotation_r5 = \u0275\u0275restoreView(_r3).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.generateDispatchPdf(quotation_r5.id, quotation_r5));
     });
     \u0275\u0275element(25, "i", 10);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(26, QuotationComponent_tr_54_button_26_Template, 2, 0, "button", 31);
-    \u0275\u0275elementStart(27, "button", 32);
-    \u0275\u0275listener("click", function QuotationComponent_tr_54_Template_button_click_27_listener() {
-      const quotation_r3 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.generatePdf(quotation_r3.id, quotation_r3));
+    \u0275\u0275template(26, QuotationComponent_tr_53_ng_container_26_Template, 2, 1, "ng-container", 32);
+    \u0275\u0275elementStart(27, "button", 33);
+    \u0275\u0275listener("click", function QuotationComponent_tr_53_Template_button_click_27_listener() {
+      const quotation_r5 = \u0275\u0275restoreView(_r3).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.generatePdf(quotation_r5.id, quotation_r5));
     });
     \u0275\u0275element(28, "i", 10);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(29, QuotationComponent_tr_54_button_29_Template, 2, 0, "button", 33);
+    \u0275\u0275template(29, QuotationComponent_tr_53_ng_container_29_Template, 2, 1, "ng-container", 32);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const quotation_r3 = ctx.$implicit;
-    const index_r9 = ctx.index;
-    const ctx_r3 = \u0275\u0275nextContext();
+    const quotation_r5 = ctx.$implicit;
+    const index_r10 = ctx.index;
+    const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r3.startIndex + index_r9 + 1);
+    \u0275\u0275textInterpolate(ctx_r1.startIndex + index_r10 + 1);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(quotation_r3.quoteNumber);
+    \u0275\u0275textInterpolate(quotation_r5.quoteNumber);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(quotation_r3.customerName);
+    \u0275\u0275textInterpolate(quotation_r5.customerName);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(9, 17, quotation_r3.quoteDate, "dd-MM-yyyy"));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(9, 17, quotation_r5.quoteDate, "dd-MM-yyyy"));
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(12, 20, quotation_r3.validUntil, "dd-MM-yyyy"));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(12, 20, quotation_r5.validUntil, "dd-MM-yyyy"));
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(15, 23, quotation_r3.totalAmount, "INR"));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(15, 23, quotation_r5.totalAmount, "INR"));
     \u0275\u0275advance(4);
-    \u0275\u0275property("ngClass", ctx_r3.getStatusClass(quotation_r3.status));
+    \u0275\u0275property("ngClass", ctx_r1.getStatusClass(quotation_r5.status));
     \u0275\u0275advance();
-    \u0275\u0275property("ngClass", ctx_r3.getStatusIcon(quotation_r3.status));
+    \u0275\u0275property("ngClass", ctx_r1.getStatusIcon(quotation_r5.status));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r3.getStatusLabel(quotation_r3.status), " ");
+    \u0275\u0275textInterpolate1(" ", ctx_r1.getStatusLabel(quotation_r5.status), " ");
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r3.canChangeStatus(quotation_r3.status));
+    \u0275\u0275property("ngIf", ctx_r1.canChangeStatus(quotation_r5.status));
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", quotation_r3.showStatusDropdown);
+    \u0275\u0275property("ngIf", quotation_r5.showStatusDropdown);
     \u0275\u0275advance(2);
-    \u0275\u0275property("disabled", quotation_r3.isPrinting);
+    \u0275\u0275property("disabled", quotation_r5.isPrinting);
     \u0275\u0275advance();
-    \u0275\u0275property("ngClass", quotation_r3.isPrinting ? "fa-spinner fa-spin" : " fa-file-pdf");
+    \u0275\u0275property("ngClass", quotation_r5.isPrinting ? "fa-spinner fa-spin" : " fa-file-pdf");
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", quotation_r3.status == "D" || quotation_r3.status == "Q" || quotation_r3.status == "A" || quotation_r3.status == "C" || quotation_r3.status == "PC");
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_QUOTATION");
     \u0275\u0275advance();
-    \u0275\u0275property("disabled", quotation_r3.isPrinting);
+    \u0275\u0275property("disabled", quotation_r5.isPrinting);
     \u0275\u0275advance();
-    \u0275\u0275property("ngClass", quotation_r3.isPrinting ? "fa-spinner fa-spin" : "fa-print");
+    \u0275\u0275property("ngClass", quotation_r5.isPrinting ? "fa-spinner fa-spin" : "fa-print");
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", quotation_r3.status == "D" || quotation_r3.status == "Q" || quotation_r3.status == "A" || quotation_r3.status == "C" || quotation_r3.status == "PC");
+    \u0275\u0275property("appCanAccess", "ADD_EDIT_QUOTATION");
   }
 }
-function QuotationComponent_app_pagination_55_Template(rf, ctx) {
+function QuotationComponent_app_pagination_54_Template(rf, ctx) {
   if (rf & 1) {
-    const _r10 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-pagination", 43);
-    \u0275\u0275listener("pageChange", function QuotationComponent_app_pagination_55_Template_app_pagination_pageChange_0_listener($event) {
-      \u0275\u0275restoreView(_r10);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onPageChange($event));
-    })("pageSizeChange", function QuotationComponent_app_pagination_55_Template_app_pagination_pageSizeChange_0_listener($event) {
-      \u0275\u0275restoreView(_r10);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.onPageSizeChange($event));
+    const _r11 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 45);
+    \u0275\u0275listener("pageChange", function QuotationComponent_app_pagination_54_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r11);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageChange($event));
+    })("pageSizeChange", function QuotationComponent_app_pagination_54_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r11);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPageSizeChange($event));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r3 = \u0275\u0275nextContext();
-    \u0275\u0275property("currentPage", ctx_r3.currentPage)("pageSize", ctx_r3.pageSize)("totalElements", ctx_r3.totalElements)("pageSizeOptions", ctx_r3.pageSizeOptions);
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r1.currentPage)("pageSize", ctx_r1.pageSize)("totalElements", ctx_r1.totalElements)("pageSizeOptions", ctx_r1.pageSizeOptions);
   }
 }
 var QuotationComponent = class _QuotationComponent {
@@ -88980,7 +90546,7 @@ var QuotationComponent = class _QuotationComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _QuotationComponent, selectors: [["app-quotation"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 56, vars: 14, consts: [[1, "quotation-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by invoice number...", 1, "form-control"], [1, "product-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Customers", 1, "btn", "btn-sm", "btn-primary", "refresh", 2, "margin-top", "3px", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["formControlName", "status", "labelKey", "label", "valueKey", "value", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "search-btn", "btn", "btn-sm", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "search-btn", "btn", "btn-sm", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "btn", "btn-sm", "btn-primary", "mb-2", 3, "click"], [1, "quotations-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "status-container"], [1, "status-badge", 3, "ngClass"], ["class", "btn-icon status-change", 3, "disabled", "click", 4, "ngIf"], ["class", "status-dropdown", 4, "ngIf"], [1, "actions"], ["title", "Generate Dispatch", 1, "btn-icon", "edit", 3, "click", "disabled"], ["class", "btn-icon edit", "title", "Edit quotation", 3, "click", 4, "ngIf"], ["title", "Print quotation", 1, "btn-icon", "print", 3, "click", "disabled"], ["class", "btn-icon delete", "title", "Delete quotation", 3, "click", 4, "ngIf"], [1, "btn-icon", "status-change", 3, "click", "disabled"], [1, "fas", "fa-chevron-down"], [1, "status-dropdown"], ["class", "status-option", 3, "disabled", "click", 4, "ngFor", "ngForOf"], [1, "status-option", 3, "click"], ["title", "Edit quotation", 1, "btn-icon", "edit", 3, "click"], [1, "fas", "fa-edit"], ["title", "Delete quotation", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function QuotationComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _QuotationComponent, selectors: [["app-quotation"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 55, vars: 15, consts: [[1, "quotation-container"], [3, "show"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by invoice number...", 1, "form-control"], [1, "product-select-group"], ["formControlName", "customerId", "labelKey", "name", "valueKey", "id", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "button", "title", "Refresh Customers", 1, "btn", "btn-sm", "btn-primary", "refresh", 2, "margin-top", "3px", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["formControlName", "status", "labelKey", "label", "valueKey", "value", 3, "options", "defaultOption", "searchPlaceholder"], ["type", "date", "formControlName", "startDate", "placeholder", "Start Date", 1, "form-control"], ["type", "date", "formControlName", "endDate", "placeholder", "End Date", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "search-btn", "btn", "btn-sm", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "search-btn", "btn", "btn-sm", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], ["class", "btn btn-sm btn-primary mb-2", 3, "click", 4, "appCanAccess"], [1, "quotations-list", "card"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "btn", "btn-sm", "btn-primary", "mb-2", 3, "click"], [1, "status-container"], [1, "status-badge", 3, "ngClass"], ["class", "btn-icon status-change", 3, "disabled", "click", 4, "ngIf"], ["class", "status-dropdown", 4, "ngIf"], [1, "actions"], ["title", "Generate Dispatch", 1, "btn-icon", "edit", 3, "click", "disabled"], [4, "appCanAccess"], ["title", "Print quotation", 1, "btn-icon", "print", 3, "click", "disabled"], [1, "btn-icon", "status-change", 3, "click", "disabled"], [1, "fas", "fa-chevron-down"], [1, "status-dropdown"], ["class", "status-option", 3, "disabled", "click", 4, "ngFor", "ngForOf"], [1, "status-option", 3, "click"], ["class", "btn-icon edit", "title", "Edit quotation", 3, "click", 4, "ngIf"], ["title", "Edit quotation", 1, "btn-icon", "edit", 3, "click"], [1, "fas", "fa-edit"], ["class", "btn-icon delete", "title", "Delete quotation", 3, "click", 4, "ngIf"], ["title", "Delete quotation", 1, "btn-icon", "delete", 3, "click"], [1, "fas", "fa-trash"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function QuotationComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-loader", 1);
@@ -89022,43 +90588,38 @@ var QuotationComponent = class _QuotationComponent {
         \u0275\u0275element(26, "i", 18);
         \u0275\u0275text(27, " Reset ");
         \u0275\u0275elementEnd()()()()();
-        \u0275\u0275elementStart(28, "button", 19);
-        \u0275\u0275listener("click", function QuotationComponent_Template_button_click_28_listener() {
-          return ctx.addQuotation();
-        });
-        \u0275\u0275text(29, "Add Quotation");
+        \u0275\u0275template(28, QuotationComponent_button_28_Template, 2, 0, "button", 19);
+        \u0275\u0275elementStart(29, "div", 20)(30, "h2");
+        \u0275\u0275text(31, "Quotations");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(30, "div", 20)(31, "h2");
-        \u0275\u0275text(32, "Quotations");
+        \u0275\u0275elementStart(32, "div", 21)(33, "table", 22)(34, "thead")(35, "tr")(36, "th");
+        \u0275\u0275text(37, "No");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(33, "div", 21)(34, "table", 22)(35, "thead")(36, "tr")(37, "th");
-        \u0275\u0275text(38, "No");
+        \u0275\u0275elementStart(38, "th");
+        \u0275\u0275text(39, "Invoice No.");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(39, "th");
-        \u0275\u0275text(40, "Invoice No.");
+        \u0275\u0275elementStart(40, "th");
+        \u0275\u0275text(41, "Customer Name");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(41, "th");
-        \u0275\u0275text(42, "Customer Name");
+        \u0275\u0275elementStart(42, "th");
+        \u0275\u0275text(43, "Quotation Date");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(43, "th");
-        \u0275\u0275text(44, "Quotation Date");
+        \u0275\u0275elementStart(44, "th");
+        \u0275\u0275text(45, "Valid Until");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(45, "th");
-        \u0275\u0275text(46, "Valid Until");
+        \u0275\u0275elementStart(46, "th");
+        \u0275\u0275text(47, "Total Quotation Amount");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(47, "th");
-        \u0275\u0275text(48, "Total Quotation Amount");
+        \u0275\u0275elementStart(48, "th");
+        \u0275\u0275text(49, "Status");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(49, "th");
-        \u0275\u0275text(50, "Status");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(51, "th");
-        \u0275\u0275text(52, "Actions");
+        \u0275\u0275elementStart(50, "th");
+        \u0275\u0275text(51, "Actions");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(53, "tbody");
-        \u0275\u0275template(54, QuotationComponent_tr_54_Template, 30, 26, "tr", 23);
+        \u0275\u0275elementStart(52, "tbody");
+        \u0275\u0275template(53, QuotationComponent_tr_53_Template, 30, 26, "tr", 23);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(55, QuotationComponent_app_pagination_55_Template, 1, 4, "app-pagination", 24);
+        \u0275\u0275template(54, QuotationComponent_app_pagination_54_Template, 1, 4, "app-pagination", 24);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
@@ -89067,14 +90628,16 @@ var QuotationComponent = class _QuotationComponent {
         \u0275\u0275advance(4);
         \u0275\u0275property("formGroup", ctx.searchForm);
         \u0275\u0275advance(6);
-        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(12, _c025))("searchPlaceholder", "Search customers...");
+        \u0275\u0275property("options", ctx.customers)("defaultOption", \u0275\u0275pureFunction0(13, _c025))("searchPlaceholder", "Search customers...");
         \u0275\u0275advance();
         \u0275\u0275property("disabled", ctx.isLoadingCustomers);
         \u0275\u0275advance();
         \u0275\u0275property("ngClass", ctx.isLoadingCustomers ? "fa-spinner fa-spin" : "fa-sync-alt");
         \u0275\u0275advance(3);
-        \u0275\u0275property("options", ctx.statusOptions)("defaultOption", \u0275\u0275pureFunction0(13, _c19))("searchPlaceholder", "Search status...");
-        \u0275\u0275advance(38);
+        \u0275\u0275property("options", ctx.statusOptions)("defaultOption", \u0275\u0275pureFunction0(14, _c19))("searchPlaceholder", "Search status...");
+        \u0275\u0275advance(12);
+        \u0275\u0275property("appCanAccess", "ADD_EDIT_QUOTATION");
+        \u0275\u0275advance(25);
         \u0275\u0275property("ngForOf", ctx.quotations);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.totalPages > 0);
@@ -89098,52 +90661,636 @@ var QuotationComponent = class _QuotationComponent {
       MatDialogModule,
       LoaderComponent,
       SearchableSelectComponent,
-      PaginationComponent
+      PaginationComponent,
+      CanAccessDirective
     ], styles: ["\n\n.quotation-container[_ngcontent-%COMP%] {\n  padding: 2rem;\n  position: relative;\n  min-height: 200px;\n  background-color: var(--background);\n}\n.quotation-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 0;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.quotation-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 1rem;\n  align-items: flex-start;\n}\n@media (max-width: 768px) {\n  .quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  margin: 0;\n  height: 100%;\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .form-control[_ngcontent-%COMP%] {\n  height: 38px;\n  box-sizing: border-box;\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  height: 100%;\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n  height: 38px;\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%]     .dropdown-btn {\n  height: 38px;\n  box-sizing: border-box;\n  display: flex;\n  align-items: center;\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%], .quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .refresh[_ngcontent-%COMP%] {\n  width: 38px;\n  height: 38px;\n  padding: 0;\n  margin-top: 0 !important;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  border: 1px solid var(--border-color);\n  border-radius: var(--border-radius);\n  background: var(--primary);\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:hover:not(:disabled), .quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background: var(--primary-dark);\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:disabled, .quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   .product-select-group[_ngcontent-%COMP%]   .refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.6;\n  cursor: not-allowed;\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  height: 100%;\n}\n@media (max-width: 768px) {\n  .quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    grid-column: 1/-1;\n  }\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n  flex: 1;\n  height: 38px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.5rem;\n}\n.quotation-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   button[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1rem;\n}\n.quotation-container[_ngcontent-%COMP%]   .quotations-list[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  overflow-x: auto;\n}\n.quotation-container[_ngcontent-%COMP%]   .quotations-list[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  white-space: nowrap;\n}\n.quotation-container[_ngcontent-%COMP%]   .quotations-list[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  vertical-align: middle;\n}\n.quotation-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%] {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: 1rem;\n}\n.quotation-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.quotation-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  white-space: nowrap;\n}\n.quotation-container[_ngcontent-%COMP%]   .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n  width: auto;\n  min-width: 80px;\n  padding: 0.5rem;\n  margin-bottom: 0;\n  height: 38px;\n}\n@media (max-width: 768px) {\n  .quotation-container[_ngcontent-%COMP%] {\n    padding: 1rem;\n  }\n  .quotation-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n  }\n  .quotation-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .quotation-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   button[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n}\n@media (max-width: 576px) {\n  .table-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    gap: 1rem;\n    align-items: flex-start;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .table-controls[_ngcontent-%COMP%]   .page-size-selector[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n    flex: 1;\n  }\n}\n.actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  padding-bottom: 20px;\n  justify-content: flex-start;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n  background: none;\n  border: none;\n  padding: 8px;\n  cursor: pointer;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.sale[_ngcontent-%COMP%] {\n  color: var(--primary);\n  background-color: rgba(253, 120, 35, 0.1);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.sale[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.sale[_ngcontent-%COMP%]:disabled {\n  color: var(--text-secondary);\n  background-color: rgba(0, 0, 0, 0.05);\n  cursor: not-allowed;\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%] {\n  color: #dc3545;\n  background-color: rgba(220, 53, 69, 0.1);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon.delete[_ngcontent-%COMP%]:hover {\n  background-color: #dc3545;\n  color: white;\n  transform: translateY(-1px);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 16px;\n}\n@media (max-width: 768px) {\n  .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%] {\n    padding: 6px;\n  }\n  .actions[_ngcontent-%COMP%]   .btn-icon[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n    font-size: 14px;\n  }\n}\n  .custom-snackbar.success {\n  background-color: var(--accent2);\n}\n  .custom-snackbar.error {\n  background-color: #dc3545;\n}\n  .custom-snackbar .snackbar-message {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  color: white;\n}\n  .custom-snackbar .snackbar-message i {\n  font-size: 1.2rem;\n}\n.loading-overlay[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  background: rgba(255, 255, 255, 0.8);\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  z-index: 1000;\n}\n.loading-overlay[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 2rem;\n  color: var(--primary);\n}\n.product-select-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 0.5rem;\n  align-items: flex-start;\n}\n.product-select-group[_ngcontent-%COMP%]   app-searchable-select[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%] {\n  background-color: var(--background);\n  color: white;\n  width: 42px;\n  height: 35px;\n  border-radius: 6px;\n  transition: all 0.2s ease;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--primary);\n  color: white;\n  transform: translateY(-1px);\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n}\n.product-select-group[_ngcontent-%COMP%]   .btn-icon.refresh[_ngcontent-%COMP%]:active {\n  transform: translateY(0);\n}\n.status-badge[_ngcontent-%COMP%] {\n  padding: 0.5rem 1rem;\n  border-radius: var(--border-radius);\n  font-size: 0.875rem;\n  font-weight: 600;\n  text-align: center;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 120px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  transition: all 0.3s ease;\n  gap: 0.5rem;\n}\n.status-badge[_ngcontent-%COMP%]   i[_ngcontent-%COMP%] {\n  font-size: 1rem;\n}\n.status-badge[_ngcontent-%COMP%]:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);\n}\n.status-badge.status-quote[_ngcontent-%COMP%] {\n  background-color: var(--info-light);\n  color: var(--info);\n  border: 1px solid var(--info);\n}\n.status-badge.status-accepted[_ngcontent-%COMP%] {\n  background-color: var(--success-light);\n  color: var(--success);\n  border: 1px solid var(--success);\n}\n.status-badge.status-declined[_ngcontent-%COMP%] {\n  background-color: var(--danger-light);\n  color: var(--danger);\n  border: 1px solid var(--danger);\n}\n.status-badge.status-ready[_ngcontent-%COMP%] {\n  background-color: var(--warning-light);\n  color: var(--warning);\n  border: 1px solid var(--warning);\n}\n.status-badge.status-processing[_ngcontent-%COMP%] {\n  background-color: var(--primary-light);\n  color: var(--primary);\n  border: 1px solid var(--primary);\n}\n.status-badge.status-completed[_ngcontent-%COMP%] {\n  background-color: var(--success-light);\n  color: var(--success);\n  border: 1px solid var(--success);\n}\n.status-badge.status-default[_ngcontent-%COMP%] {\n  background-color: var(--gray-light);\n  color: var(--gray);\n  border: 1px solid var(--gray);\n}\n.status-container[_ngcontent-%COMP%] {\n  position: relative;\n  display: inline-flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n.status-container[_ngcontent-%COMP%]   .status-change[_ngcontent-%COMP%] {\n  padding: 4px 8px;\n  color: var(--text-secondary);\n  border-radius: var(--border-radius);\n  transition: all 0.2s ease;\n  background: none;\n  border: none;\n  cursor: pointer;\n  z-index: 1;\n}\n.status-container[_ngcontent-%COMP%]   .status-change[_ngcontent-%COMP%]:hover:not(:disabled) {\n  background-color: var(--background);\n  color: var(--text-primary);\n}\n.status-container[_ngcontent-%COMP%]   .status-change[_ngcontent-%COMP%]:disabled {\n  opacity: 0.5;\n  cursor: not-allowed;\n}\n.status-container[_ngcontent-%COMP%]   .status-dropdown[_ngcontent-%COMP%] {\n  position: absolute;\n  top: calc(100% + 5px);\n  right: 0;\n  background: white;\n  border-radius: var(--border-radius);\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);\n  z-index: 1000;\n  min-width: 150px;\n  border: 1px solid var(--border-color);\n  display: block;\n}\n.status-container[_ngcontent-%COMP%]   .status-dropdown[_ngcontent-%COMP%]   .status-option[_ngcontent-%COMP%] {\n  padding: 0.75rem 1rem;\n  display: flex;\n  align-items: center;\n  gap: 0.75rem;\n  cursor: pointer;\n  transition: all 0.2s ease;\n}\n.status-container[_ngcontent-%COMP%]   .status-dropdown[_ngcontent-%COMP%]   .status-option[_ngcontent-%COMP%]:hover:not(.disabled) {\n  background-color: var(--background-light);\n}\n.status-container[_ngcontent-%COMP%]   .status-dropdown[_ngcontent-%COMP%]   .status-option.disabled[_ngcontent-%COMP%] {\n  opacity: 0.5;\n  cursor: not-allowed;\n}\n/*# sourceMappingURL=quotation.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(QuotationComponent, { className: "QuotationComponent", filePath: "src\\app\\components\\all-quotation\\quotation\\quotation.component.ts", lineNumber: 35 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(QuotationComponent, { className: "QuotationComponent", filePath: "src\\app\\components\\all-quotation\\quotation\\quotation.component.ts", lineNumber: 37 });
+})();
+
+// src/app/services/role-admin.service.ts
+var RoleAdminService = class _RoleAdminService {
+  constructor(http) {
+    this.http = http;
+  }
+  getRoles() {
+    return this.http.post(`${environment.apiUrl}/api/roles/getRoles`, {});
+  }
+  getCatalog() {
+    return this.http.post(`${environment.apiUrl}/api/page-access/catalog`, {});
+  }
+  getRoleAccess(roleId) {
+    return this.http.post(`${environment.apiUrl}/api/page-access/role/detail`, { roleId });
+  }
+  updateRoleAccess(roleId, pageAccessIds) {
+    return this.http.post(`${environment.apiUrl}/api/page-access/role/update`, { roleId, pageAccessIds });
+  }
+  searchUsers(body) {
+    return this.http.post(`${environment.apiUrl}/api/users/search`, body);
+  }
+  // ENC_URL_POST_V1: POST with id in body.
+  updateUserRole(userId, roleId) {
+    return this.http.post(`${environment.apiUrl}/api/users/update-role`, { id: userId, roleId });
+  }
+  static {
+    this.\u0275fac = function RoleAdminService_Factory(t) {
+      return new (t || _RoleAdminService)(\u0275\u0275inject(HttpClient));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _RoleAdminService, factory: _RoleAdminService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// src/app/components/role-config/role-config.component.ts
+function RoleConfigComponent_option_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 13);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const role_r1 = ctx.$implicit;
+    \u0275\u0275property("ngValue", role_r1.id);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate2("", role_r1.name, " (", role_r1.roleCode, ")");
+  }
+}
+function RoleConfigComponent_div_17_div_3_label_4_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "label", 20)(1, "input", 21);
+    \u0275\u0275listener("change", function RoleConfigComponent_div_17_div_3_label_4_Template_input_change_1_listener($event) {
+      const item_r4 = \u0275\u0275restoreView(_r3).$implicit;
+      const ctx_r4 = \u0275\u0275nextContext(3);
+      return \u0275\u0275resetView(ctx_r4.onCheckboxChange(item_r4.id, $event));
+    });
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(2, "span", 22)(3, "strong");
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "small");
+    \u0275\u0275text(6);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const item_r4 = ctx.$implicit;
+    const ctx_r4 = \u0275\u0275nextContext(3);
+    \u0275\u0275attribute("for", "pa-" + item_r4.id);
+    \u0275\u0275advance();
+    \u0275\u0275property("id", "pa-" + item_r4.id)("checked", ctx_r4.isChecked(item_r4.id));
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(item_r4.label);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r4.code);
+  }
+}
+function RoleConfigComponent_div_17_div_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 17)(1, "h3");
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "div", 18);
+    \u0275\u0275template(4, RoleConfigComponent_div_17_div_3_label_4_Template, 7, 5, "label", 19);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const group_r6 = ctx.$implicit;
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(group_r6.menuGroup);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngForOf", group_r6.items);
+  }
+}
+function RoleConfigComponent_div_17_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 14)(1, "h2");
+    \u0275\u0275text(2, "Page Access");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(3, RoleConfigComponent_div_17_div_3_Template, 5, 2, "div", 15);
+    \u0275\u0275elementStart(4, "div", 16)(5, "button", 10);
+    \u0275\u0275listener("click", function RoleConfigComponent_div_17_Template_button_click_5_listener() {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r4 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r4.save());
+    });
+    \u0275\u0275element(6, "i", 11);
+    \u0275\u0275text(7);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const ctx_r4 = \u0275\u0275nextContext();
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngForOf", ctx_r4.groups);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("disabled", ctx_r4.isSaving);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", ctx_r4.isSaving ? "fa-spinner fa-spin" : "fa-save");
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r4.isSaving ? "Saving..." : "Save Access", " ");
+  }
+}
+var RoleConfigComponent = class _RoleConfigComponent {
+  constructor(roleAdminService, snackbar) {
+    this.roleAdminService = roleAdminService;
+    this.snackbar = snackbar;
+    this.isLoading = false;
+    this.isSaving = false;
+    this.roles = [];
+    this.selectedRoleId = null;
+    this.catalog = [];
+    this.groups = [];
+    this.selectedIds = /* @__PURE__ */ new Set();
+  }
+  ngOnInit() {
+    this.loadInitial();
+  }
+  loadInitial() {
+    this.isLoading = true;
+    this.roleAdminService.getRoles().subscribe({
+      next: (roleRes) => {
+        this.roles = (roleRes.data || []).filter((r) => (r.roleCode || "").toUpperCase() !== "ADMIN");
+        this.roleAdminService.getCatalog().subscribe({
+          next: (catalogRes) => {
+            this.catalog = catalogRes.data || [];
+            this.buildGroups();
+            if (this.roles.length) {
+              this.selectedRoleId = this.roles[0].id;
+              this.loadRoleAccess();
+            } else {
+              this.isLoading = false;
+            }
+          },
+          error: (err) => {
+            this.isLoading = false;
+            this.snackbar.error(err?.error?.message || "Failed to load page access catalog");
+          }
+        });
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.snackbar.error(err?.error?.message || "Failed to load roles");
+      }
+    });
+  }
+  onRoleChange() {
+    this.loadRoleAccess();
+  }
+  loadRoleAccess() {
+    if (!this.selectedRoleId) {
+      return;
+    }
+    this.isLoading = true;
+    this.roleAdminService.getRoleAccess(this.selectedRoleId).subscribe({
+      next: (res) => {
+        this.selectedIds = new Set(res.data || []);
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.snackbar.error(err?.error?.message || "Failed to load role access");
+      }
+    });
+  }
+  isChecked(id) {
+    return this.selectedIds.has(id);
+  }
+  toggle(id, checked) {
+    if (checked) {
+      this.selectedIds.add(id);
+    } else {
+      this.selectedIds.delete(id);
+    }
+  }
+  onCheckboxChange(id, event2) {
+    const input2 = event2.target;
+    this.toggle(id, !!input2?.checked);
+  }
+  save() {
+    if (!this.selectedRoleId || this.isSaving) {
+      return;
+    }
+    this.isSaving = true;
+    const ids = Array.from(this.selectedIds);
+    this.roleAdminService.updateRoleAccess(this.selectedRoleId, ids).subscribe({
+      next: (res) => {
+        this.isSaving = false;
+        this.selectedIds = new Set(res.data || ids);
+        this.snackbar.success(res.message || "Role access saved");
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.snackbar.error(err?.error?.message || "Failed to save role access");
+      }
+    });
+  }
+  buildGroups() {
+    const map2 = /* @__PURE__ */ new Map();
+    for (const item of this.catalog) {
+      const key = item.menuGroup || "Other";
+      if (!map2.has(key)) {
+        map2.set(key, []);
+      }
+      map2.get(key).push(item);
+    }
+    this.groups = Array.from(map2.entries()).map(([menuGroup, items]) => ({
+      menuGroup,
+      items: items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    }));
+  }
+  static {
+    this.\u0275fac = function RoleConfigComponent_Factory(t) {
+      return new (t || _RoleConfigComponent)(\u0275\u0275directiveInject(RoleAdminService), \u0275\u0275directiveInject(SnackbarService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _RoleConfigComponent, selectors: [["app-role-config"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 18, vars: 7, consts: [[1, "role-config-container"], [3, "show"], [1, "search-section", "card"], [1, "hint"], [1, "search-controls"], [1, "form-group"], ["for", "roleSelect"], ["id", "roleSelect", 1, "form-control", 3, "ngModelChange", "ngModel"], [3, "ngValue", 4, "ngFor", "ngForOf"], [1, "button-group"], ["type", "button", 1, "btn", "btn-primary", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], ["class", "access-list card", 4, "ngIf"], [3, "ngValue"], [1, "access-list", "card"], ["class", "group", 4, "ngFor", "ngForOf"], [1, "footer-actions"], [1, "group"], [1, "checkbox-grid"], ["class", "checkbox-item", 4, "ngFor", "ngForOf"], [1, "checkbox-item"], ["type", "checkbox", 3, "change", "id", "checked"], [1, "label-text"]], template: function RoleConfigComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0);
+        \u0275\u0275element(1, "app-loader", 1);
+        \u0275\u0275elementStart(2, "div", 2)(3, "h2");
+        \u0275\u0275text(4, "Role Config");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(5, "p", 3);
+        \u0275\u0275text(6, "Choose a role and tick the pages that role can open. Admin always has full access and is not listed here.");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(7, "div", 4)(8, "div", 5)(9, "label", 6);
+        \u0275\u0275text(10, "Role");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(11, "select", 7);
+        \u0275\u0275twoWayListener("ngModelChange", function RoleConfigComponent_Template_select_ngModelChange_11_listener($event) {
+          \u0275\u0275twoWayBindingSet(ctx.selectedRoleId, $event) || (ctx.selectedRoleId = $event);
+          return $event;
+        });
+        \u0275\u0275listener("ngModelChange", function RoleConfigComponent_Template_select_ngModelChange_11_listener() {
+          return ctx.onRoleChange();
+        });
+        \u0275\u0275template(12, RoleConfigComponent_option_12_Template, 2, 3, "option", 8);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(13, "div", 9)(14, "button", 10);
+        \u0275\u0275listener("click", function RoleConfigComponent_Template_button_click_14_listener() {
+          return ctx.save();
+        });
+        \u0275\u0275element(15, "i", 11);
+        \u0275\u0275text(16);
+        \u0275\u0275elementEnd()()()();
+        \u0275\u0275template(17, RoleConfigComponent_div_17_Template, 8, 4, "div", 12);
+        \u0275\u0275elementEnd();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance();
+        \u0275\u0275property("show", ctx.isLoading || ctx.isSaving);
+        \u0275\u0275advance(10);
+        \u0275\u0275twoWayProperty("ngModel", ctx.selectedRoleId);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngForOf", ctx.roles);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("disabled", !ctx.selectedRoleId || ctx.isSaving);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngClass", ctx.isSaving ? "fa-spinner fa-spin" : "fa-save");
+        \u0275\u0275advance();
+        \u0275\u0275textInterpolate1(" ", ctx.isSaving ? "Saving..." : "Save", " ");
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.selectedRoleId);
+      }
+    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, FormsModule, NgSelectOption, \u0275NgSelectMultipleOption, SelectControlValueAccessor, NgControlStatus, NgModel, LoaderComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.role-config-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.role-config-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.role-config-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 12px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.role-config-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  margin: 16px 0 10px;\n  color: var(--text-primary);\n  font-size: 1.1rem;\n}\n.role-config-container[_ngcontent-%COMP%]   .hint[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  margin-bottom: 16px;\n  font-size: 0.95rem;\n}\n.role-config-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 12px;\n  align-items: flex-end;\n  flex-wrap: wrap;\n}\n.role-config-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n  min-width: 220px;\n}\n.role-config-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   label[_ngcontent-%COMP%] {\n  display: block;\n  margin-bottom: 6px;\n  color: var(--text-secondary);\n}\n.role-config-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%]   select.form-control[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 10px 12px;\n  border-radius: 6px;\n  border: 1px solid var(--supporting);\n  background: white;\n  color: var(--text-primary);\n}\n.role-config-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n}\n.role-config-container[_ngcontent-%COMP%]   .checkbox-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));\n  gap: 10px;\n}\n.role-config-container[_ngcontent-%COMP%]   .checkbox-item[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: flex-start;\n  gap: 10px;\n  padding: 10px 12px;\n  border: 1px solid var(--supporting);\n  border-radius: 8px;\n  cursor: pointer;\n  -webkit-user-select: none;\n  user-select: none;\n  min-height: 44px;\n}\n.role-config-container[_ngcontent-%COMP%]   .checkbox-item[_ngcontent-%COMP%]   input[type=checkbox][_ngcontent-%COMP%] {\n  margin-top: 3px;\n  width: 18px;\n  height: 18px;\n  flex-shrink: 0;\n}\n.role-config-container[_ngcontent-%COMP%]   .checkbox-item[_ngcontent-%COMP%]   .label-text[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n}\n.role-config-container[_ngcontent-%COMP%]   .checkbox-item[_ngcontent-%COMP%]   .label-text[_ngcontent-%COMP%]   strong[_ngcontent-%COMP%] {\n  color: var(--text-primary);\n  font-size: 0.95rem;\n}\n.role-config-container[_ngcontent-%COMP%]   .checkbox-item[_ngcontent-%COMP%]   .label-text[_ngcontent-%COMP%]   small[_ngcontent-%COMP%] {\n  color: var(--text-secondary);\n  font-size: 0.75rem;\n}\n.role-config-container[_ngcontent-%COMP%]   .checkbox-item[_ngcontent-%COMP%]:active {\n  background: rgba(0, 0, 0, 0.03);\n}\n.role-config-container[_ngcontent-%COMP%]   .footer-actions[_ngcontent-%COMP%] {\n  margin-top: 20px;\n  display: flex;\n  justify-content: flex-end;\n}\n@media (max-width: 768px) {\n  .role-config-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .role-config-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n  }\n  .role-config-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .role-config-container[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%]   .btn[_ngcontent-%COMP%] {\n    width: 100%;\n  }\n  .role-config-container[_ngcontent-%COMP%]   .checkbox-grid[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n  }\n}\n/*# sourceMappingURL=role-config.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(RoleConfigComponent, { className: "RoleConfigComponent", filePath: "src\\app\\components\\role-config\\role-config.component.ts", lineNumber: 21 });
+})();
+
+// src/app/components/user-role/user-role.component.ts
+var _c026 = () => ({ standalone: true });
+function UserRoleComponent_tr_36_option_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 26);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const role_r4 = ctx.$implicit;
+    \u0275\u0275property("ngValue", role_r4.id);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", role_r4.name, " ");
+  }
+}
+function UserRoleComponent_tr_36_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr")(1, "td");
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "td");
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "td");
+    \u0275\u0275text(6);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "td")(8, "select", 20);
+    \u0275\u0275twoWayListener("ngModelChange", function UserRoleComponent_tr_36_Template_select_ngModelChange_8_listener($event) {
+      const user_r2 = \u0275\u0275restoreView(_r1).$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r2.draftRoleIds[user_r2.id], $event) || (ctx_r2.draftRoleIds[user_r2.id] = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275elementStart(9, "option", 21);
+    \u0275\u0275text(10, "Select role");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(11, UserRoleComponent_tr_36_option_11_Template, 2, 2, "option", 22);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(12, "td", 23)(13, "button", 24);
+    \u0275\u0275listener("click", function UserRoleComponent_tr_36_Template_button_click_13_listener() {
+      const user_r2 = \u0275\u0275restoreView(_r1).$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.saveRole(user_r2));
+    });
+    \u0275\u0275element(14, "i", 25);
+    \u0275\u0275text(15, " Save ");
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const user_r2 = ctx.$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r2.displayName(user_r2));
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(user_r2.email || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(user_r2.roleName || "-");
+    \u0275\u0275advance(2);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r2.draftRoleIds[user_r2.id]);
+    \u0275\u0275property("ngModelOptions", \u0275\u0275pureFunction0(9, _c026));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngValue", null);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngForOf", ctx_r2.roles);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("disabled", ctx_r2.isSaving(user_r2.id));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", ctx_r2.isSaving(user_r2.id) ? "fa-spinner fa-spin" : "fa-save");
+  }
+}
+function UserRoleComponent_tr_37_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 27);
+    \u0275\u0275text(2, "No users found");
+    \u0275\u0275elementEnd()();
+  }
+}
+function UserRoleComponent_app_pagination_38_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-pagination", 28);
+    \u0275\u0275listener("pageChange", function UserRoleComponent_app_pagination_38_Template_app_pagination_pageChange_0_listener($event) {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onPageChange($event));
+    })("pageSizeChange", function UserRoleComponent_app_pagination_38_Template_app_pagination_pageSizeChange_0_listener($event) {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onPageSizeChange($event));
+    });
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("currentPage", ctx_r2.currentPage)("pageSize", ctx_r2.pageSize)("totalElements", ctx_r2.totalElements)("pageSizeOptions", ctx_r2.pageSizeOptions);
+  }
+}
+var UserRoleComponent = class _UserRoleComponent {
+  constructor(roleAdminService, fb, snackbar) {
+    this.roleAdminService = roleAdminService;
+    this.fb = fb;
+    this.snackbar = snackbar;
+    this.users = [];
+    this.roles = [];
+    this.isLoading = false;
+    this.savingIds = /* @__PURE__ */ new Set();
+    this.draftRoleIds = {};
+    this.currentPage = 0;
+    this.pageSize = 10;
+    this.pageSizeOptions = [5, 10, 25, 50];
+    this.totalPages = 0;
+    this.totalElements = 0;
+    this.searchForm = this.fb.group({
+      search: [""]
+    });
+  }
+  ngOnInit() {
+    this.loadRoles();
+    this.loadUsers();
+  }
+  loadRoles() {
+    this.roleAdminService.getRoles().subscribe({
+      next: (res) => {
+        this.roles = res.data || [];
+      },
+      error: (err) => {
+        this.snackbar.error(err?.error?.message || "Failed to load roles");
+      }
+    });
+  }
+  loadUsers() {
+    this.isLoading = true;
+    this.roleAdminService.searchUsers({
+      search: this.searchForm.value.search || "",
+      page: this.currentPage,
+      size: this.pageSize
+    }).subscribe({
+      next: (res) => {
+        const data = res.data || {};
+        this.users = data.content || [];
+        this.totalElements = data.totalElements || 0;
+        this.totalPages = data.totalPages || 0;
+        this.currentPage = data.page ?? this.currentPage;
+        this.draftRoleIds = {};
+        for (const user of this.users) {
+          this.draftRoleIds[user.id] = user.roleId ?? null;
+        }
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.snackbar.error(err?.error?.message || "Failed to load users");
+      }
+    });
+  }
+  onSearch() {
+    this.currentPage = 0;
+    this.loadUsers();
+  }
+  resetForm() {
+    this.searchForm.reset({ search: "" });
+    this.currentPage = 0;
+    this.loadUsers();
+  }
+  onPageChange(page) {
+    this.currentPage = page;
+    this.loadUsers();
+  }
+  onPageSizeChange(size) {
+    this.pageSize = size;
+    this.currentPage = 0;
+    this.loadUsers();
+  }
+  saveRole(user) {
+    const roleId = this.draftRoleIds[user.id];
+    if (!roleId || this.savingIds.has(user.id)) {
+      this.snackbar.error("Please select a role");
+      return;
+    }
+    this.savingIds.add(user.id);
+    this.roleAdminService.updateUserRole(user.id, roleId).subscribe({
+      next: (res) => {
+        this.savingIds.delete(user.id);
+        const updated = res.data;
+        if (updated) {
+          user.roleId = updated.roleId;
+          user.roleName = updated.roleName;
+          user.roleCode = updated.roleCode;
+          this.draftRoleIds[user.id] = updated.roleId ?? null;
+        }
+        this.snackbar.success(res.message || "User role updated");
+      },
+      error: (err) => {
+        this.savingIds.delete(user.id);
+        this.snackbar.error(err?.error?.message || "Failed to update user role");
+      }
+    });
+  }
+  isSaving(userId) {
+    return this.savingIds.has(userId);
+  }
+  displayName(user) {
+    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    return name || "-";
+  }
+  static {
+    this.\u0275fac = function UserRoleComponent_Factory(t) {
+      return new (t || _UserRoleComponent)(\u0275\u0275directiveInject(RoleAdminService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(SnackbarService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _UserRoleComponent, selectors: [["app-user-role"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 39, vars: 7, consts: [[1, "user-role-container"], [1, "search-section", "card"], [3, "ngSubmit", "formGroup"], [1, "search-controls"], [1, "form-group"], ["type", "text", "formControlName", "search", "placeholder", "Search by name or email...", 1, "form-control"], [1, "button-group"], ["type", "submit", 1, "btn", "btn-primary"], [1, "fas", "fa-search"], ["type", "button", 1, "btn", "btn-secondary", 3, "click"], [1, "fas", "fa-undo"], [1, "users-list", "card"], [1, "table-wrapper"], [1, "table-container"], [3, "show"], [1, "table-responsive"], [1, "table"], [4, "ngFor", "ngForOf"], [4, "ngIf"], [3, "currentPage", "pageSize", "totalElements", "pageSizeOptions", "pageChange", "pageSizeChange", 4, "ngIf"], [1, "form-control", "role-select", 3, "ngModelChange", "ngModel", "ngModelOptions"], ["disabled", "", 3, "ngValue"], [3, "ngValue", 4, "ngFor", "ngForOf"], [1, "actions"], ["type", "button", 1, "btn", "btn-primary", "btn-sm", 3, "click", "disabled"], [1, "fas", 3, "ngClass"], [3, "ngValue"], ["colspan", "5", 1, "text-center"], [3, "pageChange", "pageSizeChange", "currentPage", "pageSize", "totalElements", "pageSizeOptions"]], template: function UserRoleComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2");
+        \u0275\u0275text(3, "User Role");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(4, "form", 2);
+        \u0275\u0275listener("ngSubmit", function UserRoleComponent_Template_form_ngSubmit_4_listener() {
+          return ctx.onSearch();
+        });
+        \u0275\u0275elementStart(5, "div", 3)(6, "div", 4);
+        \u0275\u0275element(7, "input", 5);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(8, "div", 6)(9, "button", 7);
+        \u0275\u0275element(10, "i", 8);
+        \u0275\u0275text(11, " Search ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(12, "button", 9);
+        \u0275\u0275listener("click", function UserRoleComponent_Template_button_click_12_listener() {
+          return ctx.resetForm();
+        });
+        \u0275\u0275element(13, "i", 10);
+        \u0275\u0275text(14, " Reset ");
+        \u0275\u0275elementEnd()()()()();
+        \u0275\u0275elementStart(15, "div", 11)(16, "h2");
+        \u0275\u0275text(17, "Users");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(18, "div", 12)(19, "div", 13);
+        \u0275\u0275element(20, "app-loader", 14);
+        \u0275\u0275elementStart(21, "div", 15)(22, "table", 16)(23, "thead")(24, "tr")(25, "th");
+        \u0275\u0275text(26, "Name");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(27, "th");
+        \u0275\u0275text(28, "Email");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(29, "th");
+        \u0275\u0275text(30, "Current Role");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(31, "th");
+        \u0275\u0275text(32, "Assign Role");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(33, "th");
+        \u0275\u0275text(34, "Actions");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(35, "tbody");
+        \u0275\u0275template(36, UserRoleComponent_tr_36_Template, 16, 10, "tr", 17)(37, UserRoleComponent_tr_37_Template, 3, 0, "tr", 18);
+        \u0275\u0275elementEnd()()()()();
+        \u0275\u0275template(38, UserRoleComponent_app_pagination_38_Template, 1, 4, "app-pagination", 19);
+        \u0275\u0275elementEnd()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(4);
+        \u0275\u0275property("formGroup", ctx.searchForm);
+        \u0275\u0275advance(16);
+        \u0275\u0275property("show", ctx.isLoading);
+        \u0275\u0275advance();
+        \u0275\u0275classProp("loading", ctx.isLoading);
+        \u0275\u0275advance(15);
+        \u0275\u0275property("ngForOf", ctx.users);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !(ctx.users == null ? null : ctx.users.length));
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.totalPages > 0);
+      }
+    }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, FormsModule, \u0275NgNoValidate, NgSelectOption, \u0275NgSelectMultipleOption, DefaultValueAccessor, SelectControlValueAccessor, NgControlStatus, NgControlStatusGroup, NgModel, ReactiveFormsModule, FormGroupDirective, FormControlName, LoaderComponent, PaginationComponent], styles: ["\n\n[_ngcontent-%COMP%]:root {\n  --primary: #FD7823;\n  --secondary: #1C3F60;\n  --background: #FDF5EC;\n  --accent1: #FFC857;\n  --accent2: #5A9E6F;\n  --text-primary: #333333;\n  --text-secondary: #767676;\n  --supporting: #AEC6CF;\n}\n.user-role-container[_ngcontent-%COMP%] {\n  padding: 20px;\n  background-color: var(--background);\n}\n.user-role-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%] {\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 20px;\n  padding: 20px;\n}\n.user-role-container[_ngcontent-%COMP%]   .card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n  color: var(--text-primary);\n  font-size: 1.5rem;\n}\n.user-role-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  align-items: center;\n}\n.user-role-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .form-group[_ngcontent-%COMP%] {\n  flex: 1;\n}\n.user-role-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n}\n.user-role-container[_ngcontent-%COMP%]   .table-wrapper[_ngcontent-%COMP%] {\n  position: relative;\n  overflow: hidden;\n}\n.user-role-container[_ngcontent-%COMP%]   .table-container[_ngcontent-%COMP%] {\n  position: relative;\n  min-height: 200px;\n  background: white;\n}\n.user-role-container[_ngcontent-%COMP%]   .table-container[_ngcontent-%COMP%]   app-loader[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  z-index: 2;\n}\n.user-role-container[_ngcontent-%COMP%]   .table-container[_ngcontent-%COMP%]   .table-responsive[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n  overflow-x: auto;\n}\n.user-role-container[_ngcontent-%COMP%]   .table-container[_ngcontent-%COMP%]   .table-responsive.loading[_ngcontent-%COMP%] {\n  opacity: 0.6;\n  pointer-events: none;\n}\n.user-role-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%] {\n  width: 100%;\n  border-collapse: separate;\n  border-spacing: 0;\n}\n.user-role-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   th[_ngcontent-%COMP%] {\n  white-space: nowrap;\n  padding: 15px 12px;\n  font-weight: 600;\n  font-size: 0.9rem;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n  background-color: var(--background);\n  color: var(--text-primary);\n}\n.user-role-container[_ngcontent-%COMP%]   .table[_ngcontent-%COMP%]   td[_ngcontent-%COMP%] {\n  padding: 12px;\n  vertical-align: middle;\n  border-top: 1px solid var(--supporting);\n  color: var(--text-primary);\n}\n.user-role-container[_ngcontent-%COMP%]   .role-select[_ngcontent-%COMP%] {\n  min-width: 160px;\n  max-width: 220px;\n  padding: 8px 10px;\n  border-radius: 6px;\n  border: 1px solid var(--supporting);\n  background: white;\n}\n.user-role-container[_ngcontent-%COMP%]   .actions[_ngcontent-%COMP%]   .btn-sm[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  min-height: 40px;\n}\n@media (max-width: 768px) {\n  .user-role-container[_ngcontent-%COMP%] {\n    padding: 10px;\n  }\n  .user-role-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%] {\n    flex-direction: column;\n    align-items: stretch;\n  }\n  .user-role-container[_ngcontent-%COMP%]   .search-section[_ngcontent-%COMP%]   .search-controls[_ngcontent-%COMP%]   .button-group[_ngcontent-%COMP%] {\n    width: 100%;\n    justify-content: flex-end;\n  }\n  .user-role-container[_ngcontent-%COMP%]   .role-select[_ngcontent-%COMP%] {\n    max-width: 100%;\n    width: 100%;\n  }\n}\n/*# sourceMappingURL=user-role.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(UserRoleComponent, { className: "UserRoleComponent", filePath: "src\\app\\components\\user-role\\user-role.component.ts", lineNumber: 17 });
 })();
 
 // src/app/app-routing.module.ts
+var accessGuards = [AuthGuard, PageAccessGuard];
 var routes = [
   { path: "", redirectTo: "/login", pathMatch: "full" },
   { path: "login", component: LoginComponent },
   {
     path: "category",
     component: CategoryComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_CATEGORY" }
   },
   {
     path: "product",
     component: ProductComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_PRODUCT" }
   },
   {
     path: "purchase",
     component: PurchaseComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_PURCHASE" }
   },
   {
     path: "purchase/create",
     component: AddPurchaseComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_PURCHASE" }
   },
   {
     path: "sale",
     component: SaleComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_SALE" }
   },
   {
     path: "profit",
     component: ProfitComponent,
-    canActivate: [AuthGuard, ClientPasswordGuard]
+    canActivate: [...accessGuards, ClientPasswordGuard],
+    data: { access: "SELECT_PRODUCT_WISE_PROFIT" }
   },
   {
     path: "customer",
     component: CustomerComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_PARTY_PAYMENT" }
   },
   {
     path: "combined-purchase-sale",
@@ -89153,167 +91300,213 @@ var routes = [
   {
     path: "powder-coating-process",
     component: PowderCoatingProcessComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_COATING" }
   },
   {
     path: "powder-coating-process/create",
     component: AddPowderCoatingProcessComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_COATING" }
   },
   {
     path: "powder-coating-process/edit/:id",
     component: AddPowderCoatingProcessComponent,
-    title: "Edit Powder Coating Process"
+    title: "Edit Powder Coating Process",
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_COATING" }
   },
   {
     path: "transport/create",
     component: TransportComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_TRANSPORT" }
   },
   {
     path: "transport",
     component: TransportListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_TRANSPORT" }
   },
   {
     path: "quotation",
     component: QuotationComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_QUOTATION" }
   },
   {
     path: "quotation/create",
     component: AddQuotationComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_QUOTATION" }
   },
   {
     path: "transport/edit/:id",
     component: TransportComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_TRANSPORT" }
   },
   {
     path: "plan-dispatch",
     component: PlanDispatchListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_PLAN_DISPATCH" }
   },
   {
     path: "plan-dispatch/create",
     component: PlanDispatchFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_PLAN_DISPATCH" }
   },
   {
     path: "plan-dispatch/edit/:id",
     component: PlanDispatchFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_PLAN_DISPATCH" }
   },
   {
     path: "plan-coating",
     component: PlanCoatingListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_PLAN_COATING" }
   },
   {
     path: "plan-coating/create",
     component: PlanCoatingFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_PLAN_COATING" }
   },
   {
     path: "plan-coating/edit/:id",
     component: PlanCoatingFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_PLAN_COATING" }
   },
   {
     path: "employee",
     component: EmployeeListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_EMPLOYEE" }
   },
   {
     path: "employee/create",
     component: EmployeeFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_EMPLOYEE" }
   },
   {
     path: "employee/edit/:id",
     component: EmployeeFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_EMPLOYEE" }
   },
   {
     path: "machinery",
     component: MachineryListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_MACHINERY" }
   },
   {
     path: "machinery/create",
     component: MachineryFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_MACHINERY" }
   },
   {
     path: "machinery/edit/:id",
     component: MachineryFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_MACHINERY" }
   },
   {
     path: "employee-order",
     component: EmployeeOrderListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_EMPLOYEE_ORDER" }
   },
   {
     path: "employee-order/create",
     component: EmployeeOrderFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_EMPLOYEE_ORDER" }
   },
   {
     path: "employee-order/edit/:id",
     component: EmployeeOrderFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_EMPLOYEE_ORDER" }
   },
   {
     path: "daily-profit",
     component: DailyProfitComponent,
-    canActivate: [AuthGuard, ClientPasswordGuard]
+    canActivate: [...accessGuards, ClientPasswordGuard],
+    data: { access: "SELECT_DAILY_PROFIT" }
   },
   {
     path: "planning",
     component: PlanningListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_PLAN" }
   },
   {
     path: "planning/create",
     component: PlanningFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_PLAN" }
   },
   {
     path: "planning/edit/:id",
     component: PlanningFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_PLAN" }
   },
   {
     path: "planning/:id",
     component: PlanningDetailComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_PLAN" }
   },
   {
     path: "production/entry",
     component: ProductionEntryComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_PRODUCTION" }
   },
   {
     path: "production/edit/:id",
     component: ProductionEntryComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "ADD_EDIT_PRODUCTION" }
   },
   {
     path: "dashboard",
     component: ProductionDashboardComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_DASHBOARD" }
   },
   {
     path: "stock-movements",
     component: StockMovementListComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_STOCK_MOVES" }
   },
   {
     path: "production/report",
     component: ProcessDateReportComponent,
-    canActivate: [AuthGuard]
+    canActivate: accessGuards,
+    data: { access: "SELECT_DATE_REPORT" }
+  },
+  {
+    path: "role-config",
+    component: RoleConfigComponent,
+    canActivate: accessGuards,
+    data: { access: "__ADMIN__" }
+  },
+  {
+    path: "user-role",
+    component: UserRoleComponent,
+    canActivate: accessGuards,
+    data: { access: "__ADMIN__" }
   },
   {
     path: "**",

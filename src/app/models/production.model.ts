@@ -83,6 +83,8 @@ export interface DashboardRow {
   productId: number;
   productName: string;
   coatingRequired: boolean;
+  // PLAN_PRIORITY: U = Urgent, N = Normal, F = For Stock.
+  priority?: string;
   planned: number;
   cutting: number;
   emboss: number;

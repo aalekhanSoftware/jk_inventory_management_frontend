@@ -110,6 +110,39 @@
     padding: 2px 6px;
     font-size: 0.75rem;
     margin-left: 6px;
+
+    &.badge-priority {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    &.badge-priority-U {
+      background: #d32f2f;
+    }
+
+    &.badge-priority-F {
+      background: var(--secondary);
+    }
+  }
+
+  // PLAN_PRIORITY rows (theme-based): U = strong red, F = strong navy,
+  // N = plain. Left edge bar + tinted background survive table hover.
+  tr.priority-U {
+    background-color: rgba(211, 47, 47, 0.16);
+    box-shadow: inset 4px 0 0 #d32f2f;
+
+    &:hover {
+      background-color: rgba(211, 47, 47, 0.22);
+    }
+  }
+
+  tr.priority-F {
+    background-color: rgba(28, 63, 96, 0.13);
+    box-shadow: inset 4px 0 0 var(--secondary);
+
+    &:hover {
+      background-color: rgba(28, 63, 96, 0.19);
+    }
   }
 
   .hint { margin-top: 10px; color: var(--text-secondary); font-size: 0.85rem; }

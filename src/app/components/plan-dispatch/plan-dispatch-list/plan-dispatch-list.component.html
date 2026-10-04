@@ -59,7 +59,7 @@
               <th>Planning</th>
               <th>Total Weight</th>
               <th>Total Bags</th>
-              <th>Created At</th>
+              <th>Transport Date</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -75,7 +75,7 @@
               </td>
               <td>{{ dispatch.totalWeight | number:'1.3-3' }} kg</td>
               <td>{{ dispatch.totalBags }}</td>
-              <td>{{ dispatch.createdAt | date:'medium' }}</td>
+              <td>{{ dispatch.transportDate ? (dispatch.transportDate | date:'dd-MM-yyyy') : '-' }}</td>
               <td class="actions">
                 <button class="btn-icon" [routerLink]="['/plan-dispatch/edit', encId(dispatch.id)]" title="Edit Dispatch" *appCanAccess="'ADD_EDIT_PLAN_DISPATCH'">
                   <i class="fas fa-edit"></i>

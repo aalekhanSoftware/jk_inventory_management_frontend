@@ -16,6 +16,8 @@ export interface PowderCoatingProcess {
   customerName: string;
   status: string;
   createdAt: string;
+  // TRANSPORT_COATING_DATE: business date (yyyy-MM-dd), falls back to createdAt.
+  coatingDate?: string | null;
   items: PowderCoatingProcessItem[];
   showReturns?: boolean;
   returns?: PowderCoatingReturn[];

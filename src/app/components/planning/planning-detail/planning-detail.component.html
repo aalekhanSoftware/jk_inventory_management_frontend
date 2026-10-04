@@ -68,14 +68,14 @@
         </thead>
         <tbody>
           <ng-container *ngFor="let item of planning.items">
-            <tr>
+            <tr [ngClass]="'priority-' + (item.priority || 'N')">
               <td class="check-col">
                 <input type="checkbox" [checked]="selectedDispatch.has(item.id)"
                   [disabled]="!isDispatchable(item)" (change)="toggleItemSelection(item)"
                   [title]="isDispatchable(item) ? 'Select for dispatch (' + dispatchableQty(item) + ' pcs)' : dispatchBlockReason(item)"
                   (click)="$event.stopPropagation()">
               </td>
-              <td>{{ item.productName }} <span class="badge" *ngIf="item.coatingRequired">Coating</span><span class="badge badge-auto" *ngIf="item.autoUpdated" [title]="'Original plan: ' + (item.originalPlannedQuantity ?? '-')">Auto (was {{ item.originalPlannedQuantity ?? '-' }})</span></td>
+              <td>{{ item.productName }} <span class="badge" *ngIf="item.coatingRequired">Coating</span><span class="badge badge-auto" *ngIf="item.autoUpdated" [title]="'Original plan: ' + (item.originalPlannedQuantity ?? '-')">Auto (was {{ item.originalPlannedQuantity ?? '-' }})</span><span class="badge badge-priority" [ngClass]="'badge-priority-' + (item.priority || 'N')" *ngIf="(item.priority || 'N') !== 'N'" [title]="priorityLabel(item.priority)">{{ priorityLabel(item.priority) }}</span></td>
               <td>{{ item.plannedQuantity }}</td>
               <td>{{ item.totalBags ?? '-' }}</td>
               <td>{{ item.cuttingQty }}</td>

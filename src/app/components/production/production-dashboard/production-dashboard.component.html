@@ -18,6 +18,8 @@
       <app-plan-select formControlName="planningId" [placeholder]="'All Plannings'"></app-plan-select>
       <app-searchable-select formControlName="employeeId" [options]="employees" labelKey="name" valueKey="id"
         [placeholder]="'All Employees'" [allowClear]="true"></app-searchable-select>
+      <app-searchable-select formControlName="process" [options]="processOptions" labelKey="label" valueKey="value"
+        [placeholder]="'All Processes'" [allowClear]="true" title="Show only products with pending work in this process"></app-searchable-select>
       <input type="date" formControlName="startDate" class="form-control" aria-label="Start date"
         (touchstart)="$event.stopPropagation()" title="Planning start date">
       <input type="date" formControlName="endDate" class="form-control" aria-label="End date"
@@ -55,14 +57,15 @@
             <th>Packing</th>
             <th>Dispatch</th>
             <th>Remaining</th>
+            <th *ngIf="selectedProcess">{{ processLabel(selectedProcess) }} Pending</th>
             <th>Progress</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let row of rows">
+          <tr *ngFor="let row of rows" [ngClass]="'priority-' + (row.priority || 'N')">
             <td><a [routerLink]="['/planning', encId(row.planningId)]">{{ row.planningNumber }}</a></td>
             <td>{{ row.planningDate ? (row.planningDate | date:'dd-MM-yyyy') : '-' }}</td>
-            <td>{{ row.productName }} <span class="badge" *ngIf="row.coatingRequired">Coating</span></td>
+            <td>{{ row.productName }} <span class="badge" *ngIf="row.coatingRequired">Coating</span><span class="badge badge-priority" [ngClass]="'badge-priority-' + (row.priority || 'N')" *ngIf="(row.priority || 'N') !== 'N'">{{ priorityLabel(row.priority) }}</span></td>
             <td>{{ row.planned }}</td>
             <td>{{ row.cutting }}</td>
             <td>{{ row.emboss }}</td>
@@ -70,13 +73,14 @@
             <td>{{ row.packing }}</td>
             <td>{{ row.dispatch }}</td>
             <td [class.negative]="(row.remaining ?? 0) < 0">{{ row.remaining }}</td>
+            <td *ngIf="selectedProcess"><strong>{{ pendingFor(row) }}</strong></td>
             <td>
               <div class="progress"><div class="progress-bar" [style.width.%]="rowPercent(row)"></div></div>
               <small>{{ rowPercent(row) }}%</small>
             </td>
           </tr>
           <tr *ngIf="!rows.length">
-            <td colspan="11" class="text-center">No production data yet</td>
+            <td [attr.colspan]="selectedProcess ? 12 : 11" class="text-center">No production data yet</td>
           </tr>
         </tbody>
       </table>

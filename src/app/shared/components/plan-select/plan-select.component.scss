@@ -62,12 +62,12 @@
     right: auto;
     min-width: 100%;
     width: max-content;
-    max-width: min(92vw, 620px);
+    max-width: min(94vw, 760px);
     max-height: 320px;
     background: white;
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+    z-index: 3000;
     border: 1px solid var(--supporting);
     display: flex;
     flex-direction: column;
@@ -191,7 +191,7 @@
       margin: 0;
       border-radius: 12px;
       box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.25);
-      z-index: 2000;
+      z-index: 3000;
       touch-action: pan-y;
 
       .options-container {

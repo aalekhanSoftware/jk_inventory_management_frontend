@@ -48,6 +48,17 @@
                 {{ getFieldError(processForm.get('customerId'), 'customer') }}
               </div>
             </div>
+            <div class="form-group">
+              <label for="coatingDate">
+                <i class="fas fa-calendar-alt" aria-hidden="true"></i> <strong>Coating Date</strong> <span class="required" aria-label="required">*</span>
+              </label>
+              <input type="date" id="coatingDate" formControlName="coatingDate" class="form-control"
+                [class.is-invalid]="isFieldInvalid(processForm.get('coatingDate'))"
+                (touchstart)="$event.stopPropagation()">
+              <div class="invalid-feedback" *ngIf="isFieldInvalid(processForm.get('coatingDate'))">
+                {{ getFieldError(processForm.get('coatingDate'), 'coating date') }}
+              </div>
+            </div>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -125,6 +125,8 @@ export class PlanCoatingFormComponent implements OnInit, OnDestroy {
   private initializeForm(): void {
     this.processForm = this.fb.group({
       customerId: ['', [Validators.required]],
+      // TRANSPORT_COATING_DATE: business date, defaults to today, editable.
+      coatingDate: [formatDate(new Date(), 'yyyy-MM-dd', 'en'), Validators.required],
       status: ['A'],
       items: this.fb.array([])
     });
@@ -251,6 +253,7 @@ export class PlanCoatingFormComponent implements OnInit, OnDestroy {
         itemGroup.patchValue(
           { planningItemId: match ? Number(match.planningItemId ?? match.id) : null },
           { emitEvent: false });
+        this.autofillQuantityFromBalance(itemGroup);
       }
     });
   }
@@ -268,6 +271,31 @@ export class PlanCoatingFormComponent implements OnInit, OnDestroy {
     itemGroup.patchValue(
       { planningItemId: match ? Number(match.planningItemId ?? match.id) : null },
       { emitEvent: false });
+    this.autofillQuantityFromBalance(itemGroup);
+  }
+
+  /**
+   * AUTOFILL_BALANCE_QTY: places the "Can coat" balance directly inside
+   * Quantity (still editable). Only fills empty inputs — typed or stored
+   * values are never overwritten. Emits so item totals recalculate exactly
+   * like a keystroke.
+   */
+  private autofillQuantityFromBalance(itemGroup: AbstractControl): void {
+    const qtyCtrl = itemGroup.get('quantity');
+    if (!qtyCtrl || (qtyCtrl.value !== null && qtyCtrl.value !== '' && Number(qtyCtrl.value) !== 0)) {
+      return;
+    }
+    const pid = this.rowPlanningId(itemGroup);
+    const piId = itemGroup.get('planningItemId')?.value;
+    if (!pid || !piId) {
+      return;
+    }
+    const pi = (this.planItemsCache.get(pid) || [])
+      .find(p => Number(p.planningItemId ?? p.id) === Number(piId));
+    const balance = pi ? Number(pi.coatable ?? 0) : 0;
+    if (balance > 0) {
+      qtyCtrl.patchValue(balance);
+    }
   }
 
   // --- Items (same shape as the old coating form + plan controls) ---
@@ -450,6 +478,9 @@ export class PlanCoatingFormComponent implements OnInit, OnDestroy {
 
           this.processForm.patchValue({
             customerId: data.customerId,
+            coatingDate: data.coatingDate
+              ? formatDate(data.coatingDate, 'yyyy-MM-dd', 'en')
+              : formatDate(new Date(), 'yyyy-MM-dd', 'en'),
             status: data.status || 'A'
           });
 
@@ -562,6 +593,7 @@ export class PlanCoatingFormComponent implements OnInit, OnDestroy {
     const requestData = {
       id: this.isEditMode ? this.processId : undefined,
       customerId: formValue.customerId,
+      coatingDate: formValue.coatingDate || null,
       status: formValue.status,
       items: this.itemsFormArray.controls.map((control) => {
         const itemGroup = control as FormGroup;

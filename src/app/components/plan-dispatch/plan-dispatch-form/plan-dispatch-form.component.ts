@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl, FormControl } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -139,6 +139,8 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
   private initializeForm(): void {
     this.transportForm = this.fb.group({
       customerId: ['', [Validators.required]],
+      // TRANSPORT_COATING_DATE: business date, defaults to today, editable.
+      transportDate: [formatDate(new Date(), 'yyyy-MM-dd', 'en'), Validators.required],
       bags: this.fb.array([])
     });
   }
@@ -243,6 +245,7 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
             productId: Number(list[0].productId),
             planningItemId: Number(list[0].planningItemId ?? list[0].id)
           }, { emitEvent: false });
+          this.autofillQuantityFromBalance(itemGroup);
           return;
         }
       }
@@ -258,6 +261,9 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
         itemGroup.patchValue(
           { planningItemId: match ? Number(match.planningItemId ?? match.id) : null },
           { emitEvent: false });
+        // Balances just arrived for an already-chosen product (picked during
+        // load) — fill the empty Quantity now, it was skipped earlier.
+        this.autofillQuantityFromBalance(itemGroup);
       }
     });
   }
@@ -273,6 +279,31 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
       ? (this.planItemsCache.get(pid) || []).find(p => Number(p.productId) === prodId)
       : null;
     itemGroup.patchValue({ planningItemId: match ? Number(match.planningItemId ?? match.id) : null }, { emitEvent: false });
+    this.autofillQuantityFromBalance(itemGroup);
+  }
+
+  /**
+   * AUTOFILL_BALANCE_QTY: places the "Can dispatch" balance directly inside
+   * Quantity (still editable). Only fills empty inputs — typed or stored
+   * values are never overwritten. Emits so per-bag totals recalculate exactly
+   * like a keystroke.
+   */
+  private autofillQuantityFromBalance(itemGroup: AbstractControl): void {
+    const qtyCtrl = itemGroup.get('quantity');
+    if (!qtyCtrl || (qtyCtrl.value !== null && qtyCtrl.value !== '' && Number(qtyCtrl.value) !== 0)) {
+      return;
+    }
+    const pid = this.rowPlanningId(itemGroup);
+    const piId = itemGroup.get('planningItemId')?.value;
+    if (!pid || !piId) {
+      return;
+    }
+    const pi = (this.planItemsCache.get(pid) || [])
+      .find(p => Number(p.planningItemId ?? p.id) === Number(piId));
+    const balance = pi ? Number(pi.dispatchable ?? 0) : 0;
+    if (balance > 0) {
+      qtyCtrl.patchValue(balance);
+    }
   }
 
   addBag(): void {
@@ -335,6 +366,7 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
               productId: Number(list[0].productId),
               planningItemId: Number(list[0].planningItemId ?? list[0].id)
             }, { emitEvent: false });
+            this.autofillQuantityFromBalance(newItem);
           }
         }
       });
@@ -630,6 +662,7 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
     const payload = {
       id: this.isEditMode ? this.transportId : undefined,
       customerId: formValue.customerId,
+      transportDate: formValue.transportDate || null,
       bags: formValue.bags.map((bag: any) => ({
         id: bag.id,
         weight: bag.weight,
@@ -794,7 +827,10 @@ export class PlanDispatchFormComponent implements OnInit, OnDestroy {
     }
 
     this.transportForm.patchValue({
-      customerId: data.customerId
+      customerId: data.customerId,
+      transportDate: data.transportDate
+        ? formatDate(data.transportDate, 'yyyy-MM-dd', 'en')
+        : formatDate(new Date(), 'yyyy-MM-dd', 'en')
     });
 
     data.bags.forEach((bag: any) => {

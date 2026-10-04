@@ -45,7 +45,7 @@ export class ProductionService {
   }
 
   getDashboardSummary(planningId?: number | null, currentPage?: number | null, perPageRecord?: number | null,
-    filters?: { employeeId?: number | null; startDate?: string | null; endDate?: string | null }): Observable<any> {
+    filters?: { employeeId?: number | null; startDate?: string | null; endDate?: string | null; process?: string | null }): Observable<any> {
     const body: any = {};
     if (planningId) {
       body.planningId = planningId;
@@ -58,6 +58,9 @@ export class ProductionService {
     }
     if (filters?.endDate) {
       body.endDate = filters.endDate;
+    }
+    if (filters?.process) {
+      body.process = filters.process;
     }
     if (currentPage !== undefined && currentPage !== null) {
       body.currentPage = currentPage;

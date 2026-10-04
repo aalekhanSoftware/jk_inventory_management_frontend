@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/route
 import { PlanningService } from '../../../services/planning.service';
 import { ProductionService } from '../../../services/production.service';
 import { PlanDispatchService } from '../../../services/plan-dispatch.service';
-import { planningStatusLabel } from '../../../models/planning.model';
+import { planningStatusLabel, planningPriorityLabel } from '../../../models/planning.model';
 import { downloadCsv } from '../../../shared/utils/csv-export.util';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
@@ -26,6 +26,7 @@ export class PlanningDetailComponent implements OnInit {
   transactionsByItem: Record<number, any> = {};
   loadingTx: Record<number, boolean> = {};
   statusLabel = planningStatusLabel;
+  priorityLabel = planningPriorityLabel;
 
   // QUICK_DISPATCH: bulk one-click Packing → Dispatch selection.
   selectedDispatch = new Set<number>();
@@ -250,14 +251,14 @@ export class PlanningDetailComponent implements OnInit {
       this.snackbar.error('No data to export');
       return;
     }
-    const headers = ['Product', 'Planned', 'Bags', 'Cutting', 'Emboss', 'Coating', 'Packing', 'Dispatch', 'Remaining', 'Status'];
+    const headers = ['Product', 'Planned', 'Bags', 'Cutting', 'Emboss', 'Coating', 'Packing', 'Dispatch', 'Remaining', 'Priority', 'Status'];
     const rows = this.planning.items.map((item: any) => [
       item.productName, item.plannedQuantity, item.totalBags ?? '', item.cuttingQty, item.embossQty,
       item.coatingRequired ? item.coatingQty : 'N/A', item.packingQty, item.dispatchQty,
-      item.remainingQty, this.itemStatusLabel(item.itemStatus)
+      item.remainingQty, planningPriorityLabel(item.priority), this.itemStatusLabel(item.itemStatus)
     ]);
     rows.push(['TOTAL', this.planning.totalPlanned, '', this.planning.cuttingQty, this.planning.embossQty,
-      this.planning.coatingQty, this.planning.packingQty, this.planning.dispatchQty, this.planning.remainingQty, '']);
+      this.planning.coatingQty, this.planning.packingQty, this.planning.dispatchQty, this.planning.remainingQty, '', '']);
     downloadCsv(`planning-${this.planning.planningNumber || this.planning.id}`, headers, rows);
     this.snackbar.success('Excel sheet downloaded successfully');
   }

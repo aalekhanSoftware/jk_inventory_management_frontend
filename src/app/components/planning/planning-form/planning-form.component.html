@@ -81,6 +81,7 @@
                 <th>Planned Qty <span class="required">*</span></th>
                 <th>Bags</th>
                 <th>Coating?</th>
+                <th>Priority</th>
                 <th>Remarks</th>
                 <th>Actions</th>
               </tr>
@@ -119,6 +120,11 @@
                   <input type="checkbox" formControlName="coatingRequired" title="Coating required?">
                 </td>
                 <td>
+                  <select formControlName="priority" class="form-control" title="Priority">
+                    <option *ngFor="let p of priorityOptions" [value]="p.value">{{ p.label }}</option>
+                  </select>
+                </td>
+                <td>
                   <input type="text" formControlName="remarks" class="form-control" placeholder="Optional">
                 </td>
                 <td>
@@ -128,14 +134,14 @@
                 </td>
               </tr>
               <tr *ngIf="itemsFormArray.length === 0">
-                <td colspan="7" class="text-center">No products added. Click "Add Product" to get started.</td>
+                <td colspan="8" class="text-center">No products added. Click "Add Product" to get started.</td>
               </tr>
             </tbody>
             <tfoot *ngIf="itemsFormArray.length > 0">
               <tr>
                 <td colspan="2" class="text-end"><strong>Total Planned:</strong></td>
                 <td><strong>{{ getTotalPlanned() }}</strong></td>
-                <td colspan="4"></td>
+                <td colspan="5"></td>
               </tr>
             </tfoot>
           </table>

@@ -7,6 +7,7 @@ import { PlanningService } from '../../../services/planning.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { ProductService } from '../../../services/product.service';
 import { CustomerService } from '../../../services/customer.service';
+import { PLANNING_PRIORITY_OPTIONS } from '../../../models/planning.model';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
@@ -33,6 +34,7 @@ export class PlanningFormComponent implements OnInit, OnDestroy {
   isEditMode = false;
   planningId?: number;
   planningNumber?: string;
+  priorityOptions = PLANNING_PRIORITY_OPTIONS;
   products: any[] = [];
   employees: any[] = [];
   customers: any[] = [];
@@ -118,6 +120,8 @@ export class PlanningFormComponent implements OnInit, OnDestroy {
       plannedQuantity: [itemData?.plannedQuantity || '', [Validators.required, Validators.min(1)]],
       totalBags: [itemData?.totalBags ?? null, [Validators.min(0)]],
       coatingRequired: [itemData?.coatingRequired || false],
+      // PLAN_PRIORITY: U = Urgent, N = Normal (default), F = For Stock.
+      priority: [itemData?.priority || 'N', Validators.required],
       remarks: [itemData?.remarks || '']
     });
     this.itemsFormArray.push(itemGroup);
@@ -186,6 +190,7 @@ export class PlanningFormComponent implements OnInit, OnDestroy {
                 plannedQuantity: item.plannedQuantity,
                 totalBags: item.totalBags ?? null,
                 coatingRequired: !!item.coatingRequired,
+                priority: item.priority || 'N',
                 remarks: item.remarks || ''
               });
               if (item.id) {
@@ -313,6 +318,7 @@ export class PlanningFormComponent implements OnInit, OnDestroy {
         totalBags: v.totalBags === null || v.totalBags === '' || v.totalBags === undefined
           ? null : Number(v.totalBags),
         coatingRequired: !!v.coatingRequired,
+        priority: v.priority || 'N',
         remarks: v.remarks || ''
       };
       if (this.isEditMode && v.id) {

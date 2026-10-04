@@ -100,7 +100,7 @@
             <th scope="col"><strong>Total Bags</strong></th>
             <th scope="col"><strong>Total Amount</strong></th>
             <th scope="col"><strong>Status</strong></th>
-            <th scope="col"><strong>Created At</strong></th>
+            <th scope="col"><strong>Coating Date</strong></th>
             <th class="actions-cell" scope="col"><strong>Actions</strong></th>
           </tr>
         </thead>
@@ -136,7 +136,7 @@
                 {{ isProcessCompleted(process) ? 'Completed' : 'Active' }}
               </span>
             </td>
-            <td>{{ process.createdAt | date:'medium' }}</td>
+            <td>{{ process.coatingDate ? (process.coatingDate | date:'dd-MM-yyyy') : '-' }}</td>
             <td class="actions-cell">
               <button 
                 class="btn btn-icon btn-primary" 
